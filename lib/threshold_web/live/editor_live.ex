@@ -52,7 +52,7 @@ defmodule ThresholdWeb.EditorLive do
   ]
 
   @modes ~w(inspect place move connect close boundary)
-  @mutations ~w(set_mode pick add_location move_location update_location update_connection update_closure set_playable_override detach_location close_edge delete_selected update_boundary discard save regenerate)
+  @mutations ~w(start_reconnect reconnect_location review_reference set_mode pick add_location move_location update_location update_connection update_closure set_playable_override detach_location close_edge delete_selected update_boundary discard save regenerate)
 
   @impl true
   def mount(params, _session, socket) do
@@ -97,6 +97,7 @@ defmodule ThresholdWeb.EditorLive do
       |> assign(:saved_boundary, world.boundary["geometry"])
       |> assign(:boundary_hash, world.boundary_hash)
       |> assign(:mode, "inspect")
+      |> assign(:reconnecting, nil)
       |> assign(:pending_from, nil)
       |> assign(:selected, nil)
 
@@ -159,7 +160,13 @@ defmodule ThresholdWeb.EditorLive do
 
         {:noreply,
          socket
-         |> assign(regenerating: true, build_output: nil, mode: "inspect", pending_from: nil)
+         |> assign(
+           regenerating: true,
+           build_output: nil,
+           mode: "inspect",
+           pending_from: nil,
+           reconnecting: nil
+         )
          |> start_async(:regenerate, fn -> Importer.regenerate(name) end)}
     end
   end
@@ -194,7 +201,8 @@ defmodule ThresholdWeb.EditorLive do
 
   def handle_event("set_mode", %{"mode" => mode}, socket) when mode in @modes do
     if mode == "inspect" or editable?(socket.assigns) do
-      {:noreply, socket |> assign(:mode, mode) |> assign(:pending_from, nil)}
+      {:noreply,
+       socket |> assign(:mode, mode) |> assign(:pending_from, nil) |> assign(:reconnecting, nil)}
     else
       {:noreply,
        put_flash(
@@ -206,7 +214,58 @@ defmodule ThresholdWeb.EditorLive do
   end
 
   def handle_event("clear_selection", _params, socket) do
-    {:noreply, socket |> assign(:selected, nil) |> assign(:pending_from, nil)}
+    {:noreply,
+     socket
+     |> assign(:selected, nil)
+     |> assign(:pending_from, nil)
+     |> assign(:reconnecting, nil)
+     |> assign(:mode, "inspect")}
+  end
+
+  def handle_event("review_reference", %{"id" => id}, socket) do
+    layer = if String.starts_with?(id, "loc:"), do: "authored-location", else: "authored-closure"
+    {:noreply, socket |> select(layer, id) |> focus(%{"bounds" => nil, "object" => id})}
+  end
+
+  def handle_event("start_reconnect", _params, socket) do
+    case socket.assigns.selected do
+      %{layer: layer, id: id} when layer in ["authored-location", "authored-closure"] ->
+        with :ok <- allow_edit(socket) do
+          {:noreply,
+           assign(socket,
+             mode: "reconnect",
+             reconnecting: %{layer: layer, id: id},
+             pending_from: nil
+           )}
+        else
+          {:error, message} -> {:noreply, put_flash(socket, :error, message)}
+        end
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("reconnect_location", %{"anchor" => request}, socket) do
+    with :ok <- allow_edit(socket),
+         %{layer: "authored-location", id: id} <- socket.assigns.reconnecting,
+         true <- request["kind"] in ["node", "edge"],
+         {:ok, doc} <-
+           Edit.move_location(socket.assigns.authored, id, request, socket.assigns.geography) do
+      {:noreply,
+       socket |> apply_edit(doc) |> assign(mode: "inspect", reconnecting: nil) |> bump_rev()}
+    else
+      {:error, message} ->
+        {:noreply, put_flash(socket, :error, message)}
+
+      _ ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Click close to a visible intersection or street to reconnect."
+         )}
+    end
   end
 
   # A click on the map. What it means depends on the active tool.
@@ -383,6 +442,22 @@ defmodule ThresholdWeb.EditorLive do
   defp focus(socket, attrs),
     do: assign(socket, :focus, Map.merge(%{"n" => socket.assigns.focus["n"] + 1}, attrs))
 
+  defp pick(
+         "reconnect",
+         "edges",
+         edge,
+         _props,
+         %{assigns: %{reconnecting: %{layer: "authored-closure", id: id}}} = socket
+       ) do
+    case Edit.reconnect_closure(socket.assigns.authored, id, edge, socket.assigns.geography) do
+      {:ok, doc} -> socket |> apply_edit(doc) |> assign(mode: "inspect", reconnecting: nil)
+      {:error, message} -> put_flash(socket, :error, message)
+    end
+  end
+
+  defp pick("reconnect", _layer, _id, _props, socket),
+    do: put_flash(socket, :error, "Click a street to reconnect this closure.")
+
   defp pick("connect", "authored-location", id, _props, socket) do
     case socket.assigns.pending_from do
       nil ->
@@ -526,6 +601,7 @@ defmodule ThresholdWeb.EditorLive do
       mode: assigns.mode,
       selected: assigns.selected && assigns.selected.id,
       pendingFrom: assigns.pending_from,
+      reconnecting: assigns.reconnecting,
       dirty: dirty?(assigns),
       rev: assigns.rev,
       generation: assigns.generation,
@@ -659,10 +735,9 @@ defmodule ThresholdWeb.EditorLive do
                 <span class="badge">{ref.status}</span>
                 <button
                   type="button"
-                  phx-click="focus_object"
+                  phx-click="review_reference"
                   phx-value-id={ref.object}
                   class="link-button"
-                  disabled={ref.status == :missing and String.starts_with?(ref.object, "clo:")}
                 >
                   {ref.object}
                 </button>
@@ -740,7 +815,12 @@ defmodule ThresholdWeb.EditorLive do
           class="map-wrap"
         >
           <div id="map-canvas" phx-update="ignore"></div>
-          <.toolbar mode={@mode} editable={@editable} pending_from={@pending_from} />
+          <.toolbar
+            mode={@mode}
+            editable={@editable}
+            pending_from={@pending_from}
+            reconnecting={@reconnecting}
+          />
           <.save_bar dirty={@dirty} />
           <div :if={@loading} id="map-loading" class="map-status">Loading geography…</div>
           <div :if={@load_error} id="map-error" class="map-status map-status-error">
@@ -750,7 +830,13 @@ defmodule ThresholdWeb.EditorLive do
 
         <aside id="inspector" class="panel">
           <h2 class="panel-title">Inspector</h2>
-          <.inspector selected={@selected} authored={@authored} refs={@refs} editable={@editable} />
+          <.inspector
+            selected={@selected}
+            authored={@authored}
+            refs={@refs}
+            editable={@editable}
+            geography={@geography}
+          />
         </aside>
       </div>
     </Layouts.app>

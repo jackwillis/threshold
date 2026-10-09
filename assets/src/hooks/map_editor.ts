@@ -16,7 +16,7 @@ import type { Authored, RefStatus } from "../map/authored";
 import { snapAnchor } from "../map/snap";
 import type { LngLat } from "../map/snap";
 
-type Mode = "inspect" | "place" | "move" | "connect" | "close" | "boundary";
+type Mode = "inspect" | "place" | "move" | "connect" | "close" | "boundary" | "reconnect";
 
 type ViewState = {
   layers: Record<string, boolean>;
@@ -29,6 +29,7 @@ type ViewState = {
   mode: Mode;
   selected: string | null;
   pendingFrom: string | null;
+  reconnecting: { layer: string; id: string } | null;
   dirty: boolean;
   rev: number;
   generation: number;
@@ -70,7 +71,7 @@ type PlayableDoc = { locations: PlayableLocation[]; connections: PlayableConnect
 
 const EMPTY: FeatureCollection = { type: "FeatureCollection", features: [] };
 const CLICK_PAD_PX = 5;
-const CLICK_MODES: Mode[] = ["inspect", "connect", "close"];
+const CLICK_MODES: Mode[] = ["inspect", "connect", "close", "reconnect"];
 const BOUNDARY_EDIT_ACTIONS = ["dragCoordinate", "dragFeature", "dragCoordinateResize", "insertMidpoint", "deleteCoordinate", "edit"];
 
 async function getJson<T>(world: string, layer: string): Promise<T> {
@@ -182,12 +183,14 @@ export const MapEditor = {
   onMapClick(this: Hook, event: maplibregl.MapMouseEvent) {
     const map = this.map;
     if (!map || !this.ready || !CLICK_MODES.includes(this.mode)) return;
+    if (this.mode === "reconnect" && this.readState().reconnecting?.layer === "authored-location") return;
     const { x, y } = event.point;
     const hits = map.queryRenderedFeatures(
       [[x - CLICK_PAD_PX, y - CLICK_PAD_PX], [x + CLICK_PAD_PX, y + CLICK_PAD_PX]],
       { layers: CLICK_PRIORITY.filter((id) => map.getLayer(id)) },
     );
-    const best = [...hits].sort((a, b) => CLICK_PRIORITY.indexOf(a.layer.id) - CLICK_PRIORITY.indexOf(b.layer.id))[0];
+    const candidates = this.mode === "reconnect" ? hits.filter((hit) => hit.layer.id === "edges") : hits;
+    const best = [...candidates].sort((a, b) => CLICK_PRIORITY.indexOf(a.layer.id) - CLICK_PRIORITY.indexOf(b.layer.id))[0];
     const id = best?.properties?.id;
     const feature = typeof id === "string" ? this.features.get(id) : undefined;
     if (!best || !feature) {
@@ -291,7 +294,7 @@ export const MapEditor = {
       return [x - pad, y - pad, x + pad, y + pad];
     }
     const closure = state.authored.closures.find((c) => c.id === id);
-    const edge = closure && this.features.get(closure.edge);
+    const edge = (closure && this.features.get(closure.edge)) ?? this.features.get(id);
     return edge ? boundsOf(edge.geometry) : null;
   },
 
@@ -322,13 +325,16 @@ export const MapEditor = {
     const draw = this.draw;
     if (!draw) return;
     // Resync only when the tool or the server-side data changed, so drags are not interrupted.
-    const signature = JSON.stringify([state.mode, state.rev, state.mode === "move" ? state.authored.locations : null, state.mode === "boundary" ? state.boundary : null]);
+    const signature = JSON.stringify([state.mode, state.rev, state.reconnecting, state.mode === "move" ? state.authored.locations : null, state.mode === "boundary" ? state.boundary : null]);
     if (signature === this.syncSignature) return;
     this.syncSignature = signature;
 
     draw.clear();
     this.boundaryFeatureId = undefined;
     switch (state.mode) {
+      case "reconnect":
+        draw.setMode(state.reconnecting?.layer === "authored-location" ? "point" : "static");
+        break;
       case "place":
         draw.setMode("point");
         break;
@@ -369,10 +375,10 @@ export const MapEditor = {
     const state = this.readState();
     const visible = { nodes: state.layers["nodes"] ?? false, edges: state.layers["edges"] ?? true };
 
-    if (state.mode === "place" && action === "draw" && feature.geometry.type === "Point") {
+    if ((state.mode === "place" || (state.mode === "reconnect" && state.reconnecting?.layer === "authored-location")) && action === "draw" && feature.geometry.type === "Point") {
       draw.removeFeatures([id]);
       const anchor = snapAnchor(map, lngLat((feature.geometry as Point).coordinates), this.features, visible);
-      this.pushEvent("add_location", { anchor });
+      this.pushEvent(state.mode === "reconnect" ? "reconnect_location" : "add_location", { anchor });
     } else if (state.mode === "move" && action === "dragFeature" && feature.geometry.type === "Point") {
       const locationId = feature.properties?.locationId;
       if (typeof locationId === "string") {

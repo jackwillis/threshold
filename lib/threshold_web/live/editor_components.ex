@@ -17,6 +17,8 @@ defmodule ThresholdWeb.EditorComponents do
   attr :editable, :boolean, required: true
   attr :pending_from, :string, default: nil
 
+  attr :reconnecting, :map, default: nil
+
   def toolbar(assigns) do
     assigns = assign(assigns, :tools, @tools)
 
@@ -35,10 +37,20 @@ defmodule ThresholdWeb.EditorComponents do
           {label}
         </button>
       </div>
-      <p id="tool-hint" class="tool-hint">{tool_hint(@mode, @pending_from)}</p>
+      <p id="tool-hint" class="tool-hint">
+        {if @mode == "reconnect",
+          do: reconnect_hint(@reconnecting),
+          else: tool_hint(@mode, @pending_from)}
+      </p>
     </div>
     """
   end
+
+  defp reconnect_hint(%{layer: "authored-location"}),
+    do:
+      "Click near a visible intersection or street to reconnect the location. Press Escape to cancel."
+
+  defp reconnect_hint(_), do: "Click a street to reconnect the closure. Press Escape to cancel."
 
   defp tool_hint("inspect", _), do: "Click a feature to inspect it."
 
@@ -83,6 +95,8 @@ defmodule ThresholdWeb.EditorComponents do
   attr :authored, :map, required: true
   attr :refs, :list, required: true
   attr :editable, :boolean, required: true
+
+  attr :geography, :map, default: nil
 
   def inspector(%{selected: nil} = assigns) do
     ~H"""
@@ -129,12 +143,29 @@ defmodule ThresholdWeb.EditorComponents do
         <dt :if={@loc["anchor"]["ref"]}>anchored to</dt>
         <dd :if={@loc["anchor"]["ref"]} class="mono">{@loc["anchor"]["ref"]}</dd>
       </dl>
+      <button
+        :if={@loc["anchor"]["ref"] != nil and ref_status(@refs, @id) != "missing"}
+        type="button"
+        phx-click="focus_object"
+        phx-value-id={@loc["anchor"]["ref"]}
+        class="link-button"
+      >View current geographic feature</button>
       <p :if={ref_status(@refs, @id) in ["missing", "moved"]} class="hint">
         The imported geography this is anchored to {if ref_status(@refs, @id) == "missing",
           do: "no longer exists",
-          else: "has changed"}. Use the Move tool to snap it to current geography, or keep it as a free point.
+          else: "has changed"}. Reconnect it to current geography, or keep it as a free point.
+      </p>
+      <p :if={@loc["anchor"]["kind"] == "node" and @geography} class="hint">
+        Current intersection position: {format_position(@geography.nodes[@loc["anchor"]["ref"]])}
       </p>
       <div class="actions">
+        <button
+          id="reconnect-location"
+          type="button"
+          phx-click="start_reconnect"
+          disabled={not @editable}
+          class="tool"
+        >Reconnect to geography</button>
         <button
           :if={@loc["anchor"]["kind"] != "point"}
           type="button"
@@ -227,6 +258,19 @@ defmodule ThresholdWeb.EditorComponents do
         /></label>
       </.form>
       <p class="hint">The imported access value is unchanged and still visible on the street.</p>
+      <dl class="props">
+        <dt>recorded shape</dt><dd class="mono">{@closure["geometry_hash"]}</dd>
+        <dt>current shape</dt><dd class="mono">
+          {if @geography, do: @geography.edges[@closure["edge"]] || "Missing", else: "Unavailable"}
+        </dd>
+      </dl>
+      <button
+        id="reconnect-closure"
+        type="button"
+        phx-click="start_reconnect"
+        disabled={not @editable}
+        class="tool"
+      >Reconnect to street</button>
       <div class="actions">
         <button
           type="button"
@@ -387,6 +431,9 @@ defmodule ThresholdWeb.EditorComponents do
   defp rank(:missing), do: 2
   defp rank(:moved), do: 1
   defp rank(:ok), do: 0
+
+  defp format_position(nil), do: "Missing"
+  defp format_position(point), do: Enum.map_join(point, ", ", &Float.round(&1 * 1.0, 6))
 
   defp dom_id(id), do: String.replace(id, ":", "-")
 

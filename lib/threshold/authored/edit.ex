@@ -134,6 +134,26 @@ defmodule Threshold.Authored.Edit do
     end
   end
 
+  @doc "Explicitly reattaches a closure, preserving its identity and reason."
+  @spec reconnect_closure(Authored.t(), String.t(), String.t(), Threshold.Geography.t()) :: result
+  def reconnect_closure(doc, id, edge, geography) do
+    cond do
+      not Enum.any?(doc["closures"], &(&1["id"] == id)) ->
+        {:error, "No such closure."}
+
+      not Map.has_key?(geography.edges, edge) ->
+        {:error, "That street is not in the imported geography."}
+
+      Enum.any?(doc["closures"], &(&1["id"] != id and &1["edge"] == edge)) ->
+        {:error, "That street already has a closure."}
+
+      true ->
+        update_item(doc, "closures", id, fn closure ->
+          closure |> Map.put("edge", edge) |> Map.put("geometry_hash", geography.edges[edge])
+        end)
+    end
+  end
+
   @spec update_closure(Authored.t(), String.t(), map) :: result
   def update_closure(doc, id, fields),
     do: update_item(doc, "closures", id, &put_string(&1, fields, "reason"))

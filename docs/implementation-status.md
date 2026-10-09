@@ -15,7 +15,7 @@ Verified means exercised by an automated test and/or by driving the app in headl
 
 ## Known limitations and untested areas
 
-- The in-UI regeneration action and reference "reconnect" workflow are not built; regeneration is `make build-world`.
+- Regeneration and reference repair are implemented. Regeneration stages an offline build, playable build and validation before publishing generated files; saved-input changes reject publication. The editor preserves authored working data and save-conflict hashes. Missing/moved references open the inspector for deliberate reconnection, detachment or removal. Browser checks on a scratch Madison world exercised boundary drag/save/regenerate, map refresh, location-to-edge reconnection and missing-closure reconnection/save. Automated tests cover missing/moved references, unsaved guards and failed-build preservation. A simulated source-snapshot update still needs an end-to-end check.
 - Network review done (see [network-review.md](network-review.md)): undirected edges are correct for walking; open items are retaining sidewalk/crossing tags, an optional derived access basis, and plaza/entrance handling in the playable-node layer.
 - The full designer workflow was driven in headless Firefox against a scratch copy of the world, not against a long editing session on the committed Madison files; no browser tests are automated (the LiveView tests do not exercise Terra Draw).
 - Map labels are not drawn (they would need a font source); names appear in the inspector.
@@ -24,7 +24,7 @@ Verified means exercised by an automated test and/or by driving the app in headl
 
 ## Active
 
-Finishing and reviewing the editor milestone (plan Phases 5-6): the Phase 5 tools are implemented; Phase 6 covers in-UI regeneration and reference review.
+Reviewing the editor milestone (plan Phases 5-6): both editing and regeneration/reference-repair workflows are implemented. The next evaluation concerns playable graph route integrity and suitability for gameplay.
 
 ## Planned
 

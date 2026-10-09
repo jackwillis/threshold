@@ -16,6 +16,20 @@ defmodule Threshold.Authored.EditTest do
     {doc, id}
   end
 
+  test "closure reconnect rejects absent and already closed targets" do
+    {:ok, doc, first} = Edit.add_closure(empty(), "edge:1-2-101", @geography)
+    {:ok, doc, _} = Edit.add_closure(doc, "edge:3-4-102", @geography)
+
+    assert {:error, "That street already has a closure."} =
+             Edit.reconnect_closure(doc, first, "edge:3-4-102", @geography)
+
+    assert {:error, "That street is not in the imported geography."} =
+             Edit.reconnect_closure(doc, first, "edge:gone", @geography)
+
+    assert {:error, "No such closure."} =
+             Edit.reconnect_closure(doc, "clo:gone", "edge:1-2-101", @geography)
+  end
+
   describe "locations" do
     test "adds a free point, a node and an edge anchor" do
       {doc, id} = with_location()

@@ -49,7 +49,7 @@ Status: **Draft for discussion.** Companion to `design.md`. Phases are ordered s
 - Boundary editing with staleness banner (if included in milestone 1).
 - **Done when:** a scripted edit session produces a small, readable Git diff.
 - **Status: implemented.** Tools: inspect, place (snaps to node, then edge with offset, else free point), move (click to select, then drag; re-snaps on drop), connect (two clicks), close street (one click), boundary (Terra Draw vertex/midpoint editing). The server holds the working copy; Save writes `authored.json` and/or `boundary.geojson` with conflict checks; Discard reloads. Saving a boundary makes the geography stale (banner) and is refused if boundary + buffer would exceed the pinned snapshot. Verified in headless Firefox on the real data; Terra Draw works with MapLibre here.
-- Not yet: the in-UI regeneration action and "reconnect" suggestions (Phase 6). `window.thresholdMap` / `window.thresholdDraw` are exposed for browser-driven tests.
+- Phase 6 now provides offline regeneration and explicit reference reconnect actions. Automatic reconnect suggestions remain deferred. `window.thresholdMap` / `window.thresholdDraw` are exposed for browser-driven tests.
 
 ## Steering notes (from the engineering steering memo)
 
@@ -61,8 +61,8 @@ Implemented per the steering memo's experiment: see [playable-node-experiment.md
 
 ## Phase 6: Regeneration and reference review
 
-- UI action to run `build` (never `acquire`) and show success or error output.
-- Reference review panel: missing/moved items with reconnect, keep fictional, remove.
+- **Implemented:** asynchronous UI action to run `build`, `playable`, and `validate` (never `acquire`) on a scratch copy; publish generated files only after successful checks and unchanged saved inputs. Unsaved changes prevent regeneration; editing is blocked during the build; map sources and reference diagnostics refresh afterwards.
+- **Implemented:** missing/moved reference rows open the inspector, including missing closures. Locations can reconnect by clicking a current node or edge, remain fictional free points, or be deleted. Closures can reconnect to a current edge or be removed. Reconnection preserves IDs and metadata, updates current coordinates/hashes, and remains unsaved until Save.
 - Test by editing the fixture snapshot to move or delete features and checking flagged references.
 - **Done when:** a simulated OSM update surfaces affected authored items without altering them.
 
