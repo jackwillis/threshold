@@ -1,5 +1,5 @@
 import maplibregl from "maplibre-gl";
-import type { Feature, FeatureCollection, Geometry, Point, Polygon, Position } from "geojson";
+import type { Feature, FeatureCollection, Geometry, LineString, Point, Polygon, Position } from "geojson";
 import {
   TerraDraw,
   TerraDrawPointMode,
@@ -31,6 +31,7 @@ type ViewState = {
   pendingFrom: string | null;
   dirty: boolean;
   rev: number;
+  playable: "missing" | "fresh" | "stale";
 };
 
 type Hook = {
@@ -43,6 +44,7 @@ type Hook = {
   dirty: boolean;
   mode: Mode;
   features: Map<string, Feat>;
+  playableBase: PlayableLocation[];
   boundaryFeatureId?: string | number;
   onBeforeUnload?: (event: BeforeUnloadEvent) => void;
   onKeyDown?: (event: KeyboardEvent) => void;
@@ -55,8 +57,14 @@ type Hook = {
   onDrawFinish(id: string | number, action: string): void;
   onMapClick(event: maplibregl.MapMouseEvent): void;
   objectBounds(id: string | null): Bounds | null;
+  showPlayable(map: maplibregl.Map, state: ViewState): void;
+  highlightFeature(id: string | null, state: ViewState): Feature | undefined;
   load(map: maplibregl.Map): Promise<void>;
 };
+
+type PlayableLocation = { id: string; point: [number, number]; node: string; members: number; reasons: string[]; component: number; degree: number; override: string | null };
+type PlayableConnection = { id: string; from: string; to: string; length_m: number; classes: string[]; parallel: number; edge_ids: string[] };
+type PlayableDoc = { locations: PlayableLocation[]; connections: PlayableConnection[] };
 
 const EMPTY: FeatureCollection = { type: "FeatureCollection", features: [] };
 const CLICK_PAD_PX = 5;
@@ -84,6 +92,7 @@ export const MapEditor = {
     this.dirty = false;
     this.mode = "inspect";
     this.features = new Map();
+    this.playableBase = [];
 
     const canvas = this.el.querySelector<HTMLElement>("#map-canvas");
     if (!canvas) return;
@@ -194,11 +203,11 @@ export const MapEditor = {
     (map.getSource("mask") as maplibregl.GeoJSONSource).setData(outsideMask(state.boundary));
     this.showAuthored(map, state);
 
-    // Highlight the pending location while connecting, else the selection (a closure highlights its street).
-    const highlightId = state.pendingFrom ?? state.selected;
-    const closure = highlightId ? state.authored.closures.find((c) => c.id === highlightId) : undefined;
-    const highlighted = highlightId ? this.features.get(closure ? closure.edge : highlightId) : undefined;
-    (map.getSource("selection") as maplibregl.GeoJSONSource).setData((highlighted as Feature | undefined) ?? EMPTY);
+    this.showPlayable(map, state);
+
+    // Highlight the pending location while connecting, else the selection.
+    const highlighted = this.highlightFeature(state.pendingFrom ?? state.selected, state);
+    (map.getSource("selection") as maplibregl.GeoJSONSource).setData(highlighted ?? EMPTY);
 
     this.syncDraw(state);
 
@@ -210,6 +219,37 @@ export const MapEditor = {
         map.fitBounds([[w, s], [e, n]], { padding: 80, maxZoom: 19, duration: 600 });
       }
     }
+  },
+
+  /** What to highlight for a selected id: a closure marks its street, a playable connection its underlying edges. */
+  highlightFeature(this: Hook, id: string | null, state: ViewState): Feature | undefined {
+    if (!id) return undefined;
+    const closure = state.authored.closures.find((c) => c.id === id);
+    if (closure) return this.features.get(closure.edge) as Feature | undefined;
+    if (id.startsWith("pc:")) {
+      const connection = this.features.get(id)?.properties.edge_ids;
+      if (!Array.isArray(connection)) return undefined;
+      const lines: Position[][] = [];
+      for (const edgeId of connection) {
+        const g = this.features.get(String(edgeId))?.geometry;
+        if (g && g.type === "LineString") lines.push(g.coordinates);
+      }
+      return { type: "Feature", properties: {}, geometry: { type: "MultiLineString", coordinates: lines } };
+    }
+    return this.features.get(id) as Feature | undefined;
+  },
+
+  /** Candidate playable locations, restyled immediately by the designer's retain/suppress decisions. */
+  showPlayable(this: Hook, map: maplibregl.Map, state: ViewState) {
+    if (this.playableBase.length === 0) return;
+    const overrides = new Map((state.authored.playable_overrides ?? []).map((o) => [o.id, o.action]));
+    const features: Feature<Point, Props>[] = this.playableBase.map((l) => ({
+      type: "Feature",
+      geometry: { type: "Point", coordinates: l.point },
+      properties: { id: l.id, classification: "playable-location", reasons: l.reasons, members: l.members, degree: l.degree, component: l.component, override: overrides.get(l.id) ?? null },
+    }));
+    (map.getSource("playable-locations") as maplibregl.GeoJSONSource).setData({ type: "FeatureCollection", features });
+    indexFeatures({ type: "FeatureCollection", features }, this.features);
   },
 
   /** Refresh authored sources whenever the server's working copy or reference statuses change. */
@@ -346,11 +386,36 @@ export const MapEditor = {
     map.addSource("boundary", { type: "geojson", data: boundary });
     map.addSource("extent", { type: "geojson", data: extent });
     map.addSource("mask", { type: "geojson", data: outsideMask(boundary.geometry) });
+    map.addSource("playable-locations", { type: "geojson", data: EMPTY });
+    map.addSource("playable-connections", { type: "geojson", data: EMPTY });
     map.addSource("authored-locations", { type: "geojson", data: EMPTY });
     map.addSource("authored-connections", { type: "geojson", data: EMPTY });
     map.addSource("selection", { type: "geojson", data: EMPTY });
 
     const state = this.readState();
+    if (state.playable !== "missing") {
+      try {
+        const playable = await getJson<PlayableDoc>(world, "playable");
+        this.playableBase = playable.locations;
+        const byId = new Map(playable.locations.map((l) => [l.id, l]));
+        const lines: Feature<LineString, Props>[] = [];
+        for (const c of playable.connections) {
+          const from = byId.get(c.from);
+          const to = byId.get(c.to);
+          if (!from || !to) continue;
+          lines.push({
+            type: "Feature",
+            geometry: { type: "LineString", coordinates: [from.point, to.point] },
+            properties: { id: c.id, classification: "playable-connection", length_m: c.length_m, classes: c.classes, parallel: c.parallel, edge_ids: c.edge_ids },
+          });
+        }
+        const connections: FeatureCollection<LineString, Props> = { type: "FeatureCollection", features: lines };
+        (map.getSource("playable-connections") as maplibregl.GeoJSONSource).setData(connections);
+        indexFeatures(connections, this.features);
+      } catch (error) {
+        console.error("Could not load the playable layer:", error);
+      }
+    }
     for (const spec of layerSpecs(state.colorBy, state.palette)) map.addLayer(spec);
 
     const [w, s, e, n] = boundsOf(extent.geometry);

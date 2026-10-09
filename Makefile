@@ -3,7 +3,7 @@ PY := .venv/bin
 export PATH := $(HOME)/.bun/bin:$(PATH)
 W ?= madison
 
-.PHONY: setup assets check-assets run test check fmt build-world validate-world determinism acquire-world
+.PHONY: setup assets check-assets run test check fmt build-world build-playable validate-world determinism acquire-world
 
 setup:
 	mix setup
@@ -38,6 +38,11 @@ check:
 
 build-world:
 	$(PY)/threshold-gis build $(W)
+	$(PY)/threshold-gis playable $(W)
+
+# Regenerate only the derived playable layer (also applies retain/suppress decisions from authored.json).
+build-playable:
+	$(PY)/threshold-gis playable $(W)
 
 validate-world:
 	$(PY)/threshold-gis validate $(W)
@@ -47,7 +52,9 @@ determinism:
 	rm -rf tmp/determinism && mkdir -p tmp/determinism
 	cp -r priv/worlds/$(W) tmp/determinism/$(W)
 	$(PY)/threshold-gis build $(W) --worlds-dir tmp/determinism
+	$(PY)/threshold-gis playable $(W) --worlds-dir tmp/determinism
 	for f in nodes edges context; do diff -q priv/worlds/$(W)/$$f.geojson tmp/determinism/$(W)/$$f.geojson; done
+	diff -q priv/worlds/$(W)/playable.json tmp/determinism/$(W)/playable.json
 
 # The only target that touches the network.
 acquire-world:

@@ -138,6 +138,20 @@ defmodule Threshold.Authored.Edit do
   def update_closure(doc, id, fields),
     do: update_item(doc, "closures", id, &put_string(&1, fields, "reason"))
 
+  # --- Playable-location overrides ----------------------------------------------------
+
+  @doc """
+  Records a designer decision about a candidate playable location: `"retain"` keeps it through
+  simplification, `"suppress"` lets it be simplified away. `nil` clears the decision. Overrides take
+  effect when the playable layer is next regenerated.
+  """
+  @spec set_playable_override(Authored.t(), String.t(), String.t() | nil) :: result
+  def set_playable_override(doc, id, action) do
+    others = Enum.reject(doc["playable_overrides"], &(&1["id"] == id))
+    list = if action, do: others ++ [%{"id" => id, "action" => action}], else: others
+    finish(Map.put(doc, "playable_overrides", list))
+  end
+
   # --- Anchors ------------------------------------------------------------------------
 
   @doc false

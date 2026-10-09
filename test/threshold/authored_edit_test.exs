@@ -170,6 +170,27 @@ defmodule Threshold.Authored.EditTest do
     end
   end
 
+  describe "playable overrides" do
+    test "records, replaces and clears a decision" do
+      {:ok, doc} = Edit.set_playable_override(empty(), "pn:5", "retain")
+      assert [%{"id" => "pn:5", "action" => "retain"}] = doc["playable_overrides"]
+
+      {:ok, doc} = Edit.set_playable_override(doc, "pn:5", "suppress")
+      assert [%{"id" => "pn:5", "action" => "suppress"}] = doc["playable_overrides"]
+
+      {:ok, doc} = Edit.set_playable_override(doc, "pn:5", nil)
+      assert doc["playable_overrides"] == []
+    end
+
+    test "rejects malformed ids and actions" do
+      assert {:error, "Edit rejected" <> _} =
+               Edit.set_playable_override(empty(), "node:5", "retain")
+
+      assert {:error, "Edit rejected" <> _} =
+               Edit.set_playable_override(empty(), "pn:5", "delete")
+    end
+  end
+
   describe "closures" do
     test "closes an imported edge using the geography's shape hash" do
       {:ok, doc, id} = Edit.add_closure(empty(), "edge:3-4-102", @geography)

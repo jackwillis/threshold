@@ -320,4 +320,110 @@ defmodule ThresholdWeb.EditorEditingTest do
     assert state(view)["authored"]["locations"] == []
     assert File.read!(Path.join(dir, "authored.json")) == "{broken"
   end
+
+  describe "playable layer" do
+    test "the panel shows what was built and its integrity", %{conn: conn} do
+      {:ok, view, _} = live(conn, ~p"/")
+      assert has_element?(view, "#playable", "4 locations")
+      assert has_element?(view, "#playable-integrity", "Components kept: 2/2")
+      refute has_element?(view, "#playable-stale")
+      assert state(view)["playable"] == "fresh"
+      assert state(view)["layers"]["playable"] == false
+    end
+
+    test "a stale layer is flagged", %{conn: conn, dir: dir} do
+      File.write!(Path.join(dir, "edges.geojson"), ~s({"type":"FeatureCollection","features":[]}))
+      {:ok, view, _} = live(conn, ~p"/")
+      assert has_element?(view, "#playable-stale", "Out of date")
+    end
+
+    test "a missing layer says how to build it", %{conn: conn, dir: dir} do
+      File.rm!(Path.join(dir, "playable.json"))
+      {:ok, view, _} = live(conn, ~p"/")
+      assert has_element?(view, "#playable", "make build-playable")
+      assert state(view)["playable"] == "missing"
+    end
+
+    test "retain and suppress decisions are unsaved edits that save with the authored layer", %{
+      conn: conn,
+      dir: dir
+    } do
+      {:ok, view, _} = live(conn, ~p"/")
+
+      props = %{
+        "id" => "pn:2",
+        "reasons" => ["dead_end"],
+        "members" => 1,
+        "degree" => 1,
+        "component" => 0
+      }
+
+      render_hook(view, "pick", %{
+        "layer" => "playable-location",
+        "id" => "pn:2",
+        "properties" => props
+      })
+
+      assert has_element?(view, "#inspector", "candidate playable location")
+      assert has_element?(view, "#inspector", "dead_end")
+
+      view |> element("#inspector button", "Retain") |> render_click()
+
+      assert [%{"id" => "pn:2", "action" => "retain"}] =
+               state(view)["authored"]["playable_overrides"]
+
+      assert state(view)["dirty"] == true
+      assert has_element?(view, "#playable", "1 designer override")
+
+      view |> element("#inspector button", "Suppress") |> render_click()
+      assert [%{"action" => "suppress"}] = state(view)["authored"]["playable_overrides"]
+
+      view |> element("#save-button") |> render_click()
+      assert [%{"id" => "pn:2", "action" => "suppress"}] = saved(dir)["playable_overrides"]
+
+      view |> element("#inspector button[phx-value-action=clear]") |> render_click()
+      assert state(view)["authored"]["playable_overrides"] == []
+    end
+
+    test "overrides that match no current location are listed", %{conn: conn, dir: dir} do
+      doc =
+        put_in(Authored.empty(), ["playable_overrides"], [
+          %{"id" => "pn:999", "action" => "retain"}
+        ])
+
+      File.write!(Path.join(dir, "authored.json"), Authored.encode(doc))
+
+      File.write!(
+        Path.join(dir, "playable.json"),
+        dir
+        |> Path.join("playable.json")
+        |> File.read!()
+        |> String.replace(~s("overrides_unmatched": []), ~s("overrides_unmatched": ["pn:999"]))
+      )
+
+      {:ok, view, _} = live(conn, ~p"/")
+      assert has_element?(view, "#playable-unmatched", "pn:999")
+    end
+
+    test "a candidate connection shows its details", %{conn: conn} do
+      {:ok, view, _} = live(conn, ~p"/")
+
+      props = %{
+        "id" => "pc:1-2",
+        "length_m" => 100.0,
+        "classes" => ["street"],
+        "parallel" => 1,
+        "edge_ids" => ["edge:1-2-101"]
+      }
+
+      render_hook(view, "pick", %{
+        "layer" => "playable-connection",
+        "id" => "pc:1-2",
+        "properties" => props
+      })
+
+      assert has_element?(view, "#inspector", "candidate playable connection")
+      assert has_element?(view, "#inspector", "100.0 m")
+    end
+  end
 end

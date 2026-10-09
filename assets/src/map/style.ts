@@ -37,6 +37,7 @@ export const LAYER_GROUPS: Record<string, string[]> = {
   vertical: ["ctx-vertical-fill", "ctx-vertical-point"],
   boundary: ["boundary-line", "boundary-mask"],
   extent: ["extent-line"],
+  playable: ["playable-connection", "playable-location"],
   authored: ["authored-closure-halo", "authored-closure", "authored-connection", "authored-location"],
 };
 
@@ -44,8 +45,10 @@ export const LAYER_GROUPS: Record<string, string[]> = {
 export const CLICK_PRIORITY = [
   "authored-location",
   "authored-connection",
+  "playable-location",
   "nodes",
   "ctx-vertical-point",
+  "playable-connection",
   "edges",
   "ctx-vertical-fill",
   "ctx-building",
@@ -98,6 +101,19 @@ export function layerSpecs(colorBy: ColorBy, palette: Palette): LayerSpecificati
       source: "context",
       filter: ["all", classIs("vertical"), geom("Point")],
       paint: { "circle-radius": 7, "circle-color": "#8e5bd6", "circle-stroke-color": "#fff", "circle-stroke-width": 2 },
+    },
+    // Derived candidate playable layer (hidden by default): straight abstractions of the underlying edges.
+    { id: "playable-connection", type: "line", source: "playable-connections", paint: { "line-color": "#1f9bd7", "line-width": 2, "line-opacity": 0.85 } },
+    {
+      id: "playable-location",
+      type: "circle",
+      source: "playable-locations",
+      paint: {
+        "circle-radius": 5,
+        "circle-color": ["match", ["get", "override"], "retain", "#ffd400", "suppress", "#ffffff", "#1f9bd7"],
+        "circle-stroke-color": ["match", ["get", "override"], "suppress", "#8b95a1", "retain", "#333333", "#ffffff"],
+        "circle-stroke-width": ["match", ["get", "override"], "suppress", 2, 1.5],
+      },
     },
     { id: "boundary-mask", type: "fill", source: "mask", paint: { "fill-color": "#000", "fill-opacity": 0.08 } },
     { id: "boundary-line", type: "line", source: "boundary", paint: { "line-color": "#c0392b", "line-width": 2 } },

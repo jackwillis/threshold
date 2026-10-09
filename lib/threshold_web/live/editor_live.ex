@@ -10,7 +10,7 @@ defmodule ThresholdWeb.EditorLive do
 
   alias Threshold.Authored
   alias Threshold.Authored.Edit
-  alias Threshold.{Boundary, Geography, References, World}
+  alias Threshold.{Boundary, Geography, Playable, References, World}
 
   # Single source for the palette: it drives the legend here and the map via data-state.
   @palette %{
@@ -40,7 +40,8 @@ defmodule ThresholdWeb.EditorLive do
     {"vertical", "Elevators / vertical"},
     {"boundary", "Playable boundary"},
     {"extent", "Import extent (buffer)"},
-    {"authored", "Authored layer"}
+    {"authored", "Authored layer"},
+    {"playable", "Playable locations (candidate)"}
   ]
 
   @color_options [
@@ -87,6 +88,7 @@ defmodule ThresholdWeb.EditorLive do
       socket
       |> assign(:world, world)
       |> assign(:geography, if(is_map(geography), do: geography))
+      |> assign(:playable, Playable.status(dir))
       |> assign(:boundary, world.boundary["geometry"])
       |> assign(:saved_boundary, world.boundary["geometry"])
       |> assign(:boundary_hash, world.boundary_hash)
@@ -119,7 +121,8 @@ defmodule ThresholdWeb.EditorLive do
   defp refresh_refs(%{assigns: a} = socket),
     do: assign(socket, :refs, References.resolve(a.authored, a.geography))
 
-  defp default_layers, do: Map.new(@layer_options, fn {key, _} -> {key, key != "nodes"} end)
+  defp default_layers,
+    do: Map.new(@layer_options, fn {key, _} -> {key, key not in ["nodes", "playable"]} end)
 
   defp assign_view(socket, %{"color_by" => color_by, "layers" => layers}) do
     form = layers |> Map.put("color_by", color_by) |> then(&to_form(&1, as: :view))
@@ -212,6 +215,15 @@ defmodule ThresholdWeb.EditorLive do
 
   def handle_event("update_closure", %{"closure" => %{"id" => id} = fields}, socket),
     do: edit(socket, &Edit.update_closure(&1, id, fields))
+
+  # Records a designer decision about a candidate playable location; it applies on the next regeneration.
+  def handle_event("set_playable_override", %{"id" => id, "action" => action}, socket)
+      when action in ["retain", "suppress", "clear"] do
+    edit(
+      socket,
+      &Edit.set_playable_override(&1, id, if(action == "clear", do: nil, else: action))
+    )
+  end
 
   def handle_event("detach_location", %{"id" => id}, socket),
     do: edit(socket, &Edit.detach_location(&1, id))
@@ -447,9 +459,16 @@ defmodule ThresholdWeb.EditorLive do
       pendingFrom: assigns.pending_from,
       dirty: dirty?(assigns),
       rev: assigns.rev,
+      playable: playable_state(assigns.playable),
       palette: Map.new(assigns.palette, fn {key, entries} -> {key, Map.new(entries)} end)
     })
   end
+
+  defp playable_state(:missing), do: "missing"
+  defp playable_state(%{state: state}), do: Atom.to_string(state)
+
+  defp unmatched_overrides(%{diagnostics: %{"overrides_unmatched" => list}}), do: list
+  defp unmatched_overrides(_), do: []
 
   defp summary(world, key), do: get_in(world.provenance || %{}, ["summary", key]) || %{}
 
@@ -558,6 +577,43 @@ defmodule ThresholdWeb.EditorLive do
                 <span class="hint">→ {ref.ref}</span>
               </li>
             </ul>
+          </section>
+
+          <section id="playable">
+            <h3>Playable layer</h3>
+            <%= case @playable do %>
+              <% :missing -> %>
+                <p class="hint">
+                  Not built. Run <code>make build-playable</code> to generate candidate locations.
+                </p>
+              <% %{state: state, diagnostics: d} -> %>
+                <p :if={state == :stale} id="playable-stale" class="banner banner-warn">
+                  Out of date with the geography. Run <code>make build-playable</code>.
+                </p>
+                <p class="hint">
+                  {d["locations"]} locations · {d["connections"]} connections · median {d[
+                    "median_connection_m"
+                  ]} m
+                </p>
+                <p class="hint" id="playable-integrity">
+                  Components kept: {d["components"]}/{d["core_components"]}, wrongly joined: {d[
+                    "components_wrongly_merged"
+                  ]}, lost: {d["source_components_lost"]}.
+                </p>
+                <p class="hint">
+                  {length(@authored["playable_overrides"])} designer override(s) recorded.
+                </p>
+                <p
+                  :if={unmatched_overrides(@playable) != []}
+                  id="playable-unmatched"
+                  class="banner banner-warn"
+                >
+                  Overrides matching no current location: {Enum.join(
+                    unmatched_overrides(@playable),
+                    ", "
+                  )}
+                </p>
+            <% end %>
           </section>
 
           <section id="components">

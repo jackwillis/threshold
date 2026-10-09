@@ -15,6 +15,8 @@ defmodule Threshold.Authored do
   }
   @kind_format ~r/\A[a-z_]+\z/
   @anchor_kinds ~w(node edge point)
+  @override_id ~r/\Apn:[0-9]+\z/
+  @override_actions ~w(retain suppress)
 
   @type t :: %{String.t() => term}
 
@@ -25,7 +27,8 @@ defmodule Threshold.Authored do
       "format_version" => @format_version,
       "locations" => [],
       "connections" => [],
-      "closures" => []
+      "closures" => [],
+      "playable_overrides" => []
     }
 
   @doc "Generates an id for a new object, e.g. `new_id(\"locations\")` -> `\"loc:3f2a…\"`."
@@ -72,8 +75,8 @@ defmodule Threshold.Authored do
   @doc "Deterministic pretty JSON: sorted keys, collections ordered by id, trailing newline."
   def encode(doc) do
     sorted =
-      Enum.reduce(~w(locations connections closures), doc, fn key, acc ->
-        Map.update!(acc, key, fn list -> Enum.sort_by(list, & &1["id"]) end)
+      Enum.reduce(~w(locations connections closures playable_overrides), doc, fn key, acc ->
+        Map.update(acc, key, [], fn list -> Enum.sort_by(list, & &1["id"]) end)
       end)
 
     Jason.encode!(ordered(sorted), pretty: true) <> "\n"
@@ -114,9 +117,15 @@ defmodule Threshold.Authored do
   @spec validate(term) :: {:ok, t} | {:error, [String.t()]}
   def validate(data) when is_map(data) do
     errors =
-      check_keys(data, ~w(format_version locations connections closures), [], "document") ++
+      check_keys(
+        data,
+        ~w(format_version locations connections closures),
+        ~w(playable_overrides),
+        "document"
+      ) ++
         version_errors(data) ++
-        Enum.flat_map(~w(locations connections closures), &collection_errors(data, &1))
+        Enum.flat_map(~w(locations connections closures), &collection_errors(data, &1)) ++
+        override_errors(data)
 
     errors = errors ++ internal_reference_errors(data, errors)
 
@@ -124,6 +133,38 @@ defmodule Threshold.Authored do
   end
 
   def validate(_), do: {:error, ["document: must be a JSON object"]}
+
+  defp override_errors(%{"playable_overrides" => list}) when is_list(list) do
+    ids = for o <- list, is_map(o), is_binary(o["id"]), do: o["id"]
+
+    list
+    |> Enum.with_index()
+    |> Enum.flat_map(fn
+      {o, i} when is_map(o) ->
+        path = "playable_overrides[#{i}]"
+
+        check_keys(o, ~w(id action), [], path) ++
+          if(is_binary(o["id"]) and Regex.match?(@override_id, o["id"]),
+            do: [],
+            else: ["#{path}.id: must look like \"pn:<number>\""]
+          ) ++
+          if(o["action"] in @override_actions,
+            do: [],
+            else: ["#{path}.action: must be one of #{Enum.join(@override_actions, ", ")}"]
+          )
+
+      {_, i} ->
+        ["playable_overrides[#{i}]: must be an object"]
+    end)
+    |> Kernel.++(
+      for {id, n} <- Enum.frequencies(ids),
+          n > 1,
+          do: "playable_overrides: duplicate id #{inspect(id)}"
+    )
+  end
+
+  defp override_errors(%{"playable_overrides" => _}), do: ["playable_overrides: must be a list"]
+  defp override_errors(_), do: []
 
   defp version_errors(%{"format_version" => @format_version}), do: []
 
@@ -303,6 +344,7 @@ defmodule Threshold.Authored do
 
   defp normalize(data) do
     data
+    |> Map.put_new("playable_overrides", [])
     |> Map.update!("locations", fn list -> Enum.map(list, &Map.put_new(&1, "notes", "")) end)
     |> Map.update!("connections", fn list ->
       Enum.map(list, fn c -> c |> Map.put_new("notes", "") |> Map.put_new("geometry", nil) end)

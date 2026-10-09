@@ -4,7 +4,7 @@ defmodule Threshold.World do
   provenance and the authored layer. This module never writes imported files.
   """
 
-  @layers ~w(boundary provenance nodes edges context authored)
+  @layers ~w(boundary provenance nodes edges context authored playable)
   @name_format ~r/\A[a-z0-9-]+\z/i
 
   @type staleness :: :fresh | :missing | {:stale, [String.t()]}
@@ -41,6 +41,7 @@ defmodule Threshold.World do
   defp filename("boundary"), do: "boundary.geojson"
   defp filename("provenance"), do: "provenance.json"
   defp filename("authored"), do: "authored.json"
+  defp filename("playable"), do: "playable.json"
   defp filename(layer), do: layer <> ".geojson"
 
   @doc """

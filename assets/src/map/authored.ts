@@ -12,7 +12,8 @@ type Location = {
 type Connection = { id: string; from: string; to: string; kind: string; notes: string };
 type Closure = { id: string; edge: string; kind: string; reason: string };
 
-export type Authored = { locations: Location[]; connections: Connection[]; closures: Closure[] };
+export type PlayableOverride = { id: string; action: "retain" | "suppress" };
+export type Authored = { locations: Location[]; connections: Connection[]; closures: Closure[]; playable_overrides?: PlayableOverride[] };
 export type RefStatus = Record<string, Status>;
 
 export const EMPTY_AUTHORED: Authored = { locations: [], connections: [], closures: [] };

@@ -458,11 +458,26 @@ def validate(world):
     return {"command": "validate", "ok": True}
 
 
+def playable(world, radius_m=None):
+    from threshold_gis.playable import DEFAULT_RADIUS_M, build_playable
+
+    result = build_playable(world, radius_m or DEFAULT_RADIUS_M)
+    write(world / "playable.json", result)
+    d = result["diagnostics"]
+    if d["components_wrongly_merged"] or d["source_components_lost"]:
+        raise ValueError(
+            f"playable layer lost connectivity integrity: {d['components_wrongly_merged']} merged, {d['source_components_lost']} lost"
+        )
+    log.info("Playable layer: %d locations, %d connections, %d components", d["locations"], d["connections"], d["components"])
+    return {"command": "playable", **{k: d[k] for k in ("locations", "connections", "components")}}
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="threshold-gis", description=__doc__)
-    parser.add_argument("command", choices=["acquire", "build", "validate"])
+    parser.add_argument("command", choices=["acquire", "build", "validate", "playable"])
     parser.add_argument("world", nargs="?", default="madison")
     parser.add_argument("--worlds-dir", type=Path, default=DEFAULT_WORLDS, help="directory containing world folders")
+    parser.add_argument("--radius", type=float, default=None, help="playable: cluster radius in metres along the network (default 25)")
     parser.add_argument("--json", action="store_true", help="print a machine-readable summary to stdout")
     args = parser.parse_args(argv)
     if not args.world.replace("-", "").isalnum():
@@ -470,7 +485,11 @@ def main(argv=None):
     logging.basicConfig(level=logging.INFO, stream=sys.stderr, format="%(levelname)s %(message)s")
     world = args.worlds_dir / args.world
     try:
-        summary = {"acquire": acquire, "build": build, "validate": validate}[args.command](world)
+        summary = (
+            playable(world, args.radius)
+            if args.command == "playable"
+            else {"acquire": acquire, "build": build, "validate": validate}[args.command](world)
+        )
     except (ValueError, OSError, ET.ParseError) as exc:
         parser.exit(1, f"World {args.command} failed: {exc}\n")
     if args.json:

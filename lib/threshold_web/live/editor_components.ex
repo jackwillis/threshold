@@ -241,6 +241,86 @@ defmodule ThresholdWeb.EditorComponents do
     """
   end
 
+  def inspector(%{selected: %{layer: "playable-location", id: id, properties: props}} = assigns) do
+    override =
+      Enum.find_value(assigns.authored["playable_overrides"], &(&1["id"] == id && &1["action"]))
+
+    assigns = assign(assigns, id: id, props: props, override: override)
+
+    ~H"""
+    <h3 class="mono">{@id}</h3>
+    <p class="hint">
+      candidate playable location
+      <span :if={@override} class={["badge", "badge-override"]}>{@override}</span>
+    </p>
+    <dl class="props">
+      <dt>why kept</dt>
+      <dd>
+        {if @props["reasons"] in [nil, []],
+          do: "ordinary junction",
+          else: Enum.join(@props["reasons"], ", ")}
+      </dd>
+      <dt>merges</dt>
+      <dd>{@props["members"]} imported node(s)</dd>
+      <dt>connections</dt>
+      <dd>{@props["degree"]}</dd>
+      <dt>component</dt>
+      <dd>{@props["component"]}</dd>
+    </dl>
+    <div class="actions">
+      <button
+        type="button"
+        phx-click="set_playable_override"
+        phx-value-id={@id}
+        phx-value-action="retain"
+        disabled={not @editable}
+        class={["tool", @override == "retain" && "tool-active"]}
+      >Retain</button>
+      <button
+        type="button"
+        phx-click="set_playable_override"
+        phx-value-id={@id}
+        phx-value-action="suppress"
+        disabled={not @editable}
+        class={["tool", @override == "suppress" && "tool-active"]}
+      >Suppress</button>
+      <button
+        :if={@override}
+        type="button"
+        phx-click="set_playable_override"
+        phx-value-id={@id}
+        phx-value-action="clear"
+        disabled={not @editable}
+        class="tool"
+      >Clear</button>
+    </div>
+    <p class="hint">
+      Retain keeps this location through simplification; Suppress lets it be simplified away. The decision is saved with your authored changes and applies the next time the playable layer is built.
+    </p>
+    <button type="button" phx-click="clear_selection" class="link-button">Clear selection</button>
+    """
+  end
+
+  def inspector(%{selected: %{layer: "playable-connection", id: id, properties: props}} = assigns) do
+    assigns = assign(assigns, id: id, props: props)
+
+    ~H"""
+    <h3 class="mono">{@id}</h3>
+    <p class="hint">candidate playable connection</p>
+    <dl class="props">
+      <dt>length</dt>
+      <dd>{@props["length_m"]} m</dd>
+      <dt>route types</dt>
+      <dd>{Enum.join(@props["classes"] || [], ", ")}</dd>
+      <dt>parallel routes</dt>
+      <dd>{@props["parallel"]}</dd>
+      <dt>underlying edges</dt>
+      <dd>{length(@props["edge_ids"] || [])} (highlighted on the map)</dd>
+    </dl>
+    <button type="button" phx-click="clear_selection" class="link-button">Clear selection</button>
+    """
+  end
+
   def inspector(assigns) do
     closure = Enum.find(assigns.authored["closures"], &(&1["edge"] == assigns.selected.id))
     assigns = assign(assigns, closure: closure)

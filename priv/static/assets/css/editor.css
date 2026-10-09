@@ -48,7 +48,7 @@ body { display: flex; flex-direction: column; font-family: system-ui, sans-serif
 .toolbar > * { pointer-events: auto; }
 .tools { display: flex; flex-wrap: wrap; gap: .25rem; }
 .tool { padding: .3rem .7rem; border-radius: .4rem; border: 1px solid var(--ed-border); background: var(--color-base-100, #fff); color: inherit; cursor: pointer; font: inherit; }
-.tool:hover:not(:disabled) { background: color-mix(in srgb, currentColor 8%, var(--color-base-100, #fff)); }
+.tool:hover:not(:disabled):not(.tool-active):not(.tool-primary) { background: color-mix(in srgb, currentColor 8%, var(--color-base-100, #fff)); }
 .tool:disabled { opacity: .45; cursor: not-allowed; }
 .tool-active { background: #1f6feb; color: #fff; border-color: #1f6feb; }
 .tool-primary { background: #1f6feb; color: #fff; border-color: #1f6feb; }
@@ -62,3 +62,4 @@ body { display: flex; flex-direction: column; font-family: system-ui, sans-serif
 .actions { display: flex; flex-wrap: wrap; gap: .4rem; margin: .75rem 0; }
 .badge-moved { background: #e0a020; color: #000; }
 .badge-missing { background: #d64545; color: #fff; }
+.badge-override { background: #1f9bd7; color: #fff; }

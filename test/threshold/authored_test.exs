@@ -62,6 +62,66 @@ defmodule Threshold.AuthoredTest do
     assert {:ok, _} = Authored.validate(Authored.empty())
   end
 
+  describe "playable_overrides" do
+    test "are optional and default to empty" do
+      {:ok, normalized} = Authored.validate(doc())
+      assert normalized["playable_overrides"] == []
+    end
+
+    test "accept retain and suppress" do
+      overrides = [
+        %{"id" => "pn:123", "action" => "retain"},
+        %{"id" => "pn:456", "action" => "suppress"}
+      ]
+
+      assert {:ok, %{"playable_overrides" => ^overrides}} =
+               Authored.validate(doc(%{"playable_overrides" => overrides}))
+    end
+
+    test "reject bad ids, actions, duplicates and extra keys" do
+      bad = fn o -> errors(doc(%{"playable_overrides" => o})) end
+
+      assert Enum.any?(
+               bad.([%{"id" => "loc:1", "action" => "retain"}]),
+               &(&1 =~ "must look like")
+             )
+
+      assert Enum.any?(
+               bad.([%{"id" => "pn:1", "action" => "delete"}]),
+               &(&1 =~ "must be one of retain, suppress")
+             )
+
+      assert Enum.any?(
+               bad.([
+                 %{"id" => "pn:1", "action" => "retain"},
+                 %{"id" => "pn:1", "action" => "suppress"}
+               ]),
+               &(&1 =~ "duplicate id")
+             )
+
+      assert Enum.any?(
+               bad.([%{"id" => "pn:1", "action" => "retain", "why" => "x"}]),
+               &(&1 =~ "unknown key")
+             )
+
+      assert ["playable_overrides: must be a list"] = bad.("nope")
+    end
+
+    test "are written sorted by id" do
+      {:ok, d} =
+        Authored.validate(
+          doc(%{
+            "playable_overrides" => [
+              %{"id" => "pn:9", "action" => "retain"},
+              %{"id" => "pn:2", "action" => "suppress"}
+            ]
+          })
+        )
+
+      assert Authored.encode(d) =~ ~r/"pn:2".*"pn:9"/s
+    end
+  end
+
   test "reports a wrong or missing version" do
     assert ["format_version: unsupported version 2" <> _] = errors(doc(%{"format_version" => 2}))
     assert "format_version: missing" in errors(Map.delete(doc(), "format_version"))

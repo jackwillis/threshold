@@ -58,3 +58,16 @@ Connection lengths are the shortest constituent edge between two clusters, an ap
 1. If this direction is accepted, make graph-radius clustering a separate, deterministic pipeline step that writes a derived playable layer next to, not into, the imported graph, always reporting component integrity.
 2. Add an editor view of the candidate locations so a designer can retain or suppress them.
 3. Decide how alley connections and plaza crossings should be represented before fixing a radius.
+
+## Follow-up: productized (same day)
+
+The G25 + contract approach is now a pipeline step, `threshold-gis playable` (`make build-playable`; `make build-world` also runs it), implemented in `gis/src/threshold_gis/playable.py` and writing `priv/worlds/madison/playable.json` beside the imported files. It fails if any source component is lost or wrongly joined.
+
+Provisional choices made while the designer was undecided (change them in the module and regenerate):
+- **Alleys are protected:** clustering does not traverse alley edges. Alley connections rose from 26 (experiment) to 58, at the cost of a few more locations (993 vs 968).
+- **Plaza gaps are not bridged:** no synthetic edges. The diagnostics count dead-end locations near pedestrian areas (23) so the question stays visible.
+- **Core graph** excludes restricted access and vehicle-oriented service ways, as in the experiment.
+
+Result on Madison: 993 locations, 1,631 connections, 20 of 20 components kept, 0 wrongly joined, median connection 42.3 m, 38% in 40-100 m, 14% over 100 m.
+
+The editor shows the layer (off by default), its diagnostics and staleness, and lets a designer **retain** or **suppress** a candidate location. Decisions are stored as `playable_overrides` in `authored.json` and take effect the next time the layer is built; locations that no longer exist are reported as unmatched. Retain keeps a location through simplification; suppress lets it be simplified away unless it is a junction or dead end.

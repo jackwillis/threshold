@@ -55,6 +55,10 @@ Status: **Draft for discussion.** Companion to `design.md`. Phases are ordered s
 
 Database: keep the file-based world files as source artifacts; introduce PostgreSQL/PostGIS incrementally with persistent gameplay. After the editor: validate the real network, then the playable-node experiment (two or three candidate networks, compared before choosing), then Postgres and movement. Review whether undirected edge normalization loses meaningful direction or access information.
 
+## Playable layer (added after Phase 5)
+
+Implemented per the steering memo's experiment: see [playable-node-experiment.md](playable-node-experiment.md). Provisional, still open for the designer: how alley connections and plaza crossings should be represented; the cluster radius (25 m); whether suppression should be able to remove junctions.
+
 ## Phase 6: Regeneration and reference review
 
 - UI action to run `build` (never `acquire`) and show success or error output.

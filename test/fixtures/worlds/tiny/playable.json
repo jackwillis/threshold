@@ -1,0 +1,118 @@
+{
+  "connections": [
+    {
+      "classes": [
+        "street"
+      ],
+      "edge_ids": [
+        "edge:1-2-101"
+      ],
+      "from": "pn:1",
+      "id": "pc:1-2",
+      "length_m": 100.0,
+      "parallel": 1,
+      "to": "pn:2"
+    },
+    {
+      "classes": [
+        "path"
+      ],
+      "edge_ids": [
+        "edge:3-4-102"
+      ],
+      "from": "pn:3",
+      "id": "pc:3-4",
+      "length_m": 100.0,
+      "parallel": 1,
+      "to": "pn:4"
+    }
+  ],
+  "diagnostics": {
+    "components": 2,
+    "components_wrongly_merged": 0,
+    "connections": 2,
+    "core_components": 2,
+    "locations": 4,
+    "median_connection_m": 100.0,
+    "overrides_applied": 0,
+    "overrides_unmatched": [],
+    "source_components_lost": 0
+  },
+  "format_version": 1,
+  "inputs": {
+    "context.geojson": "8d8ab91a90cb5340a4bef5f248b4bfb8df0804ef193746fec2e498ceb05502b0",
+    "edges.geojson": "3b698800b05c77aacf5110172c48d029ee08c422b75cd81584627e91d5a37161",
+    "nodes.geojson": "2f8cd04d699a4cd609c3c1492ef912235f4ca2ce09023d3d54d474260dd2bb79"
+  },
+  "locations": [
+    {
+      "component": 0,
+      "degree": 1,
+      "id": "pn:1",
+      "inside_playable": true,
+      "members": 1,
+      "node": "node:1",
+      "override": null,
+      "point": [
+        -89.385,
+        43.074
+      ],
+      "reasons": [
+        "dead_end"
+      ]
+    },
+    {
+      "component": 0,
+      "degree": 1,
+      "id": "pn:2",
+      "inside_playable": true,
+      "members": 1,
+      "node": "node:2",
+      "override": null,
+      "point": [
+        -89.38,
+        43.075
+      ],
+      "reasons": [
+        "dead_end"
+      ]
+    },
+    {
+      "component": 1,
+      "degree": 1,
+      "id": "pn:3",
+      "inside_playable": true,
+      "members": 1,
+      "node": "node:3",
+      "override": null,
+      "point": [
+        -89.375,
+        43.076
+      ],
+      "reasons": [
+        "dead_end"
+      ]
+    },
+    {
+      "component": 1,
+      "degree": 1,
+      "id": "pn:4",
+      "inside_playable": true,
+      "members": 1,
+      "node": "node:4",
+      "override": null,
+      "point": [
+        -89.374,
+        43.077
+      ],
+      "reasons": [
+        "dead_end"
+      ]
+    }
+  ],
+  "params": {
+    "bridge_plazas": false,
+    "protect_alleys": true,
+    "radius_m": 25.0
+  }
+}
