@@ -9,7 +9,6 @@ defmodule Threshold.Application do
   def start(_type, _args) do
     children = [
       ThresholdWeb.Telemetry,
-      {DNSCluster, query: Application.get_env(:threshold, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Threshold.PubSub},
       # Start a worker by calling: Threshold.Worker.start_link(arg)
       # {Threshold.Worker, arg},
