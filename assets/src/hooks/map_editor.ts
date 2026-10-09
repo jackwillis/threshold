@@ -31,6 +31,7 @@ type ViewState = {
   pendingFrom: string | null;
   dirty: boolean;
   rev: number;
+  generation: number;
   playable: "missing" | "fresh" | "stale";
 };
 
@@ -39,6 +40,7 @@ type Hook = {
   map?: maplibregl.Map;
   draw?: TerraDraw;
   ready: boolean;
+  lastGeneration: number;
   lastFocus: number;
   syncSignature: string;
   dirty: boolean;
@@ -72,7 +74,7 @@ const CLICK_MODES: Mode[] = ["inspect", "connect", "close"];
 const BOUNDARY_EDIT_ACTIONS = ["dragCoordinate", "dragFeature", "dragCoordinateResize", "insertMidpoint", "deleteCoordinate", "edit"];
 
 async function getJson<T>(world: string, layer: string): Promise<T> {
-  const response = await fetch(`/worlds/${encodeURIComponent(world)}/${layer}`);
+  const response = await fetch(`/worlds/${encodeURIComponent(world)}/${layer}`, { cache: "no-store" });
   if (!response.ok) throw new Error(`${layer}: HTTP ${response.status}`);
   return (await response.json()) as T;
 }
@@ -87,6 +89,7 @@ const lngLat = (position: Position): LngLat => [position[0] ?? 0, position[1] ??
 export const MapEditor = {
   mounted(this: Hook) {
     this.ready = false;
+    this.lastGeneration = this.readState().generation;
     this.lastFocus = 0;
     this.syncSignature = "";
     this.dirty = false;
@@ -147,6 +150,20 @@ export const MapEditor = {
   },
 
   updated(this: Hook) {
+    const generation = this.readState().generation;
+    if (generation !== this.lastGeneration && this.map) {
+      this.lastGeneration = generation;
+      this.ready = false;
+      this.load(this.map).then(() => {
+        this.ready = true;
+        this.syncSignature = "";
+        this.apply();
+        this.pushEvent("map_loaded", {});
+      }).catch((error: unknown) => {
+        this.pushEvent("map_failed", { message: `Could not reload geography: ${String(error)}` });
+      });
+      return;
+    }
     this.apply();
   },
 
@@ -377,20 +394,28 @@ export const MapEditor = {
       getJson<Fc>(world, "nodes"),
       getJson<Fc>(world, "context"),
     ]);
+    const initial = !map.getSource("edges");
+    this.features.clear();
+    this.playableBase = [];
     for (const fc of [edges, nodes, context]) indexFeatures(fc, this.features);
 
+    const setSource = (id: string, source: { type: "geojson"; data: Feature | FeatureCollection }) => {
+      const existing = map.getSource(id) as maplibregl.GeoJSONSource | undefined;
+      if (existing) existing.setData(source.data);
+      else map.addSource(id, source);
+    };
     const extent: Feature<Polygon> = { type: "Feature", properties: {}, geometry: provenance.import_extent };
-    map.addSource("context", { type: "geojson", data: context });
-    map.addSource("edges", { type: "geojson", data: edges });
-    map.addSource("nodes", { type: "geojson", data: nodes });
-    map.addSource("boundary", { type: "geojson", data: boundary });
-    map.addSource("extent", { type: "geojson", data: extent });
-    map.addSource("mask", { type: "geojson", data: outsideMask(boundary.geometry) });
-    map.addSource("playable-locations", { type: "geojson", data: EMPTY });
-    map.addSource("playable-connections", { type: "geojson", data: EMPTY });
-    map.addSource("authored-locations", { type: "geojson", data: EMPTY });
-    map.addSource("authored-connections", { type: "geojson", data: EMPTY });
-    map.addSource("selection", { type: "geojson", data: EMPTY });
+    setSource("context", { type: "geojson", data: context });
+    setSource("edges", { type: "geojson", data: edges });
+    setSource("nodes", { type: "geojson", data: nodes });
+    setSource("boundary", { type: "geojson", data: boundary });
+    setSource("extent", { type: "geojson", data: extent });
+    setSource("mask", { type: "geojson", data: outsideMask(boundary.geometry) });
+    setSource("playable-locations", { type: "geojson", data: EMPTY });
+    setSource("playable-connections", { type: "geojson", data: EMPTY });
+    setSource("authored-locations", { type: "geojson", data: EMPTY });
+    setSource("authored-connections", { type: "geojson", data: EMPTY });
+    setSource("selection", { type: "geojson", data: EMPTY });
 
     const state = this.readState();
     if (state.playable !== "missing") {
@@ -416,9 +441,11 @@ export const MapEditor = {
         console.error("Could not load the playable layer:", error);
       }
     }
-    for (const spec of layerSpecs(state.colorBy, state.palette)) map.addLayer(spec);
+    for (const spec of layerSpecs(state.colorBy, state.palette)) {
+      if (!map.getLayer(spec.id)) map.addLayer(spec);
+    }
 
     const [w, s, e, n] = boundsOf(extent.geometry);
-    map.fitBounds([[w, s], [e, n]], { padding: 40, duration: 0 });
+    if (initial) map.fitBounds([[w, s], [e, n]], { padding: 40, duration: 0 });
   },
 };

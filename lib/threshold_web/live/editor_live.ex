@@ -10,7 +10,7 @@ defmodule ThresholdWeb.EditorLive do
 
   alias Threshold.Authored
   alias Threshold.Authored.Edit
-  alias Threshold.{Boundary, Geography, Playable, References, World}
+  alias Threshold.{Boundary, Geography, Importer, Playable, References, World}
 
   # Single source for the palette: it drives the legend here and the map via data-state.
   @palette %{
@@ -52,6 +52,7 @@ defmodule ThresholdWeb.EditorLive do
   ]
 
   @modes ~w(inspect place move connect close boundary)
+  @mutations ~w(set_mode pick add_location move_location update_location update_connection update_closure set_playable_override detach_location close_edge delete_selected update_boundary discard save regenerate)
 
   @impl true
   def mount(params, _session, socket) do
@@ -65,6 +66,9 @@ defmodule ThresholdWeb.EditorLive do
          |> assign(:loading, true)
          |> assign(:load_error, nil)
          |> assign(:rev, 0)
+         |> assign(:generation, 0)
+         |> assign(:regenerating, false)
+         |> assign(:build_output, nil)
          |> assign(:focus, %{"n" => 0, "bounds" => nil, "object" => nil})
          |> assign(:layer_options, @layer_options)
          |> assign(:color_options, @color_options)
@@ -129,13 +133,37 @@ defmodule ThresholdWeb.EditorLive do
     socket |> assign(:color_by, color_by) |> assign(:layers, layers) |> assign(:form, form)
   end
 
-  defp editable?(assigns), do: assigns.authored_errors == [] and assigns.geography != nil
+  defp editable?(assigns),
+    do: not assigns.regenerating and assigns.authored_errors == [] and assigns.geography != nil
 
   defp dirty?(a), do: a.authored != a.saved_authored or a.boundary != a.saved_boundary
 
   # --- Events -------------------------------------------------------------------------
 
   @impl true
+  def handle_event(event, _params, %{assigns: %{regenerating: true}} = socket)
+      when event in @mutations do
+    {:noreply, put_flash(socket, :error, "Wait for regeneration to finish before editing.")}
+  end
+
+  def handle_event("regenerate", _params, socket) do
+    cond do
+      dirty?(socket.assigns) ->
+        {:noreply, put_flash(socket, :error, "Save or discard your changes before regenerating.")}
+
+      socket.assigns.authored_errors != [] ->
+        {:noreply, put_flash(socket, :error, "Fix authored.json before regenerating.")}
+
+      true ->
+        name = socket.assigns.world.name
+
+        {:noreply,
+         socket
+         |> assign(regenerating: true, build_output: nil, mode: "inspect", pending_from: nil)
+         |> start_async(:regenerate, fn -> Importer.regenerate(name) end)}
+    end
+  end
+
   def handle_event("view", %{"view" => params}, socket) do
     layers = Map.new(socket.assigns.layers, fn {key, _} -> {key, params[key] == "true"} end)
 
@@ -306,6 +334,47 @@ defmodule ThresholdWeb.EditorLive do
     {:noreply, socket}
   end
 
+  @impl true
+  def handle_async(:regenerate, {:ok, result}, socket) do
+    # Keep authored working data and saved hashes: concurrent disk edits must still conflict.
+    {:ok, world} = World.load(socket.assigns.world.name)
+    Geography.invalidate(world.dir)
+
+    geography =
+      case Geography.index(world.dir) do
+        {:ok, index} -> index
+        _ -> nil
+      end
+
+    {kind, output} = result
+
+    {:noreply,
+     socket
+     |> assign(
+       regenerating: false,
+       build_output: output,
+       world: world,
+       geography: geography,
+       playable: Playable.status(world.dir),
+       selected: nil,
+       loading: true
+     )
+     |> refresh_refs()
+     |> update(:generation, &(&1 + 1))
+     |> bump_rev()
+     |> put_flash(
+       if(kind == :ok, do: :info, else: :error),
+       if(kind == :ok,
+         do: "Geography regenerated. Review affected references below.",
+         else: "Regeneration failed. See the build output; generated layers were reloaded."
+       )
+     )}
+  end
+
+  def handle_async(:regenerate, {:exit, reason}, socket) do
+    handle_async(:regenerate, {:ok, {:error, "Importer stopped: #{inspect(reason)}"}}, socket)
+  end
+
   # --- Event helpers ------------------------------------------------------------------
 
   # Tells the map to re-sync its drawing layer even if the server data did not change (e.g. a rejected edit).
@@ -411,7 +480,7 @@ defmodule ThresholdWeb.EditorLive do
            |> assign(:world, world)
            |> assign(:saved_boundary, a.boundary)
            |> assign(:boundary_hash, hash),
-           [{:ok, "Boundary saved. Regenerate the geography with `make build-world`."} | notes]}
+           [{:ok, "Boundary saved. Use Regenerate geography to refresh the map."} | notes]}
 
         {:error, :conflict} ->
           {socket, [{:error, conflict_message("boundary.geojson")} | notes]}
@@ -459,6 +528,7 @@ defmodule ThresholdWeb.EditorLive do
       pendingFrom: assigns.pending_from,
       dirty: dirty?(assigns),
       rev: assigns.rev,
+      generation: assigns.generation,
       playable: playable_state(assigns.playable),
       palette: Map.new(assigns.palette, fn {key, entries} -> {key, Map.new(entries)} end)
     })
@@ -497,7 +567,7 @@ defmodule ThresholdWeb.EditorLive do
           <h2 class="panel-title">{@world.config["name"]}</h2>
 
           <div :if={@world.staleness == :missing} id="stale-banner" class="banner banner-warn">
-            No generated geography yet. Run <code>make build-world</code>.
+            No generated geography yet. Use Regenerate geography below.
           </div>
           <div
             :if={match?({:stale, _}, @world.staleness)}
@@ -508,9 +578,31 @@ defmodule ThresholdWeb.EditorLive do
             <ul>
               <li :for={reason <- elem(@world.staleness, 1)}>{reason}</li>
             </ul>
-            Run <code>make build-world</code>
-            to regenerate.
+            Use Regenerate geography below.
           </div>
+
+          <section id="regeneration">
+            <h3>Regenerate geography</h3>
+            <p class="hint">
+              Rebuild streets, context and playable candidates from the pinned snapshot and saved boundary. Authored content is preserved. No new source data is downloaded.
+            </p>
+            <p :if={@dirty} class="hint">Save or discard your changes first.</p>
+            <button
+              id="regenerate-button"
+              type="button"
+              phx-click="regenerate"
+              disabled={@dirty or @regenerating or @authored_errors != []}
+              class="tool"
+            >
+              {if @regenerating, do: "Regenerating…", else: "Regenerate geography"}
+            </button>
+            <p :if={@regenerating} id="regeneration-progress" role="status">
+              Building geography and playable candidates, then validating…
+            </p>
+            <details :if={@build_output} id="regeneration-output" open>
+              <summary>Build output</summary><pre>{@build_output}</pre>
+            </details>
+          </section>
 
           <div :if={@authored_errors != []} id="authored-errors" class="banner banner-error">
             <strong>authored.json is invalid and was not loaded. Editing is disabled.</strong>

@@ -272,7 +272,7 @@ defmodule ThresholdWeb.EditorEditingTest do
 
       view |> element("#save-button") |> render_click()
       assert has_element?(view, "#stale-banner", "Boundary changed")
-      assert render(view) =~ "make build-world"
+      assert render(view) =~ "Regenerate geography"
 
       saved = dir |> Path.join("boundary.geojson") |> File.read!() |> Jason.decode!()
       assert saved["geometry"]["coordinates"] == [@square]

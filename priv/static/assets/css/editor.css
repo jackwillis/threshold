@@ -63,3 +63,5 @@ body { display: flex; flex-direction: column; font-family: system-ui, sans-serif
 .badge-moved { background: #e0a020; color: #000; }
 .badge-missing { background: #d64545; color: #fff; }
 .badge-override { background: #1f9bd7; color: #fff; }
+#regeneration-output { margin-top: .5rem; font-size: .8rem; }
+#regeneration-output pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 16rem; overflow-y: auto; }

@@ -38,6 +38,17 @@ defmodule Threshold.Geography do
     end
   end
 
+  @doc "Clears cached indexes after an explicit regeneration, including same-size writes."
+  def invalidate(dir) do
+    path = Path.join(dir, "nodes.geojson")
+
+    for {{__MODULE__, ^path, _, _, _, _} = key, _} <- :persistent_term.get() do
+      :persistent_term.erase(key)
+    end
+
+    :ok
+  end
+
   defp read_features(path) do
     with {:ok, text} <- File.read(path),
          {:ok, %{"features" => features}} <- Jason.decode(text) do

@@ -14,7 +14,7 @@ defmodule Threshold.Importer do
   @type result :: {:ok, String.t()} | {:error, String.t()}
 
   @spec run(String.t(), String.t()) :: result
-  def run(command, world) when command in @commands do
+  def run(command, world, root \\ Threshold.World.root()) when command in @commands do
     if Regex.match?(~r/\A[a-z0-9-]+\z/i, world) do
       {exe, args} = executable()
       Logger.info("importer #{command} #{world}")
@@ -23,7 +23,7 @@ defmodule Threshold.Importer do
         Task.async(fn ->
           System.cmd(
             exe,
-            args ++ [command, world, "--worlds-dir", Path.expand(Threshold.World.root())],
+            args ++ [command, world, "--worlds-dir", Path.expand(root)],
             stderr_to_stdout: true,
             cd: File.cwd!()
           )
@@ -39,10 +39,76 @@ defmodule Threshold.Importer do
     end
   end
 
-  @doc "Rebuilds geography and playable candidates offline, then validates the result."
+  @generated ~w(nodes.geojson edges.geojson context.geojson provenance.json playable.json)
+
+  @doc "Builds and validates a scratch copy offline before publishing generated files only."
   def regenerate(world) do
+    if Threshold.World.valid_name?(world) do
+      root = Path.expand(Threshold.World.root())
+      :global.trans({{__MODULE__, root, world}, self()}, fn -> regenerate_copy(root, world) end)
+    else
+      {:error, "invalid world name"}
+    end
+  end
+
+  defp regenerate_copy(root, world) do
+    dir = Path.join(root, world)
+
+    scratch =
+      Path.join(System.tmp_dir!(), "threshold-build-#{System.unique_integer([:positive])}")
+
+    try do
+      before = inputs(dir)
+      File.mkdir_p!(scratch)
+      File.cp_r!(dir, Path.join(scratch, world))
+
+      with {:ok, log} <- build_copy(world, scratch),
+           true <- before == inputs(dir) do
+        # Never copy authored.json, the boundary, configuration or source back.
+        for file <- @generated do
+          destination = Path.join(dir, file)
+          temporary = destination <> ".regenerating"
+          File.cp!(Path.join([scratch, world, file]), temporary)
+        end
+
+        for file <- @generated do
+          destination = Path.join(dir, file)
+          File.rename!(destination <> ".regenerating", destination)
+        end
+
+        {:ok, log}
+      else
+        false ->
+          {:error,
+           "World inputs changed during regeneration. No generated files were published; retry with current saved inputs."}
+
+        error ->
+          error
+      end
+    rescue
+      error -> {:error, Exception.message(error)}
+    after
+      File.rm_rf(scratch)
+      for file <- @generated, do: File.rm(Path.join(dir, file) <> ".regenerating")
+    end
+  end
+
+  defp inputs(dir) do
+    for file <- [
+          "config.json",
+          "boundary.geojson",
+          "authored.json" | Path.wildcard(Path.join(dir, "source/**/*"))
+        ],
+        path = if(Path.type(file) == :absolute, do: file, else: Path.join(dir, file)),
+        File.regular?(path),
+        into: %{} do
+      {path, :crypto.hash(:sha256, File.read!(path))}
+    end
+  end
+
+  defp build_copy(world, root) do
     Enum.reduce_while(~w(build playable validate), {:ok, ""}, fn command, {:ok, log} ->
-      case run(command, world) do
+      case run(command, world, root) do
         {:ok, output} -> {:cont, {:ok, log <> "#{command}:\n" <> output}}
         {:error, output} -> {:halt, {:error, log <> "#{command}:\n" <> output}}
       end
