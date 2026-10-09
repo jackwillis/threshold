@@ -46,6 +46,8 @@ defmodule Threshold.MixProject do
       {:phoenix_live_view, "~> 1.2.0"},
       {:lazy_html, ">= 0.1.0", only: :test},
       {:jason, "~> 1.2"},
+      {:ecto_sql, "~> 3.14"},
+      {:postgrex, "~> 0.22"},
       {:bandit, "~> 1.5"}
     ]
   end

@@ -7,13 +7,18 @@ defmodule Threshold.Application do
 
   @impl true
   def start(_type, _args) do
-    children = [
-      {Phoenix.PubSub, name: Threshold.PubSub},
-      # Start a worker by calling: Threshold.Worker.start_link(arg)
-      # {Threshold.Worker, arg},
-      # Start to serve requests, typically the last entry
-      ThresholdWeb.Endpoint
-    ]
+    database_children =
+      if Application.get_env(:threshold, :database_enabled), do: [Threshold.Repo], else: []
+
+    children =
+      database_children ++
+        [
+          {Phoenix.PubSub, name: Threshold.PubSub},
+          # Start a worker by calling: Threshold.Worker.start_link(arg)
+          # {Threshold.Worker, arg},
+          # Start to serve requests, typically the last entry
+          ThresholdWeb.Endpoint
+        ]
 
     # See https://elixir.hexdocs.pm/Supervisor.html
     # for other strategies and supported options

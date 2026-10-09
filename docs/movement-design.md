@@ -531,3 +531,8 @@ Authored places give those locations meaning.
 Hidden connections gradually change the player's understanding of the world.
 
 **The graph determines where the player can go. The map shows what the world looks like. Exploration reveals what the world contains.**
+## Implemented persistence setup
+
+Player progress uses PostgreSQL via `Threshold.Repo`; geography and authored world data stay in files. The editor runs without a database. To enable gameplay, create a dedicated local database, set `THRESHOLD_DATABASE_URL=postgres://USER:PASSWORD@localhost/threshold_game`, and run `mix ecto.migrate` before starting Phoenix. One local player save is stored per world. Moves lock the save row, check the expected turn and world revision, and update location, turn and visited locations atomically. Changing the authored world requires an explicit new walk.
+
+Database tests require a separate database whose name ends in `_test`: run `THRESHOLD_TEST_DATABASE_URL=postgres://USER:PASSWORD@localhost/threshold_test make check`. Without this variable, database tests are explicitly excluded; the development database URL is never used by tests.

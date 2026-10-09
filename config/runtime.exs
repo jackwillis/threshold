@@ -59,3 +59,22 @@ if config_env() == :prod do
     http: [ip: {127, 0, 0, 1}],
     secret_key_base: secret_key_base
 end
+
+# Gameplay persistence is optional for the editor. Tests never use the development URL.
+database_url =
+  System.get_env(
+    if config_env() == :test, do: "THRESHOLD_TEST_DATABASE_URL", else: "THRESHOLD_DATABASE_URL"
+  )
+
+if database_url do
+  if config_env() == :test and not String.ends_with?(URI.parse(database_url).path || "", "_test") do
+    raise "THRESHOLD_TEST_DATABASE_URL must name a dedicated database ending in _test"
+  end
+
+  config :threshold, :database_enabled, true
+  config :threshold, Threshold.Repo, url: database_url, pool_size: 5
+
+  if config_env() == :test do
+    config :threshold, Threshold.Repo, pool: Ecto.Adapters.SQL.Sandbox
+  end
+end

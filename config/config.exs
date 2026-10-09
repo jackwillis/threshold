@@ -8,7 +8,9 @@
 import Config
 
 config :threshold,
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  ecto_repos: [Threshold.Repo],
+  database_enabled: false
 
 # Configure the endpoint
 config :threshold, ThresholdWeb.Endpoint,
