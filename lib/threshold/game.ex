@@ -1,5 +1,5 @@
 defmodule Threshold.Game do
-  @moduledoc "Server-authoritative, one-hop movement. Only successful moves advance a turn."
+  @moduledoc "Server-authoritative walking. Each traversed connection spends one turn."
   alias Threshold.Game.{Player, World}
 
   def start(%World{} = world) do
@@ -41,23 +41,55 @@ defmodule Threshold.Game do
     |> Enum.sort_by(& &1.destination)
   end
 
-  @doc "Visible locations exactly two legal stops away; these are previews, not moves."
-  def two_stop_preview(%World{} = world, %Player{} = player) do
-    next = available_moves(world, player)
-    immediate = MapSet.new([player.location | Enum.map(next, & &1.destination)])
+  @doc "Clickable destinations up to two stops away, with a third-stop preview."
+  def walk_options(%World{} = world, %Player{} = player) do
+    first = %{
+      destination: player.location,
+      path: [],
+      length_m: 0,
+      geometry: %{
+        "type" => "LineString",
+        "coordinates" => [world.locations[player.location]["point"]]
+      }
+    }
 
-    next
-    |> Enum.flat_map(fn move ->
-      available_moves(world, %{player | location: move.destination})
-    end)
-    |> Enum.reject(&MapSet.member?(immediate, &1.destination))
-    |> Enum.uniq_by(& &1.destination)
-    |> Enum.map(&Map.take(&1, [:destination, :point]))
-    |> Enum.sort_by(& &1.destination)
+    {levels, _, _} =
+      Enum.reduce(1..3, {%{}, [first], MapSet.new([player.location])}, fn depth,
+                                                                          {levels, frontier, seen} ->
+        next =
+          frontier
+          |> Enum.flat_map(fn route ->
+            available_moves(world, %{player | location: route.destination})
+            |> Enum.map(fn move ->
+              %{
+                move
+                | length_m: route.length_m + move.length_m,
+                  geometry:
+                    Map.put(
+                      move.geometry,
+                      "coordinates",
+                      route.geometry["coordinates"] ++ tl(move.geometry["coordinates"])
+                    )
+              }
+              |> Map.merge(%{stops: depth, path: route.path ++ [move.destination]})
+            end)
+          end)
+          |> Enum.reject(&MapSet.member?(seen, &1.destination))
+          |> Enum.sort_by(&{&1.length_m, &1.path})
+          |> Enum.uniq_by(& &1.destination)
+
+        {Map.put(levels, depth, next), next,
+         Enum.reduce(next, seen, &MapSet.put(&2, &1.destination))}
+      end)
+
+    %{
+      moves: (levels[1] ++ levels[2]) |> Enum.sort_by(&{&1.stops, &1.destination}),
+      preview: Enum.map(levels[3], &Map.take(&1, [:destination, :point]))
+    }
   end
 
   def move(%World{} = world, %Player{} = player, destination) do
-    case Enum.find(available_moves(world, player), &(&1.destination == destination)) do
+    case Enum.find(walk_options(world, player).moves, &(&1.destination == destination)) do
       nil ->
         {:error, :unavailable}
 
@@ -66,8 +98,8 @@ defmodule Threshold.Game do
          %{
            player
            | location: destination,
-             turn: player.turn + 1,
-             visited: MapSet.put(player.visited, destination)
+             turn: player.turn + route.stops,
+             visited: Enum.reduce(route.path, player.visited, &MapSet.put(&2, &1))
          }, route}
     end
   end

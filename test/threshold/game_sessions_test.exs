@@ -42,6 +42,27 @@ defmodule Threshold.GameSessionsTest do
     assert back.turn == 2 and MapSet.size(back.visited) == 2
   end
 
+  test "a two-stop walk is saved atomically with its intermediate visit", %{world: world} do
+    connection =
+      Map.merge(world.connections["pc:1-2"], %{
+        "id" => "pc:2-3",
+        "from" => "pn:2",
+        "to" => "pn:3",
+        "geometry" => %{
+          "type" => "LineString",
+          "coordinates" => [world.locations["pn:2"]["point"], world.locations["pn:3"]["point"]]
+        }
+      })
+
+    world = %{world | connections: Map.put(world.connections, "pc:2-3", connection)}
+    assert {:ok, _} = Sessions.load_or_start(world)
+    assert {:ok, {moved, %{stops: 2}}} = Sessions.move(world, 0, "pn:3")
+    assert moved.turn == 2 and moved.visited == MapSet.new(["pn:1", "pn:2", "pn:3"])
+    assert {:ok, ^moved} = Sessions.load_or_start(world)
+    assert {:error, :stale_turn} = Sessions.move(world, 0, "pn:1")
+    assert Repo.get_by!(Progress, world: "tiny").turn == 2
+  end
+
   test "changed worlds require an explicit reset", %{world: world} do
     assert {:ok, _} = Sessions.load_or_start(world)
     changed = %{world | revision: "new-world"}

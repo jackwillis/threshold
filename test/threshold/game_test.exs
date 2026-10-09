@@ -37,7 +37,7 @@ defmodule Threshold.GameTest do
     assert player.location == "pn:1" and player.turn == 0 and MapSet.size(player.visited) == 1
   end
 
-  test "two-stop previews are deduplicated, exclude closer locations, and cannot be used as moves" do
+  test "two-stop walks choose a stable route, count both stops, and visit the intermediate location" do
     world = world()
     connection = world.connections["pc:1-2"]
 
@@ -69,25 +69,37 @@ defmodule Threshold.GameTest do
           )
     }
 
-    player = %Player{location: "pn:1"}
-    assert [%{destination: "pn:4", point: point}] = Game.two_stop_preview(world, player)
-    assert point == world.locations["pn:4"]["point"]
-    assert {:error, :unavailable} = Game.move(world, player, "pn:4")
-    assert player.turn == 0
+    player = %Player{location: "pn:1", visited: MapSet.new(["pn:1"])}
+    options = Game.walk_options(world, player)
+    assert length(options.moves) == 3
+    assert options.preview == []
+    assert {:ok, moved, route} = Game.move(world, player, "pn:4")
+    assert moved.turn == 2
+    assert moved.visited == MapSet.new(["pn:1", "pn:2", "pn:4"])
+    assert route.path == ["pn:2", "pn:4"] and route.stops == 2
 
-    assert [%{destination: "pn:3"}] =
-             Game.two_stop_preview(
-               %{world | connections: Map.take(world.connections, ["pc:1-2", "pc:2-3"])},
-               player
-             )
+    assert route.geometry["coordinates"] ==
+             Enum.map(["pn:1", "pn:2", "pn:4"], &world.locations[&1]["point"])
+
+    shorter = put_in(world, [Access.key(:connections), "pc:3-4", "length_m"], 50)
+    assert {:ok, _, %{path: ["pn:3", "pn:4"]}} = Game.move(shorter, player, "pn:4")
+    direct = Map.put(link.("pc:1-4", "pn:1", "pn:4"), "length_m", 500)
+    closer = %{shorter | connections: Map.put(shorter.connections, "pc:1-4", direct)}
+    assert {:ok, %{turn: 1}, %{stops: 1}} = Game.move(closer, player, "pn:4")
+    # A chain exposes its third stop only as a preview.
+    chain = %{world | connections: Map.take(world.connections, ["pc:1-2", "pc:2-3", "pc:3-4"])}
+    assert [%{destination: "pn:4"}] = Game.walk_options(chain, player).preview
+    assert {:error, :unavailable} = Game.move(chain, player, "pn:4")
+    assert player.turn == 0
   end
 
-  test "two-stop previews do not cross restricted connections" do
+  test "walks and third-stop previews do not cross restricted connections" do
     world = world()
     # The imported pn:3-pn:4 route was filtered out by the access policy.
     connection = Map.merge(world.connections["pc:1-2"], %{"id" => "pc:1-3", "to" => "pn:3"})
     world = %{world | connections: Map.put(world.connections, "pc:1-3", connection)}
-    assert Game.two_stop_preview(world, %Player{location: "pn:1"}) == []
+    assert Game.walk_options(world, %Player{location: "pn:1"}).preview == []
+    assert {:error, :unavailable} = Game.move(world, %Player{location: "pn:1"}, "pn:4")
   end
 
   test "missing/defaultless/isolated spawns are rejected" do

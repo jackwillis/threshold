@@ -4,7 +4,7 @@ import { BACKGROUND, layerSpecs } from "../map/style";
 
 type Point = [number, number];
 type Move = { destination: string; point: Point; geometry: LineString };
-type State = { point: Point; turn: number; moves: Move[]; preview: { destination: string; point: Point }[]; visited: Point[]; movement: { turn: number; geometry: LineString } | null; camera: number; zoom: number };
+type State = { point: Point; turn: number; moves: Move[]; preview: { destination: string; point: Point }[]; visited: Point[]; movement: { turn: number; geometry: LineString; stops: number } | null; camera: number; zoom: number };
 type Hook = {
   el: HTMLElement; map?: maplibregl.Map; ready: boolean; removed: boolean;
   lastTurn: number; lastCamera: number; frame?: number; animating: boolean;
@@ -105,8 +105,9 @@ export const PlayerMap = {
       lengths.push(lengths[i - 1]! + Math.hypot((b[0] - a[0]) * Math.cos(a[1] * Math.PI / 180), b[1] - a[1]));
     }
     const total = lengths[lengths.length - 1]!; const started = performance.now();
+    const duration = 750 * (state.movement?.stops ?? 1);
     const tick = (now: number) => {
-      const fraction = Math.min(1, (now - started) / 750); const distance = fraction * total;
+      const fraction = Math.min(1, (now - started) / duration); const distance = fraction * total;
       let segment = 1;
       while (segment < lengths.length - 1 && lengths[segment]! < distance) segment++;
       const a = coords[segment - 1]!; const b = coords[segment]!;

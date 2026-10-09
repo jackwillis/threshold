@@ -546,3 +546,7 @@ The full gate passed with PostgreSQL enabled: 131 Elixir tests and 32 Python tes
 ### Two-stop visibility
 
 The player map now shows immediate destinations as bright clickable markers and locations exactly two legal stops away as faint rings. Two-stop previews exclude the current location and immediate neighbors, deduplicate locations reached through multiple paths, and use only the already validated movement graph. Previewing a location does not permit a multi-hop move or spend a turn. Camera framing includes both distances. The full gate passed with 133 Elixir tests and 32 Python tests; browser verification showed distinct near/far markers with no overlapping destination IDs.
+
+### Two-stop walking, third-stop preview
+
+The clickable range is now one or two stops, with faint rings exactly three stops away. A two-stop click follows a server-chosen path through validated connections, spends two turns, and adds the intermediate location to visited progress. Route selection prefers fewer stops, then lower total distance, with stable ID ordering for ties. Both steps save atomically under the existing revision/turn checks; third-stop destinations remain unavailable. Browser verification in a separate scratch walk confirmed turn 0 to turn 2, three visited locations and restoration after reload. The full gate passed with 134 Elixir tests and 32 Python tests.

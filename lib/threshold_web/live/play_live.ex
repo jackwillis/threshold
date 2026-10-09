@@ -53,7 +53,7 @@ defmodule ThresholdWeb.PlayLive do
            player: player,
            error: nil,
            inspected: nil,
-           movement: %{turn: player.turn, geometry: route.geometry}
+           movement: %{turn: player.turn, geometry: route.geometry, stops: route.stops}
          )
        )}
     else
@@ -122,14 +122,15 @@ defmodule ThresholdWeb.PlayLive do
   defp present(socket) do
     %{world: world, player: player} = socket.assigns
     point = world.locations[player.location]["point"]
-    moves = Game.available_moves(world, player)
+    options = Game.walk_options(world, player)
+    moves = options.moves
     spawn = Enum.find(world.spawns, & &1["default"])
 
     state = %{
       point: point,
       turn: player.turn,
       moves: moves,
-      preview: Game.two_stop_preview(world, player),
+      preview: options.preview,
       visited:
         for(
           id <- player.visited,
@@ -187,7 +188,7 @@ defmodule ThresholdWeb.PlayLive do
             </div>
             <h2>Your next step</h2>
             <p class="play-hint">
-              Choose a glowing marker or a direction below. Faint rings show places two stops away.
+              Choose a glowing marker or a direction below. Choose up to two stops. Faint rings show places three stops away.
             </p>
             <div id="available-moves" class="play-moves">
               <button
@@ -198,7 +199,9 @@ defmodule ThresholdWeb.PlayLive do
                 phx-value-turn={@player.turn}
               >
                 <span>Walk {direction(@world.locations[@player.location]["point"], move.point)}</span>
-                <small>{round(move.length_m)} m <.icon name="hero-arrow-right" class="w-4 h-4" /></small>
+                <small>{move.stops} {if move.stops == 1, do: "stop", else: "stops"} · {round(
+                  move.length_m
+                )} m <.icon name="hero-arrow-right" class="w-4 h-4" /></small>
               </button>
             </div>
             <p :if={@moves == []} class="play-hint">No walkable routes from here.</p>
