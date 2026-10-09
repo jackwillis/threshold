@@ -2,13 +2,13 @@ defmodule Threshold.Importer do
   @moduledoc """
   Runs the Python importer (`gis/`) as a subprocess.
 
-  Only `build` and `validate` are exposed. `acquire` contacts OpenStreetMap and
+  Only `build`, `playable` and `validate` are exposed. `acquire` contacts OpenStreetMap and
   must stay an explicit command-line action. The command is configurable so tests
   can substitute a stub: `config :threshold, Threshold.Importer, command: {exe, args}`.
   """
   require Logger
 
-  @commands ~w(build validate)
+  @commands ~w(build playable validate)
   @timeout :timer.minutes(5)
 
   @type result :: {:ok, String.t()} | {:error, String.t()}
@@ -21,7 +21,12 @@ defmodule Threshold.Importer do
 
       task =
         Task.async(fn ->
-          System.cmd(exe, args ++ [command, world], stderr_to_stdout: true, cd: File.cwd!())
+          System.cmd(
+            exe,
+            args ++ [command, world, "--worlds-dir", Path.expand(Threshold.World.root())],
+            stderr_to_stdout: true,
+            cd: File.cwd!()
+          )
         end)
 
       case Task.yield(task, @timeout) || Task.shutdown(task) do
@@ -32,6 +37,16 @@ defmodule Threshold.Importer do
     else
       {:error, "invalid world name"}
     end
+  end
+
+  @doc "Rebuilds geography and playable candidates offline, then validates the result."
+  def regenerate(world) do
+    Enum.reduce_while(~w(build playable validate), {:ok, ""}, fn command, {:ok, log} ->
+      case run(command, world) do
+        {:ok, output} -> {:cont, {:ok, log <> "#{command}:\n" <> output}}
+        {:error, output} -> {:halt, {:error, log <> "#{command}:\n" <> output}}
+      end
+    end)
   end
 
   defp executable do

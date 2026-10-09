@@ -15,7 +15,17 @@ defmodule Threshold.ImporterTest do
 
   test "returns output on success" do
     Application.put_env(:threshold, Importer, command: {"echo", ["stub"]})
-    assert {:ok, "stub build madison\n"} = Importer.run("build", "madison")
+    assert {:ok, output} = Importer.run("build", "tiny")
+    assert output == "stub build tiny --worlds-dir #{Path.expand(Threshold.World.root())}\n"
+  end
+
+  test "regenerates offline in order" do
+    Application.put_env(:threshold, Importer, command: {"echo", []})
+    assert {:ok, output} = Importer.regenerate("tiny")
+    assert output =~ "build:\nbuild tiny --worlds-dir"
+    assert output =~ "playable:\nplayable tiny --worlds-dir"
+    assert output =~ "validate:\nvalidate tiny --worlds-dir"
+    refute output =~ "acquire"
   end
 
   test "returns the error with output on a nonzero exit" do
