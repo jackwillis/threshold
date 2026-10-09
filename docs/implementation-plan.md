@@ -94,3 +94,11 @@ Recommendations in bold. Please push back on any.
 16. **Sidewalk-level graph. DECIDED.** Keep the graph as imported, including parallel sidewalk and crossing edges. Any simplified movement layer is deferred.
 14. **Game title and world naming.** Not needed now; the world is called "Madison · First Settlement" in config.
 15. **Real-world access disclaimer.** **DECIDED.** Show a visible note, in the inspector and legend, that map presence does not imply permission to enter.
+
+## First playable exploration — implemented October 9, 2026
+
+- Dedicated `/play` interface, immediate legal destinations, one hop per turn, route-following animation, camera follow/recenter, visited locations, and accessible movement buttons.
+- Optional authored spawn definitions and explicit place-to-movement attachments, editable and saved through the world editor.
+- PostgreSQL progress with atomic moves, expected-turn checks and world-revision checks. Geography remains file-based; PostGIS is deferred until a spatial database query is needed.
+- Nearby inspection without a turn. Fictional transitions, multi-hop routing, fog, radio and narrative progression remain outside this first prototype.
+- Full gate: 131 Elixir/32 Python tests plus TypeScript, world validation and deterministic rebuild. Browser verified on scratch data; see `movement-design.md` for limits. Local Compose setup is documented in `local-gameplay.md`.

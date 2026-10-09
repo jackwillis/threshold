@@ -69,3 +69,11 @@ Recorded in `docs/implementation-plan.md` (numbered). In short: LiveView plus on
 1. Run `make setup && make check` and confirm green on your machine (needs Elixir 1.19/OTP 26, Python 3.12, and Bun; see README).
 2. Read `docs/implementation-plan.md` (decisions and phases) and `docs/implementation-status.md` (verified vs not).
 3. Review `docs/playable-route-review.md`: candidate connections now retain complete ordered walking routes and actual geometry. The 993 locations and 1,631 connections remain; corrected median length is 58.0 m. Retain overrides protect exact nodes during clustering. Before persistent movement, settle traversal policy for access values, authored closures and routes leaving the playable boundary.
+
+## First playable exploration update — October 9, 2026
+
+The project now also has a first playable exploration prototype at `/play`, with pure movement in `lib/threshold/game.ex` and `lib/threshold/game/`, PostgreSQL progress through `Threshold.Repo`, a dedicated `PlayLive`, and `assets/src/hooks/player_map.ts`. The editor remains at `/`. World files remain source artifacts; there is no PostGIS schema or database migration of geography yet.
+
+Authored spawns and optional location `movement_location` attachments are now supported. The designer approved allowing public/unknown/mixed/conditional routes provisionally, while blocking explicit restrictions, authored closures and any route leaving the boundary. Every constituent edge is checked, with no alternative rerouting. Saves check world revision and expected turn under a PostgreSQL row lock. Nearby inspection is free. An explicit new walk resets progress when a world revision changes.
+
+See `docs/local-gameplay.md` for Compose, test and production-mode commands, and `docs/movement-design.md` for verification. The full gate passed with PostgreSQL enabled: 131 Elixir tests, 32 Python tests and deterministic rebuild. A scratch Madison browser session verified marker movement, backtracking, free inspection and save restoration after restarting Phoenix. Docker itself was unavailable; Compose YAML parses but container startup remains unverified. Reduced motion is implemented but not browser-verified. The designer's real `authored.json` was left untouched and remains uncommitted.
