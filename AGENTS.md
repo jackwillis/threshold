@@ -1,3 +1,29 @@
+# Threshold: project notes for coding agents
+
+Single-player Madison-based mystery game. Current milestone: a local geographic **world-authoring editor** (Phoenix LiveView + a TypeScript MapLibre hook + a Python/OSMnx pipeline). No gameplay yet. **Read [docs/handoff.md](docs/handoff.md) first**, then [docs/implementation-plan.md](docs/implementation-plan.md).
+
+## Commands
+
+- `make setup`: Elixir deps, Python venv (`.venv`, Python 3.12), Bun packages, build the frontend.
+- `make check`: **the gate**: `mix precommit` (compile with warnings as errors, format check, tests), ruff, TypeScript type check, pytest, world validation and a byte-identical rebuild check. Do not commit unless it passes.
+- `make run` (Phoenix on localhost:4000 with a Bun watcher), `make test`, `make assets`, `make fmt`.
+- `make build-world` (regenerate geography from the pinned snapshot, offline), `make build-playable`, `make validate-world`, `make acquire-world` (the only networked step; never run it without the designer's approval).
+- Bun lives at `~/.bun/bin` (the Makefile adds it to PATH). Run a Python module test with `.venv/bin/pytest gis -k name`; a single Elixir test with `mix test path:line`.
+
+## Where things are
+
+- `lib/threshold/`: domain (world loading, `authored.ex` validation/save, `authored/edit.ex` pure edits, `references.ex`, `boundary.ex`, `playable.ex`, `importer.ex`). `lib/threshold_web/live/`: the editor.
+- `assets/src/`: TypeScript (`hooks/map_editor.ts`, `map/*.ts`); `bun build.ts` bundles to `priv/static/assets/js/app.js` (gitignored).
+- `gis/src/threshold_gis/`: `world.py` (acquire/build/validate), `playable.py`; `gis/analysis/` is exploratory.
+- `priv/worlds/madison/`: pinned source, generated files, `authored.json`. **Generated files are never edited by hand.** **`authored.json` holds the designer's real work: never overwrite or run tests against it**; tests use `test/fixtures/worlds/tiny`; set `THRESHOLD_WORLDS_DIR` to experiment on a scratch copy.
+
+## Conventions specific to this project
+
+- The server (LiveView) owns the working copy; the browser sends gestures and receives `data-state`. Keep large geography off the socket (served by `WorldController`).
+- Preserve the layer separation: source snapshot / generated geography / authored world. Closures annotate imported access; references are flagged, never silently rewritten.
+- Add tests with changes, verify UI behaviour in a browser (the LiveView tests do not cover Terra Draw/MapLibre), and report what was and was not verified.
+- Small, reviewable commits, only when asked; never push or deploy unprompted.
+
 This is a web application written using the Phoenix web framework.
 
 ## Project guidelines
