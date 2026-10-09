@@ -48,6 +48,12 @@ Status: **Draft for discussion.** Companion to `design.md`. Phases are ordered s
 - Unsaved-changes indicator, Save, Discard, leave-page guard.
 - Boundary editing with staleness banner (if included in milestone 1).
 - **Done when:** a scripted edit session produces a small, readable Git diff.
+- **Status: implemented.** Tools: inspect, place (snaps to node, then edge with offset, else free point), move (click to select, then drag; re-snaps on drop), connect (two clicks), close street (one click), boundary (Terra Draw vertex/midpoint editing). The server holds the working copy; Save writes `authored.json` and/or `boundary.geojson` with conflict checks; Discard reloads. Saving a boundary makes the geography stale (banner) and is refused if boundary + buffer would exceed the pinned snapshot. Verified in headless Firefox on the real data; Terra Draw works with MapLibre here.
+- Not yet: the in-UI regeneration action and "reconnect" suggestions (Phase 6). `window.thresholdMap` / `window.thresholdDraw` are exposed for browser-driven tests.
+
+## Steering notes (from the engineering steering memo)
+
+Database: keep the file-based world files as source artifacts; introduce PostgreSQL/PostGIS incrementally with persistent gameplay. After the editor: validate the real network, then the playable-node experiment (two or three candidate networks, compared before choosing), then Postgres and movement. Review whether undirected edge normalization loses meaningful direction or access information.
 
 ## Phase 6: Regeneration and reference review
 

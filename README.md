@@ -2,16 +2,17 @@
 
 A Madison-based single-player mystery and exploration project. The first milestone is a local geographic editor built with Phoenix, browser-based mapping, and a Python GIS pipeline.
 
-**Status: initialized and paused.** Phoenix scaffolding and an unverified importer draft exist; the map/editor is not implemented and no geographic source snapshot has been acquired.
+**Status: world-authoring editor working locally.** A pinned OpenStreetMap snapshot of the Madison study area is imported and viewable, and a designer can place locations, connect them, restrict streets and edit the playable boundary on the map, then save reviewable files. There is no gameplay yet. See [Implementation status](docs/implementation-status.md) for what is verified and what is not.
 
 ## Project memos
 
 - [Original design memo](docs/initial-design-memo.md): the user's initial proposal, preserved verbatim. Its viewer-only milestone is superseded by the editor decision below.
 - [Project decisions](docs/project-decisions.md): agreed direction, geographic boundary, technology, data layers, Git workflow, and open questions.
 - [Editor design](docs/design.md) and [implementation plan](docs/implementation-plan.md): draft, with open product decisions listed in the plan.
-- [Implementation status](docs/implementation-status.md): existing scaffolding, limitations, environment notes, and proposed next steps.
+- [Implementation status](docs/implementation-status.md): what exists and is verified, active work, planned and deferred items.
+- [Game design memo](docs/game-design.md) and [engineering/architecture memo](docs/architecture.md): long-term vision. Where they differ from the implementation plan, the plan is the operational task list.
 
-## Draft layout
+## Layout
 
 ```text
 lib/threshold/            Phoenix application / future world-file handling
@@ -38,4 +39,4 @@ make build-world     regenerate geography from the pinned snapshot (offline)
 make acquire-world   download a new OSM snapshot (the only networked step)
 ```
 
-Development and GIS instructions will be finalized when implementation resumes. No database, remote repository, CI provider, or deployment target has been selected.
+ No CI provider or deployment target has been selected. PostgreSQL/PostGIS is the planned long-term store for player progress; it is introduced with the first persistent gameplay, not before (see project decisions).

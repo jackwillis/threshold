@@ -1,7 +1,7 @@
 # Project decisions
 
 Date: October 8, 2026 (America/Chicago)
-Status: Agreed direction; implementation paused
+Status: Agreed direction; editor implementation in progress (see implementation-plan.md for operational decisions)
 Project directory and application name: `threshold`
 Game title: Not yet chosen
 
@@ -54,7 +54,7 @@ Start as a local browser application on `localhost`. Public hosting is not requi
 
 A native Python GUI was considered. A browser GUI was recommended because the editor centers on interactive maps and will grow alongside the Elixir game. A Python web backend remains technically possible but is not the chosen direction.
 
-Avoid PostgreSQL/PostGIS, background job infrastructure, and an additional frontend framework without a concrete need. Terra Draw or a comparable established tool is a candidate for geometry editing, not yet integrated or selected definitively.
+Avoid background job infrastructure and an additional frontend framework (React or a separate SPA) without a concrete need. PostgreSQL/PostGIS is the revised long-term persistent store (see Files, Git, and CI/CD), but is not needed for the editor milestone. Terra Draw or a comparable established tool is a candidate for geometry editing, not yet integrated or selected definitively.
 
 ## Source geography
 
@@ -116,13 +116,17 @@ Intended workflow: edit → save files → review diff → commit → CI validat
 
 CI should check geometry, topology, references, and world structure. When relevant pipeline inputs change, it can regenerate from the pinned snapshot and check equivalent outputs. Do not make CI depend on live OSM queries.
 
-A database is deferred until shared hosted editing or runtime writes justify it. A future database could hold drafts and export reviewed world releases. Player progress, sessions, and inventory are separate from world definitions and may eventually use database storage.
+**Revised:** PostgreSQL with PostGIS is the planned long-term platform for player progress, discovered connections, inventory, narrative flags, achievements and spatial queries, and possibly persistent editing state. It is introduced incrementally with the first database-backed gameplay requirement (persistent player movement), not as a migration of the world files. The version-controlled source snapshot, generated geography and authored world files remain reproducible source artifacts. The Python pipeline stays independent of Phoenix and the database. Previously: deferred until shared hosted editing or runtime writes justify it. A future database could hold drafts and export reviewed world releases. Player progress, sessions, and inventory are separate from world definitions and may eventually use database storage.
 
 ## Non-goals retained from the original memo
 
 No player movement, game sessions, radio simulation, dialogue, encounters, quests, inventory, authentication, multiplayer, GPS tracking, WebGL interiors, persistent simulation, scheduling, or procedural fictional geography in this milestone.
 
 The geographic editor does not imply implementing a complete narrative or gameplay authoring suite.
+
+## Resolved since this memo was written
+
+The editor milestone decisions (editor actions, anchoring, closure semantics, edge IDs, LiveView with one JS hook, Bun/TypeScript tooling, Terra Draw, no basemap, committing data files, keeping the sidewalk-level graph) are recorded in [implementation-plan.md](implementation-plan.md). The list below is the original open list; items it covers are marked there.
 
 ## Remaining decisions
 
