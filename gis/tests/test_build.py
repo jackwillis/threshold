@@ -73,3 +73,36 @@ def test_checksum_mismatch_rejected(worlds_dir):
 def test_json_summary(worlds_dir, capsys):
     main(["build", "test", "--worlds-dir", str(worlds_dir), "--json"])
     assert json.loads(capsys.readouterr().out)["command"] == "build"
+
+
+def edge_map(worlds_dir):
+    return {e["id"]: e for e in load(worlds_dir, "edges.geojson")["features"]}
+
+
+def test_edge_ids_are_topological(built):
+    for id_, edge in edge_map(built).items():
+        p = edge["properties"]
+        assert id_.startswith(f"edge:{p['from'].removeprefix('node:')}-{p['to'].removeprefix('node:')}-{p['osm_ids'][0]}")
+
+
+def test_vertex_tweak_keeps_edge_id_but_changes_geometry_hash(worlds_dir):
+    import hashlib
+
+    run(worlds_dir, "build")
+    before = edge_map(worlds_dir)
+    snapshot = worlds_dir / "test/source/snapshot.osm"
+    # Insert a mid-edge vertex into way 106 (3 -> 15); it is simplified away, so only the shape changes.
+    raw = snapshot.read_text()
+    raw = raw.replace('<node id="15"', '<node id="16" lat="43.0752" lon="-89.3670"/>\n<node id="15"')
+    raw = raw.replace('<way id="106">\n<nd ref="3"/>', '<way id="106">\n<nd ref="3"/>\n<nd ref="16"/>')
+    assert 'ref="16"' in raw
+    snapshot.write_text(raw)
+    manifest = worlds_dir / "test/source/manifest.json"
+    meta = json.loads(manifest.read_text())
+    meta["sha256"] = hashlib.sha256(raw.encode()).hexdigest()
+    manifest.write_text(json.dumps(meta))
+    run(worlds_dir, "build")
+    after = edge_map(worlds_dir)
+    changed = [i for i in before if after[i]["properties"]["geometry_hash"] != before[i]["properties"]["geometry_hash"]]
+    assert set(before) == set(after)
+    assert changed and all(106 in before[i]["properties"]["osm_ids"] for i in changed)

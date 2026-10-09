@@ -169,13 +169,41 @@ def filtered_xml(raw, cfg):
     return ET.tostring(root)
 
 
+def make_edge(id_, geom_hash, u, v, coords, osmids, data, boundary, component_map):
+    geometry = LineString(coords)
+    props = {tag: clean(data[tag]) for tag in TAGS if tag in data}
+    highway = data.get("highway")
+    classification = (
+        "alley"
+        if data.get("service") == "alley"
+        else "path"
+        if highway in {"pedestrian", "footway", "path", "steps", "track"}
+        else "street"
+    )
+    props.update(
+        {
+            "from": f"node:{u}",
+            "to": f"node:{v}",
+            "osm_ids": osmids,
+            "classification": classification,
+            "access_status": access(props),
+            "component": component_map[u],
+            "length_m": round(float(data.get("length", 0)), 3),
+            "inside_playable": boundary.covers(geometry),
+            "crosses_boundary": geometry.intersects(boundary.boundary),
+            "geometry_hash": geom_hash,
+        }
+    )
+    return feature(id_, geometry, props)
+
+
 def export_graph(graph, boundary):
     nodes, edges = [], []
     component_map = {}
     groups = sorted(nx.weakly_connected_components(graph), key=lambda g: (-len(g), min(g)))
     for index, group in enumerate(groups):
         component_map.update({n: index for n in group})
-    seen = set()
+    candidates = {}  # base id -> {geometry hash: (u, v, coords, osmids, data)}
     for u, v, _, data in sorted(graph.edges(keys=True, data=True), key=lambda row: (row[0], row[1], row[2])):
         geom = data.get("geometry", LineString([(graph.nodes[u]["x"], graph.nodes[u]["y"]), (graph.nodes[v]["x"], graph.nodes[v]["y"])]))
         coords = [[round(x, 7), round(y, 7)] for x, y in geom.coords]
@@ -186,35 +214,17 @@ def export_graph(graph, boundary):
             coords.reverse()
         osmids = data["osmid"] if isinstance(data["osmid"], list) else [data["osmid"]]
         osmids = sorted(map(int, osmids))
-        signature = json.dumps([u, v, osmids, coords], separators=(",", ":"))
-        id_ = "edge:" + digest(signature.encode())[:24]
-        if id_ in seen:
-            continue
-        seen.add(id_)
-        geometry = LineString(coords)
-        props = {tag: clean(data[tag]) for tag in TAGS if tag in data}
-        highway = data.get("highway")
-        classification = (
-            "alley"
-            if data.get("service") == "alley"
-            else "path"
-            if highway in {"pedestrian", "footway", "path", "steps", "track"}
-            else "street"
-        )
-        props.update(
-            {
-                "from": f"node:{u}",
-                "to": f"node:{v}",
-                "osm_ids": osmids,
-                "classification": classification,
-                "access_status": access(props),
-                "component": component_map[u],
-                "length_m": round(float(data.get("length", 0)), 3),
-                "inside_playable": boundary.covers(geometry),
-                "crosses_boundary": geometry.intersects(boundary.boundary),
-            }
-        )
-        edges.append(feature(id_, geometry, props))
+        # Both directions of a bidirectional edge normalise to the same geometry and collapse here.
+        geom_hash = digest(json.dumps(coords, separators=(",", ":")).encode())[:16]
+        base = f"edge:{u}-{v}-{osmids[0]}"
+        candidates.setdefault(base, {})[geom_hash] = (u, v, coords, osmids, data)
+    for base, group in sorted(candidates.items()):
+        # IDs depend on topology (end nodes, lowest way id), not shape, so vertex tweaks keep references valid.
+        # Distinct geometries sharing the same ends and way get a deterministic numeric suffix.
+        ordered = sorted(group.items(), key=lambda item: item[1][2])
+        for index, (geom_hash, (u, v, coords, osmids, data)) in enumerate(ordered, 1):
+            id_ = base if len(ordered) == 1 else f"{base}-{index}"
+            edges.append(make_edge(id_, geom_hash, u, v, coords, osmids, data, boundary, component_map))
     incident = {f"node:{n}": [] for n in graph.nodes}
     for edge in edges:
         for n in {edge["properties"]["from"], edge["properties"]["to"]}:

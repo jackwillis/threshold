@@ -42,7 +42,7 @@ Three layers, never merged on disk:
 ### Identifiers
 
 - Nodes: `node:<osm_id>`. Stable while OSM keeps that node, but simplification can drop intermediate nodes, so a node can vanish without being deleted in OSM.
-- Edges: `edge:<hash of endpoints + osm way ids + coordinates>`. Deterministic, but **any geometry change produces a new ID**, so a small OSM correction orphans references to that edge. This is the weakest point for "references survive updates" and is the main reason for the reference-resolution design below. **[DECIDE]** whether to keep content-hash IDs or key edges by OSM way id(s) plus a segment index.
+- Edges: `edge:<from>-<to>-<lowest way id>` (suffix on collision). Shape edits keep the ID; `geometry_hash` flags them as moved. Topology changes (split or delete) produce missing references. See plan decision 4.
 - Authored objects get their own UUID-style IDs (`loc:…`), independent of geography.
 
 ### Authored schema (proposed, v1)
