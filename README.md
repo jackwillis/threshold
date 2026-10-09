@@ -8,6 +8,7 @@ A Madison-based single-player mystery and exploration project. The first milesto
 
 - [Original design memo](docs/initial-design-memo.md): the user's initial proposal, preserved verbatim. Its viewer-only milestone is superseded by the editor decision below.
 - [Project decisions](docs/project-decisions.md): agreed direction, geographic boundary, technology, data layers, Git workflow, and open questions.
+- [Editor design](docs/design.md) and [implementation plan](docs/implementation-plan.md): draft, with open product decisions listed in the plan.
 - [Implementation status](docs/implementation-status.md): existing scaffolding, limitations, environment notes, and proposed next steps.
 
 ## Draft layout
@@ -16,10 +17,23 @@ A Madison-based single-player mystery and exploration project. The first milesto
 lib/threshold/            Phoenix application / future world-file handling
 lib/threshold_web/        Phoenix web interface (currently generated defaults)
 priv/worlds/madison/      Boundary, import configuration, authored world
-scripts/gis/             Unverified Python importer draft and pinned dependencies
+gis/                     Python importer package (threshold-gis), tests, pinned dependencies
 docs/                    Project memos
 ```
 
 Imported source geography, generated geographic graphs, and authored game metadata must remain separate. Editor saves should produce reviewable file changes; committing and deployment remain explicit actions.
 
-Development and GIS instructions will be finalized when implementation resumes and the baseline is verified. No database, remote repository, CI provider, or deployment target has been selected.
+## Development
+
+Needs Elixir 1.19 / OTP 26 and Python 3.12 (see `.tool-versions`; [mise](https://mise.jdx.dev) reads it).
+
+```text
+make setup           deps, .venv, install gis package
+make run             start the Phoenix server (localhost:4000)
+make test            Elixir and Python tests
+make check           everything CI would run (precommit, ruff, pytest, world validation, determinism)
+make build-world     regenerate geography from the pinned snapshot (offline)
+make acquire-world   download a new OSM snapshot (the only networked step)
+```
+
+Development and GIS instructions will be finalized when implementation resumes. No database, remote repository, CI provider, or deployment target has been selected.

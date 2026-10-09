@@ -8,7 +8,6 @@ defmodule Threshold.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      ThresholdWeb.Telemetry,
       {Phoenix.PubSub, name: Threshold.PubSub},
       # Start a worker by calling: Threshold.Worker.start_link(arg)
       # {Threshold.Worker, arg},

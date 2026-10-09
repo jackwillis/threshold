@@ -1,0 +1,25 @@
+[project]
+name = "threshold-gis"
+version = "0.1.0"
+description = "Offline OpenStreetMap importer for Threshold worlds"
+requires-python = ">=3.12,<3.13"
+dependencies = ["osmnx>=2.1,<3", "requests>=2.32"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.scripts]
+threshold-gis = "threshold_gis.world:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 140

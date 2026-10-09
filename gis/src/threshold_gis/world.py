@@ -1,13 +1,15 @@
 """Offline geographic build. Only `acquire` contacts OpenStreetMap."""
+
 import argparse
 import hashlib
 import importlib.metadata
-import io
 import json
+import logging
 import math
 import sys
+import tempfile
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import networkx as nx
@@ -16,9 +18,41 @@ from pyproj import Transformer
 from shapely.geometry import LineString, Point, mapping, shape
 from shapely.ops import transform
 
-ROOT = Path(__file__).resolve().parents[2]
-TAGS = ["highway", "name", "access", "foot", "service", "surface", "oneway", "bridge", "tunnel", "layer", "foot:conditional", "access:conditional"]
-HIGHWAYS = {"residential", "living_street", "service", "pedestrian", "footway", "path", "steps", "track", "unclassified", "tertiary", "tertiary_link", "secondary", "secondary_link", "primary", "primary_link", "road"}
+ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_WORLDS = ROOT / "priv/worlds"
+log = logging.getLogger("threshold_gis")
+TAGS = [
+    "highway",
+    "name",
+    "access",
+    "foot",
+    "service",
+    "surface",
+    "oneway",
+    "bridge",
+    "tunnel",
+    "layer",
+    "foot:conditional",
+    "access:conditional",
+]
+HIGHWAYS = {
+    "residential",
+    "living_street",
+    "service",
+    "pedestrian",
+    "footway",
+    "path",
+    "steps",
+    "track",
+    "unclassified",
+    "tertiary",
+    "tertiary_link",
+    "secondary",
+    "secondary_link",
+    "primary",
+    "primary_link",
+    "road",
+}
 
 
 def load(path):
@@ -71,6 +105,7 @@ def settings(world):
 
 def acquire(world):
     import requests
+
     cfg, _, extent = settings(world)
     west, south, east, north = extent.bounds
     bbox = f"{south:.7f},{west:.7f},{north:.7f},{east:.7f}"
@@ -86,8 +121,21 @@ def acquire(world):
         raise ValueError("Overpass returned an error or empty source")
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_bytes(response.content)
-    write(world / "source/manifest.json", {"source": "OpenStreetMap", "endpoint": endpoint, "retrieved_at": datetime.now(timezone.utc).isoformat(), "sha256": digest(response.content), "query": query, "bounds": list(extent.bounds), "license": "ODbL-1.0", "attribution": "© OpenStreetMap contributors"})
-    print(f"Pinned {target}: {len(response.content):,} bytes")
+    write(
+        world / "source/manifest.json",
+        {
+            "source": "OpenStreetMap",
+            "endpoint": endpoint,
+            "retrieved_at": datetime.now(UTC).isoformat(),
+            "sha256": digest(response.content),
+            "query": query,
+            "bounds": list(extent.bounds),
+            "license": "ODbL-1.0",
+            "attribution": "© OpenStreetMap contributors",
+        },
+    )
+    log.info("Pinned %s: %s bytes", target, f"{len(response.content):,}")
+    return {"command": "acquire", "path": str(target), "bytes": len(response.content), "sha256": digest(response.content)}
 
 
 def access(tags):
@@ -146,18 +194,48 @@ def export_graph(graph, boundary):
         geometry = LineString(coords)
         props = {tag: clean(data[tag]) for tag in TAGS if tag in data}
         highway = data.get("highway")
-        classification = "alley" if data.get("service") == "alley" else "path" if highway in {"pedestrian", "footway", "path", "steps", "track"} else "street"
-        props.update({"from": f"node:{u}", "to": f"node:{v}", "osm_ids": osmids, "classification": classification, "access_status": access(props), "component": component_map[u], "length_m": round(float(data.get("length", 0)), 3), "inside_playable": boundary.covers(geometry), "crosses_boundary": geometry.intersects(boundary.boundary)})
+        classification = (
+            "alley"
+            if data.get("service") == "alley"
+            else "path"
+            if highway in {"pedestrian", "footway", "path", "steps", "track"}
+            else "street"
+        )
+        props.update(
+            {
+                "from": f"node:{u}",
+                "to": f"node:{v}",
+                "osm_ids": osmids,
+                "classification": classification,
+                "access_status": access(props),
+                "component": component_map[u],
+                "length_m": round(float(data.get("length", 0)), 3),
+                "inside_playable": boundary.covers(geometry),
+                "crosses_boundary": geometry.intersects(boundary.boundary),
+            }
+        )
         edges.append(feature(id_, geometry, props))
     incident = {f"node:{n}": [] for n in graph.nodes}
     for edge in edges:
-        for n in set([edge["properties"]["from"], edge["properties"]["to"]]):
+        for n in {edge["properties"]["from"], edge["properties"]["to"]}:
             incident[n].append(edge["id"])
     for n, data in sorted(graph.nodes(data=True)):
         if not incident[f"node:{n}"]:
             continue
         pt = Point(round(data["x"], 7), round(data["y"], 7))
-        nodes.append(feature(f"node:{n}", pt, {"osm_id": n, "component": component_map[n], "inside_playable": boundary.covers(pt), "edges": sorted(incident[f"node:{n}"]), "degree": len(incident[f"node:{n}"])}))
+        nodes.append(
+            feature(
+                f"node:{n}",
+                pt,
+                {
+                    "osm_id": n,
+                    "component": component_map[n],
+                    "inside_playable": boundary.covers(pt),
+                    "edges": sorted(incident[f"node:{n}"]),
+                    "degree": len(incident[f"node:{n}"]),
+                },
+            )
+        )
     return collection(nodes), collection(edges), len(groups)
 
 
@@ -169,11 +247,14 @@ def build(world):
     if digest(raw) != manifest["sha256"]:
         raise ValueError("Source checksum does not match manifest")
     a, b, c, d = manifest["bounds"]
-    if not shape({"type": "Polygon", "coordinates": [[[a,b],[c,b],[c,d],[a,d],[a,b]]]}).buffer(1e-7).covers(extent):
+    if not shape({"type": "Polygon", "coordinates": [[[a, b], [c, b], [c, d], [a, d], [a, b]]]}).buffer(1e-7).covers(extent):
         raise ValueError("New boundary and buffer exceed pinned source coverage; acquire a larger snapshot explicitly")
     ox.settings.useful_tags_way = TAGS
     ox.settings.useful_tags_node = ["highway", "access", "foot", "barrier"]
-    graph = ox.graph_from_xml(io.BytesIO(filtered_xml(raw, cfg)), bidirectional=True, simplify=False, retain_all=True)
+    with tempfile.TemporaryDirectory() as tmp:
+        filtered = Path(tmp) / "filtered.osm"
+        filtered.write_bytes(filtered_xml(raw, cfg))
+        graph = ox.graph_from_xml(filtered, bidirectional=True, simplify=False, retain_all=True)
     graph = ox.truncate.truncate_graph_polygon(graph, extent, truncate_by_edge=True)
     graph = ox.simplification.simplify_graph(graph, edge_attrs_differ=["access", "foot", "highway", "service"], remove_rings=False)
     if not cfg["retain_all_components"]:
@@ -185,13 +266,39 @@ def build(world):
         geometry = row.geometry
         if not geometry.is_empty and geometry.is_valid and geometry.intersects(extent):
             props = {k: clean(row[k]) for k in ["name", "building", "leisure", "natural"] if k in row and clean(row[k]) is not None}
-            props.update({"osm_id": int(osm_id), "osm_type": kind, "classification": "building" if props.get("building") else "water" if props.get("natural") == "water" else "park"})
+            props.update(
+                {
+                    "osm_id": int(osm_id),
+                    "osm_type": kind,
+                    "classification": "building" if props.get("building") else "water" if props.get("natural") == "water" else "park",
+                }
+            )
             context_features.append(feature(f"{kind}:{osm_id}", geometry, props))
-    provenance = {"format_version": 1, "source": manifest, "config": cfg, "boundary": mapping(boundary), "import_extent": mapping(extent), "crs": "EPSG:4326", "software": {p: importlib.metadata.version(p) for p in ["osmnx", "networkx", "shapely", "geopandas", "pyproj"]}, "python": sys.version.split()[0], "pipeline_sha256": digest(Path(__file__).read_bytes()), "simplification": {"edge_attrs_differ": ["access", "foot", "highway", "service"], "remove_rings": False, "bidirectional": True}, "components": count, "nodes": len(nodes["features"]), "edges": len(edges["features"])}
+    provenance = {
+        "format_version": 1,
+        "source": manifest,
+        "config": cfg,
+        "boundary": mapping(boundary),
+        "import_extent": mapping(extent),
+        "crs": "EPSG:4326",
+        "software": {p: importlib.metadata.version(p) for p in ["osmnx", "networkx", "shapely", "geopandas", "pyproj"]},
+        "python": sys.version.split()[0],
+        "pipeline_sha256": digest(Path(__file__).read_bytes()),
+        "simplification": {"edge_attrs_differ": ["access", "foot", "highway", "service"], "remove_rings": False, "bidirectional": True},
+        "components": count,
+        "nodes": len(nodes["features"]),
+        "edges": len(edges["features"]),
+    }
     validate_graph(nodes, edges)
-    for filename, data in [("nodes.geojson", nodes), ("edges.geojson", edges), ("context.geojson", collection(context_features)), ("provenance.json", provenance)]:
+    for filename, data in [
+        ("nodes.geojson", nodes),
+        ("edges.geojson", edges),
+        ("context.geojson", collection(context_features)),
+        ("provenance.json", provenance),
+    ]:
         write(world / filename, data)
-    print(f"Built {len(nodes['features'])} nodes, {len(edges['features'])} edges, {count} components")
+    log.info("Built %d nodes, %d edges, %d components", len(nodes["features"]), len(edges["features"]), count)
+    return {"command": "build", "nodes": len(nodes["features"]), "edges": len(edges["features"]), "components": count}
 
 
 def validate_graph(nodes, edges):
@@ -232,21 +339,27 @@ def validate(world):
     cfg = load(world / "config.json")
     if digest((world / cfg["source"]).read_bytes()) != load(world / "source/manifest.json")["sha256"]:
         raise ValueError("Source checksum mismatch")
-    print("Valid geometry, topology, references, boundary, and source checksum")
+    log.info("Valid geometry, topology, references, boundary, and source checksum")
+    return {"command": "validate", "ok": True}
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+def main(argv=None):
+    parser = argparse.ArgumentParser(prog="threshold-gis", description=__doc__)
     parser.add_argument("command", choices=["acquire", "build", "validate"])
     parser.add_argument("world", nargs="?", default="madison")
-    args = parser.parse_args()
+    parser.add_argument("--worlds-dir", type=Path, default=DEFAULT_WORLDS, help="directory containing world folders")
+    parser.add_argument("--json", action="store_true", help="print a machine-readable summary to stdout")
+    args = parser.parse_args(argv)
     if not args.world.replace("-", "").isalnum():
         parser.error("World name must be alphanumeric")
-    world = ROOT / "priv/worlds" / args.world
+    logging.basicConfig(level=logging.INFO, stream=sys.stderr, format="%(levelname)s %(message)s")
+    world = args.worlds_dir / args.world
     try:
-        {"acquire": acquire, "build": build, "validate": validate}[args.command](world)
+        summary = {"acquire": acquire, "build": build, "validate": validate}[args.command](world)
     except (ValueError, OSError, ET.ParseError) as exc:
         parser.exit(1, f"World {args.command} failed: {exc}\n")
+    if args.json:
+        print(json.dumps(summary, sort_keys=True))
 
 
 if __name__ == "__main__":

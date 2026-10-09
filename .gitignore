@@ -28,6 +28,17 @@ threshold-*.tar
 
 # Local tooling and source acquisition scratch files
 .venv/
-cache/
 __pycache__/
 *.pyc
+
+# Python tooling
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+gis/build/
+
+# Importer scratch files and local environment
+*.tmp
+.env*
+.elixir_ls/
+.DS_Store

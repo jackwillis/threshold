@@ -10,7 +10,7 @@ The workspace was initially empty. The following preliminary work happened befor
 - Generated a Phoenix 1.8.15 application named `threshold`, module `Threshold`, without Ecto, mailer, dashboard, or an asset build pipeline.
 - Downloaded Elixir dependencies and created `mix.lock`.
 - Created a local Python 3.12 virtual environment in `.venv` and installed OSMnx 2.1.0 and its dependencies.
-- Recorded installed Python package versions in `scripts/gis/requirements.txt`.
+- Recorded installed Python package versions in `gis/requirements.lock`.
 - Created the initial Madison rectangle in `priv/worlds/madison/boundary.geojson`.
 - Created a draft import configuration and empty authored world file.
 - Wrote a preliminary independently executable GIS script with `acquire`, `build`, and `validate` commands.
