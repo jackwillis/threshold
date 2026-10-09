@@ -1,0 +1,48 @@
+# Local gameplay setup
+
+Use Docker Compose for PostgreSQL and run Phoenix, Bun and the GIS pipeline on the host. Native PostgreSQL works too: the application only needs a connection URL. The editor does not require PostgreSQL.
+
+## Compose database
+
+Install Docker with Compose, then from the repository root:
+
+```bash
+docker compose up -d --wait postgres
+export THRESHOLD_DATABASE_URL=postgres://threshold:threshold_local@localhost:5432/threshold_game
+mix ecto.migrate
+make assets
+make run
+```
+
+Open <http://localhost:4000/play>. In the editor, enable the playable layer, select a location, choose **Use as default spawn**, and save. To make an authored place inspectable, select it, choose **Nearby at playable location**, and save. These changes are deliberate designer actions; no spawn is guessed automatically.
+
+Compose publishes PostgreSQL on loopback only. The `postgres_data` named volume preserves saves when containers stop or are recreated. `docker compose stop` stops the database without removing it. The default password is for this local setup. You can override `THRESHOLD_POSTGRES_PASSWORD`, `THRESHOLD_POSTGRES_PORT`, or `THRESHOLD_POSTGRES_TEST_PORT` in a local `.env` file; update your connection URLs accordingly. Compose reads `.env`, while Phoenix reads the exported URL.
+
+The official PostgreSQL 18 image stores its versioned data below `/var/lib/postgresql`, which is where the named volume is mounted. The major version is pinned to 18; patch updates follow that image tag. See the [official PostgreSQL image documentation](https://hub.docker.com/_/postgres) and [Compose health checks](https://docs.docker.com/compose/how-tos/startup-order).
+
+## Full checks with PostgreSQL
+
+The test service runs on a separate port with a disposable filesystem. It never shares the player save volume.
+
+```bash
+docker compose --profile test up -d --wait postgres-test
+THRESHOLD_TEST_DATABASE_URL=postgres://threshold:threshold_local@localhost:5433/threshold_test make check
+```
+
+Tests apply migrations automatically and isolate each test using Ecto SQL Sandbox. Without `THRESHOLD_TEST_DATABASE_URL`, database tests are explicitly excluded. The development URL is never used for tests, and the test database name must end in `_test`.
+
+## Production mode on this computer
+
+With the database URL exported and PostgreSQL running:
+
+```bash
+make assets
+MIX_ENV=prod mix ecto.migrate
+SECRET_KEY_BASE="$(mix phx.gen.secret)" MIX_ENV=prod mix phx.server
+```
+
+This serves on loopback at <http://localhost:4000>. Set `PORT` to use another port. Preserve your secret across runs if you want existing browser sessions to remain valid. This command runs production mode locally; it does not deploy the application.
+
+## Verification limits
+
+Movement, saves and browser restoration were verified using an isolated PostgreSQL 18.6 instance and a scratch Madison world. Docker is not installed in the agent's current environment, so the Compose container startup itself has not been exercised here. Reduced-motion animation handling is implemented but has not been separately tested in the browser.

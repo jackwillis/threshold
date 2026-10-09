@@ -1,0 +1,38 @@
+# Local PostgreSQL only; Phoenix, Bun and the GIS pipeline run on the host.
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: threshold
+      POSTGRES_PASSWORD: ${THRESHOLD_POSTGRES_PASSWORD:-threshold_local}
+      POSTGRES_DB: threshold_game
+    ports:
+      - "127.0.0.1:${THRESHOLD_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U threshold -d threshold_game"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  postgres-test:
+    image: postgres:18
+    profiles: ["test"]
+    environment:
+      POSTGRES_USER: threshold
+      POSTGRES_PASSWORD: ${THRESHOLD_POSTGRES_PASSWORD:-threshold_local}
+      POSTGRES_DB: threshold_test
+    ports:
+      - "127.0.0.1:${THRESHOLD_POSTGRES_TEST_PORT:-5433}:5432"
+    # Test data is disposable and is kept separate from the persistent player save.
+    tmpfs:
+      - /var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U threshold -d threshold_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+volumes:
+  postgres_data:
