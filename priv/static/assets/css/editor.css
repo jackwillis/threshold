@@ -38,3 +38,9 @@ body { display: flex; flex-direction: column; font-family: system-ui, sans-serif
 .props dd { margin: 0; word-break: break-word; }
 .empty-state { padding: 2rem; }
 @media (max-width: 900px) { .editor { grid-template-columns: 1fr; grid-template-rows: auto 60vh auto; } }
+.banner-error { background: color-mix(in srgb, #d64545 18%, transparent); border: 1px solid #d64545; }
+.review { list-style: none; margin: .35rem 0; padding: 0; }
+.review li { display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem; padding: .15rem 0; }
+.badge { font-size: .7rem; padding: 0 .4rem; border-radius: .6rem; text-transform: uppercase; letter-spacing: .03em; background: #e0a020; color: #000; }
+.review-missing .badge { background: #d64545; color: #fff; }
+.review .hint { word-break: break-all; }

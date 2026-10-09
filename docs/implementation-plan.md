@@ -38,6 +38,7 @@ Status: **Draft for discussion.** Companion to `design.md`. Phases are ordered s
 - Render authored objects; "detached" styling; review list.
 - Tests: schema validation, round trip, stale save rejection, reference statuses (ok, moved, missing).
 - **Done when:** a hand-edited `authored.json` displays correctly and invalid files give clear errors.
+- **Status: implemented.** `Threshold.Authored` (strict validation, deterministic encode, conflict-checked atomic save), `Threshold.References` (ok/moved/missing), the authored layer and review list in the editor. The save path is tested at module level; the editor UI calls it from Phase 5. Map labels are not drawn yet (they need a glyph source; names show in the inspector).
 
 ## Phase 5: Editing tools
 

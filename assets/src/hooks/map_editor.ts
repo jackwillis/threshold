@@ -3,6 +3,8 @@ import type { Feature, FeatureCollection, Geometry, Polygon } from "geojson";
 import { BACKGROUND, CLICK_PRIORITY, LAYER_GROUPS, layerSpecs, edgeColor } from "../map/style";
 import type { ColorBy, Palette } from "../map/style";
 import { boundsOf, indexFeatures, outsideMask } from "../map/geo";
+import { EMPTY_AUTHORED, buildAuthored } from "../map/authored";
+import type { Authored, RefStatus } from "../map/authored";
 import type { Bounds, Feat, Props } from "../map/geo";
 
 // Terra Draw (editing) is installed but intentionally not started in the read-only viewer: it
@@ -12,7 +14,9 @@ type ViewState = {
   layers: Record<string, boolean>;
   colorBy: ColorBy;
   palette: Palette;
-  focus: { n: number; bounds: Bounds | null };
+  focus: { n: number; bounds: Bounds | null; object: string | null };
+  authored: Authored;
+  refStatus: RefStatus;
 };
 
 type Hook = {
@@ -24,6 +28,8 @@ type Hook = {
   pushEvent(event: string, payload: object): void;
   readState(): ViewState;
   apply(): void;
+  showAuthored(map: maplibregl.Map, state: ViewState): void;
+  objectBounds(id: string | null): Bounds | null;
   load(map: maplibregl.Map): Promise<void>;
 };
 
@@ -118,11 +124,41 @@ export const MapEditor = {
       }
     }
     map.setPaintProperty("edges", "line-color", edgeColor(state.colorBy, state.palette));
-    if (state.focus.bounds && state.focus.n !== this.lastFocus) {
+    this.showAuthored(map, state);
+    if (state.focus.n !== this.lastFocus) {
       this.lastFocus = state.focus.n;
-      const [w, s, e, n] = state.focus.bounds;
-      map.fitBounds([[w, s], [e, n]], { padding: 80, maxZoom: 19, duration: 600 });
+      const bounds = state.focus.bounds ?? this.objectBounds(state.focus.object);
+      if (bounds) {
+        const [w, s, e, n] = bounds;
+        map.fitBounds([[w, s], [e, n]], { padding: 80, maxZoom: 19, duration: 600 });
+      }
     }
+  },
+
+  /** Refresh authored sources whenever the server's working copy or reference statuses change. */
+  showAuthored(this: Hook, map: maplibregl.Map, state: ViewState) {
+    const built = buildAuthored(state.authored ?? EMPTY_AUTHORED, state.refStatus ?? {});
+    (map.getSource("authored-locations") as maplibregl.GeoJSONSource).setData(built.locations);
+    (map.getSource("authored-connections") as maplibregl.GeoJSONSource).setData(built.connections);
+    const filter: maplibregl.FilterSpecification = ["in", ["get", "id"], ["literal", built.closureEdgeIds]];
+    map.setFilter("authored-closure-halo", filter);
+    map.setFilter("authored-closure", filter);
+    for (const fc of [built.locations, built.connections]) indexFeatures(fc, this.features);
+  },
+
+  /** Where to zoom for an authored object: its point, or the edge a closure marks. */
+  objectBounds(this: Hook, id: string | null): Bounds | null {
+    if (!id) return null;
+    const state = this.readState();
+    const location = state.authored.locations.find((l) => l.id === id);
+    if (location) {
+      const [x, y] = location.anchor.point;
+      const pad = 0.0004;
+      return [x - pad, y - pad, x + pad, y + pad];
+    }
+    const closure = state.authored.closures.find((c) => c.id === id);
+    const edge = closure && this.features.get(closure.edge);
+    return edge ? boundsOf(edge.geometry) : null;
   },
 
   async load(this: Hook, map: maplibregl.Map) {
@@ -144,6 +180,8 @@ export const MapEditor = {
     map.addSource("boundary", { type: "geojson", data: boundary });
     map.addSource("extent", { type: "geojson", data: extent });
     map.addSource("mask", { type: "geojson", data: outsideMask(boundary.geometry) });
+    map.addSource("authored-locations", { type: "geojson", data: EMPTY });
+    map.addSource("authored-connections", { type: "geojson", data: EMPTY });
     map.addSource("selection", { type: "geojson", data: EMPTY });
 
     const state = this.readState();

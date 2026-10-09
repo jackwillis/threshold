@@ -16,6 +16,11 @@ import Config
 #
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
+# Point the app at another directory of worlds (e.g. a scratch copy for experiments).
+if worlds_dir = System.get_env("THRESHOLD_WORLDS_DIR") do
+  config :threshold, :worlds_dir, Path.expand(worlds_dir)
+end
+
 if System.get_env("PHX_SERVER") do
   config :threshold, ThresholdWeb.Endpoint, server: true
 end

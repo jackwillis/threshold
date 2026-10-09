@@ -45,18 +45,25 @@ Three layers, never merged on disk:
 - Edges: `edge:<from>-<to>-<lowest way id>` (suffix on collision). Shape edits keep the ID; `geometry_hash` flags them as moved. Topology changes (split or delete) produce missing references. See plan decision 4.
 - Authored objects get their own UUID-style IDs (`loc:…`), independent of geography.
 
-### Authored schema (proposed, v1)
+### Authored schema (v1, implemented in `Threshold.Authored`)
 
 ```json
 {
   "format_version": 1,
-  "locations":   [{"id": "loc:…", "name": "", "notes": "", "anchor": {"kind": "node|edge|point", "ref": "node:123", "offset": null, "point": [lon, lat]}, "resolved": true}],
-  "connections": [{"id": "conn:…", "from": "loc:…", "to": "loc:…", "kind": "fictional", "geometry": null, "notes": ""}],
-  "closures":    [{"id": "clo:…", "edge": "edge:…", "access": "restricted", "reason": ""}]
+  "locations": [
+    {"id": "loc:3f2a", "name": "", "notes": "",
+     "anchor": {"kind": "node", "ref": "node:123", "point": [lon, lat]}}
+  ],
+  "connections": [
+    {"id": "conn:9b1c", "from": "loc:3f2a", "to": "loc:77de", "kind": "fictional", "notes": "", "geometry": null}
+  ],
+  "closures": [
+    {"id": "clo:42aa", "edge": "edge:1-2-3", "kind": "restricted", "reason": "", "geometry_hash": "<hash at creation>"}
+  ]
 }
 ```
 
-Existing empty file already has `locations`, `connections`, `closures`. Open: do closures override imported access, or only annotate? Does a location anchored to an edge store a fractional position along it?
+Anchors are one of: `node` (`ref`, `point`), `edge` (`ref`, `offset` 0..1 along the edge, `point`, `ref_geometry_hash`), or `point` (free point, no reference). `point` is always the fallback position. Validation is strict: unknown keys, bad ids, out-of-range coordinates and dangling connections are errors with specific messages. Closures are layered on imported access, whole-edge only, with an extensible `kind` (decision 2). Files are written with sorted keys and collections ordered by id so Git diffs stay small. A save is refused if `authored.json` changed on disk since it was loaded.
 
 ## Reference resolution
 

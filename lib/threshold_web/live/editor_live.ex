@@ -6,7 +6,7 @@ defmodule ThresholdWeb.EditorLive do
   """
   use ThresholdWeb, :live_view
 
-  alias Threshold.World
+  alias Threshold.{Authored, Geography, References, World}
 
   # Single source for the palette: it drives the legend here and the map via data-state.
   @palette %{
@@ -29,7 +29,8 @@ defmodule ThresholdWeb.EditorLive do
     {"water", "Water"},
     {"vertical", "Elevators / vertical"},
     {"boundary", "Playable boundary"},
-    {"extent", "Import extent (buffer)"}
+    {"extent", "Import extent (buffer)"},
+    {"authored", "Authored layer"}
   ]
 
   @color_options [
@@ -51,16 +52,55 @@ defmodule ThresholdWeb.EditorLive do
          |> assign(:loading, true)
          |> assign(:load_error, nil)
          |> assign(:selected, nil)
-         |> assign(:focus, %{"n" => 0, "bounds" => nil})
+         |> assign(:focus, %{"n" => 0, "bounds" => nil, "object" => nil})
          |> assign(:layer_options, @layer_options)
          |> assign(:color_options, @color_options)
          |> assign(:palette, @palette)
+         |> load_authored()
          |> assign_view(%{"color_by" => "access_status", "layers" => default_layers()})}
 
       {:error, :not_found} ->
         {:ok,
          socket |> put_flash(:error, "World #{inspect(name)} not found") |> assign(:world, nil)}
     end
+  end
+
+  # The authored file is the only one the editor writes. An invalid file is reported, never "fixed".
+  defp load_authored(socket) do
+    dir = socket.assigns.world.dir
+
+    case Authored.load(dir) do
+      {:ok, authored, hash} ->
+        refs =
+          case Geography.index(dir) do
+            {:ok, geography} -> References.resolve(authored, geography)
+            :error -> []
+          end
+
+        socket
+        |> assign(:authored, authored)
+        |> assign(:authored_hash, hash)
+        |> assign(:authored_errors, [])
+        |> assign(:refs, refs)
+
+      {:error, errors} ->
+        socket
+        |> assign(:authored, Authored.empty())
+        |> assign(:authored_hash, nil)
+        |> assign(:authored_errors, errors)
+        |> assign(:refs, [])
+    end
+  end
+
+  # Worst status per authored object: missing > moved > ok.
+  defp ref_status(refs) do
+    rank = %{missing: 2, moved: 1, ok: 0}
+
+    refs
+    |> Enum.group_by(& &1.object, & &1.status)
+    |> Map.new(fn {object, statuses} ->
+      {object, statuses |> Enum.max_by(&rank[&1]) |> Atom.to_string()}
+    end)
   end
 
   defp default_layers, do: Map.new(@layer_options, fn {key, _} -> {key, key != "nodes"} end)
@@ -106,6 +146,11 @@ defmodule ThresholdWeb.EditorLive do
     {:noreply, assign(socket, :focus, focus)}
   end
 
+  def handle_event("focus_object", %{"id" => id}, socket) do
+    focus = %{"n" => socket.assigns.focus["n"] + 1, "bounds" => nil, "object" => id}
+    {:noreply, assign(socket, :focus, focus)}
+  end
+
   defp components(%{provenance: %{"summary" => %{"components" => list}}}), do: list
   defp components(_), do: []
 
@@ -114,6 +159,8 @@ defmodule ThresholdWeb.EditorLive do
       layers: assigns.layers,
       colorBy: assigns.color_by,
       focus: assigns.focus,
+      authored: assigns.authored,
+      refStatus: ref_status(assigns.refs),
       palette: Map.new(assigns.palette, fn {key, entries} -> {key, Map.new(entries)} end)
     })
   end
@@ -179,6 +226,14 @@ defmodule ThresholdWeb.EditorLive do
             to regenerate.
           </div>
 
+          <div :if={@authored_errors != []} id="authored-errors" class="banner banner-error">
+            <strong>authored.json is invalid and was not loaded.</strong>
+            <ul>
+              <li :for={error <- Enum.take(@authored_errors, 8)}>{error}</li>
+            </ul>
+            <span :if={length(@authored_errors) > 8}>…and {length(@authored_errors) - 8} more.</span>
+          </div>
+
           <.form for={@form} id="view-form" phx-change="view">
             <fieldset>
               <legend>Layers</legend>
@@ -212,6 +267,30 @@ defmodule ThresholdWeb.EditorLive do
                   Each color is one connected component. The main network is slate; separate colors mark disconnected pieces.
                 </p>
             <% end %>
+          </section>
+
+          <section id="authored">
+            <h3>Authored</h3>
+            <p class="hint">
+              {length(@authored["locations"])} locations · {length(@authored["connections"])} connections · {length(
+                @authored["closures"]
+              )} closures
+            </p>
+            <ul :if={References.needing_review(@refs) != []} id="review" class="review">
+              <li :for={ref <- References.needing_review(@refs)} class={"review-#{ref.status}"}>
+                <span class="badge">{ref.status}</span>
+                <button
+                  type="button"
+                  phx-click="focus_object"
+                  phx-value-id={ref.object}
+                  class="link-button"
+                  disabled={ref.status == :missing and String.starts_with?(ref.object, "clo:")}
+                >
+                  {ref.object}
+                </button>
+                <span class="hint">→ {ref.ref}</span>
+              </li>
+            </ul>
           </section>
 
           <section id="components">
