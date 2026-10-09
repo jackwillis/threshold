@@ -45,6 +45,7 @@ defmodule ThresholdWeb.EditorLive do
 
   @color_options [
     {"Access", "access_status"},
+    {"Access basis", "access_basis"},
     {"Type", "classification"},
     {"Component", "component"}
   ]
