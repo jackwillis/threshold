@@ -15,7 +15,8 @@ A Madison-based single-player mystery and exploration project. The first milesto
 
 ```text
 lib/threshold/            Phoenix application / future world-file handling
-lib/threshold_web/        Phoenix web interface (currently generated defaults)
+lib/threshold_web/        Phoenix web interface (EditorLive shell)
+assets/                  TypeScript frontend (MapLibre, Terra Draw), built with Bun
 priv/worlds/madison/      Boundary, import configuration, authored world
 gis/                     Python importer package (threshold-gis), tests, pinned dependencies
 docs/                    Project memos
@@ -25,10 +26,11 @@ Imported source geography, generated geographic graphs, and authored game metada
 
 ## Development
 
-Needs Elixir 1.19 / OTP 26 and Python 3.12 (see `.tool-versions`; [mise](https://mise.jdx.dev) reads it).
+Needs Elixir 1.19 / OTP 26, Python 3.12 and [Bun](https://bun.sh) (installed to `~/.bun/bin`; the Makefile adds it to PATH) (see `.tool-versions`; [mise](https://mise.jdx.dev) reads it).
 
 ```text
-make setup           deps, .venv, install gis package
+make setup           deps, .venv, gis package, Bun packages, build frontend
+make assets          rebuild the TypeScript bundle (`make run` also watches in dev)
 make run             start the Phoenix server (localhost:4000)
 make test            Elixir and Python tests
 make check           everything CI would run (precommit, ruff, pytest, world validation, determinism)

@@ -25,7 +25,7 @@ One user (the designer), on localhost, no auth, no database. Success means: open
 - **Importer** is a standalone CLI (`acquire`, `build`, `validate`). Only `acquire` touches the network. Phoenix may later shell out to `build`, never to `acquire`.
 - **Phoenix** loads world files, validates, and writes `authored.json` atomically (temp file + rename). It holds no state beyond the files.
 - **Browser** owns the map and interaction. One JS hook on a LiveView page (or plain JS served by Phoenix) mounts MapLibre. The pure-JS side stays small; **[DECIDE]** whether the editor is LiveView-driven (server holds the working copy) or a thin JS app that talks to JSON endpoints.
-- **No Node build pipeline** at first: vendor MapLibre (and the draw library) as static files, since the project was generated without an asset pipeline. **[DECIDE]**
+- **Frontend toolchain:** Bun + TypeScript in `assets/`, bundling MapLibre, Terra Draw and the Phoenix client to `priv/static/assets/js/app.js`. No Node.
 
 ## Data layers
 

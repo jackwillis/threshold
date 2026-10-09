@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["bun"],
+    "baseUrl": ".",
+    "paths": {
+      "phoenix": ["../deps/phoenix/priv/static/phoenix.mjs"],
+      "phoenix_html": ["../deps/phoenix_html/priv/static/phoenix_html.js"],
+      "phoenix_live_view": ["../deps/phoenix_live_view/priv/static/phoenix_live_view.esm.js"]
+    }
+  },
+  "include": ["src", "build.ts"]
+}

@@ -34,7 +34,9 @@ def test_build_is_deterministic(worlds_dir):
 
 def test_disconnected_component_retained(built):
     edges = load(built, "edges.geojson")["features"]
-    assert len({e["properties"]["component"] for e in edges}) >= 3  # main network, loop, private footway
+    assert len({e["properties"]["component"] for e in edges}) == 3  # main network, loop, private footway
+    # Building corners must not be counted as network components.
+    assert load(built, "provenance.json")["components"] == 3
 
 
 def test_access_classification(built):
@@ -106,3 +108,20 @@ def test_vertex_tweak_keeps_edge_id_but_changes_geometry_hash(worlds_dir):
     changed = [i for i in before if after[i]["properties"]["geometry_hash"] != before[i]["properties"]["geometry_hash"]]
     assert set(before) == set(after)
     assert changed and all(106 in before[i]["properties"]["osm_ids"] for i in changed)
+
+
+def test_area_ways_are_context_not_edges(built):
+    edges = load(built, "edges.geojson")["features"]
+    assert not any(202 in e["properties"]["osm_ids"] for e in edges)
+    context = load(built, "context.geojson")["features"]
+    assert any(f["properties"]["classification"] == "pedestrian_area" for f in context)
+
+
+def test_cycleway_in_graph(built):
+    edges = load(built, "edges.geojson")["features"]
+    assert any(e["properties"].get("highway") == "cycleway" for e in edges)
+
+
+def test_elevator_node_kept_as_vertical_context(built):
+    context = load(built, "context.geojson")["features"]
+    assert any(f["properties"]["classification"] == "vertical" and f["properties"].get("name") == "Test Elevator" for f in context)

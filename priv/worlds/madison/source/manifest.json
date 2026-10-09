@@ -1,0 +1,15 @@
+{
+  "attribution": "\u00a9 OpenStreetMap contributors",
+  "bounds": [
+    -89.3948467307057,
+    43.06767978522409,
+    -89.3663782390292,
+    43.08238921027942
+  ],
+  "endpoint": "https://overpass-api.de/api/interpreter",
+  "license": "ODbL-1.0",
+  "query": "[out:xml][timeout:120];(way[\"highway\"](43.0676798,-89.3948467,43.0823892,-89.3663782);node[\"highway\"=\"elevator\"](43.0676798,-89.3948467,43.0823892,-89.3663782);way[\"building\"](43.0676798,-89.3948467,43.0823892,-89.3663782);way[\"leisure\"=\"park\"](43.0676798,-89.3948467,43.0823892,-89.3663782);way[\"natural\"=\"water\"](43.0676798,-89.3948467,43.0823892,-89.3663782);relation[\"building\"](43.0676798,-89.3948467,43.0823892,-89.3663782);relation[\"leisure\"=\"park\"](43.0676798,-89.3948467,43.0823892,-89.3663782);relation[\"natural\"=\"water\"](43.0676798,-89.3948467,43.0823892,-89.3663782););(._;>>;);out meta;",
+  "retrieved_at": "2026-10-09T02:31:19.679177+00:00",
+  "sha256": "5cf9ec50ccd1359f95dc47af0a7f1a5fb31cb71ed7edfedc0ffa900b9b0db67b",
+  "source": "OpenStreetMap"
+}

@@ -17,7 +17,7 @@ defmodule ThresholdWeb.Router do
   scope "/", ThresholdWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    live "/", EditorLive
   end
 
   # Other scopes may use custom stacks.

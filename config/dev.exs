@@ -14,7 +14,10 @@ config :threshold, ThresholdWeb.Endpoint,
   code_reloader: true,
   debug_errors: true,
   secret_key_base: "0dEls2rUJ8Zv38xFInlOi7A1qZSECQVPlKCEdCUMt4pVOgsB1IoJtxE9Eaq83def",
-  watchers: []
+  # Requires `bun` on PATH (make run adds ~/.bun/bin).
+  watchers: [
+    bun: ["build.ts", "--watch", cd: Path.expand("../assets", __DIR__)]
+  ]
 
 # ## SSL Support
 #

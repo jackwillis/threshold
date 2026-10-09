@@ -1,0 +1,19 @@
+{
+  "name": "threshold-assets",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun build.ts",
+    "watch": "bun build.ts --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "maplibre-gl": "^5",
+    "terra-draw": "^1",
+    "terra-draw-maplibre-gl-adapter": "^1"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5"
+  }
+}

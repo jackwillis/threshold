@@ -42,6 +42,7 @@ HIGHWAYS = {
     "pedestrian",
     "footway",
     "path",
+    "cycleway",
     "steps",
     "track",
     "unclassified",
@@ -109,12 +110,24 @@ def acquire(world):
     cfg, _, extent = settings(world)
     west, south, east, north = extent.bounds
     bbox = f"{south:.7f},{west:.7f},{north:.7f},{east:.7f}"
-    query = f'[out:xml][timeout:120];(way["highway"]({bbox});way["building"]({bbox});way["leisure"="park"]({bbox});way["natural"="water"]({bbox});relation["natural"="water"]({bbox}););(._;>>;);out meta;'
+    # Fetch generously: the snapshot is pinned once, so keep everything later decisions may need
+    # (standalone elevator nodes, building/park/water multipolygon relations).
+    query = (
+        f"[out:xml][timeout:120];("
+        f'way["highway"]({bbox});node["highway"="elevator"]({bbox});way["building"]({bbox});way["leisure"="park"]({bbox});'
+        f'way["natural"="water"]({bbox});relation["building"]({bbox});relation["leisure"="park"]({bbox});'
+        f'relation["natural"="water"]({bbox}););(._;>>;);out meta;'
+    )
     target = world / cfg["source"]
     if target.exists():
         raise ValueError("Source already exists. Archive it explicitly before acquiring an update.")
     endpoint = "https://overpass-api.de/api/interpreter"
-    response = requests.post(endpoint, data={"data": query}, timeout=180)
+    response = requests.post(
+        endpoint,
+        data={"data": query},
+        headers={"User-Agent": f"threshold-gis/{importlib.metadata.version('threshold-gis')} (local game map editor)", "Accept": "*/*"},
+        timeout=180,
+    )
     response.raise_for_status()
     root = ET.fromstring(response.content)
     if root.tag != "osm" or root.find("remark") is not None or not root.findall("way"):
@@ -158,7 +171,8 @@ def filtered_xml(raw, cfg):
     root = ET.fromstring(raw)
     for way in list(root.findall("way")):
         tags = {t.attrib["k"]: t.attrib["v"] for t in way.findall("tag")}
-        keep = tags.get("highway") in HIGHWAYS
+        # Closed area=yes ways (plazas, indoor elevator areas) are areas, not network edges.
+        keep = tags.get("highway") in HIGHWAYS and tags.get("area") != "yes"
         if cfg["access_policy"] == "public_only":
             keep = keep and access(tags) == "public"
         if not keep:
@@ -177,7 +191,7 @@ def make_edge(id_, geom_hash, u, v, coords, osmids, data, boundary, component_ma
         "alley"
         if data.get("service") == "alley"
         else "path"
-        if highway in {"pedestrian", "footway", "path", "steps", "track"}
+        if highway in {"pedestrian", "footway", "path", "steps", "track", "cycleway"}
         else "street"
     )
     props.update(
@@ -195,6 +209,18 @@ def make_edge(id_, geom_hash, u, v, coords, osmids, data, boundary, component_ma
         }
     )
     return feature(id_, geometry, props)
+
+
+def context_class(props):
+    if props.get("highway") == "elevator":
+        return "vertical"
+    if props.get("highway") in {"pedestrian", "footway"}:
+        return "pedestrian_area" if props.get("area") == "yes" else None
+    if props.get("building"):
+        return "building"
+    if props.get("natural") == "water":
+        return "water"
+    return "park"
 
 
 def export_graph(graph, boundary):
@@ -267,22 +293,28 @@ def build(world):
         graph = ox.graph_from_xml(filtered, bidirectional=True, simplify=False, retain_all=True)
     graph = ox.truncate.truncate_graph_polygon(graph, extent, truncate_by_edge=True)
     graph = ox.simplification.simplify_graph(graph, edge_attrs_differ=["access", "foot", "highway", "service"], remove_rings=False)
+    # Nodes left over from filtered-out ways (building corners etc.) are not network components.
+    graph.remove_nodes_from(list(nx.isolates(graph)))
     if not cfg["retain_all_components"]:
         graph = ox.truncate.largest_component(graph)
     nodes, edges, count = export_graph(graph, boundary)
-    context = ox.features_from_xml(source, tags={"building": True, "leisure": "park", "natural": "water"})
+    context = ox.features_from_xml(
+        source,
+        tags={"building": True, "leisure": "park", "natural": "water", "highway": ["pedestrian", "footway", "elevator"]},
+    )
     context_features = []
     for (kind, osm_id), row in context.iterrows():
         geometry = row.geometry
         if not geometry.is_empty and geometry.is_valid and geometry.intersects(extent):
-            props = {k: clean(row[k]) for k in ["name", "building", "leisure", "natural"] if k in row and clean(row[k]) is not None}
-            props.update(
-                {
-                    "osm_id": int(osm_id),
-                    "osm_type": kind,
-                    "classification": "building" if props.get("building") else "water" if props.get("natural") == "water" else "park",
-                }
-            )
+            props = {
+                k: clean(row[k])
+                for k in ["name", "building", "leisure", "natural", "highway", "area", "level", "indoor", "access", "bicycle"]
+                if k in row and clean(row[k]) is not None
+            }
+            classification = context_class(props)
+            if classification is None:
+                continue  # e.g. ordinary pedestrian/footway lines, which are graph edges
+            props.update({"osm_id": int(osm_id), "osm_type": kind, "classification": classification})
             context_features.append(feature(f"{kind}:{osm_id}", geometry, props))
     provenance = {
         "format_version": 1,

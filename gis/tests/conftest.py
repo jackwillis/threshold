@@ -36,6 +36,8 @@ WAYS = [
     (105, [10, 11], {"highway": "footway", "access": "private"}),  # disconnected, restricted
     (106, [3, 15], {"highway": "residential"}),  # leaves the playable boundary and the import extent
     (201, [12, 13, 14, 12], {"building": "yes"}),
+    (107, [1, 5], {"highway": "cycleway"}),
+    (202, [6, 7, 8, 9, 6], {"highway": "pedestrian", "area": "yes"}),  # plaza polygon: context, not edges
 ]
 
 
@@ -43,6 +45,7 @@ def osm_xml():
     out = ['<?xml version="1.0"?>', '<osm version="0.6">']
     for id_, lon, lat in NODES:
         out.append(f'<node id="{id_}" lat="{lat}" lon="{lon}"/>')
+    out.append('<node id="17" lat="43.0730" lon="-89.3770"><tag k="highway" v="elevator"/><tag k="name" v="Test Elevator"/></node>')
     for id_, refs, tags in WAYS:
         out.append(f'<way id="{id_}">')
         out += [f'<nd ref="{r}"/>' for r in refs]

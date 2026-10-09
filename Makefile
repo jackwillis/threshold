@@ -1,13 +1,19 @@
 # Cross-language orchestration. Elixir-only checks live in `mix precommit`.
 PY := .venv/bin
+export PATH := $(HOME)/.bun/bin:$(PATH)
 W ?= madison
 
-.PHONY: setup run test check fmt build-world validate-world determinism acquire-world
+.PHONY: setup assets check-assets run test check fmt build-world validate-world determinism acquire-world
 
 setup:
 	mix setup
 	test -d .venv || python3.12 -m venv .venv
 	$(PY)/pip install -q -e "gis[dev]"
+	cd assets && bun install --frozen-lockfile
+	$(MAKE) assets
+
+assets:
+	cd assets && bun run build
 
 run:
 	mix phx.server
@@ -16,6 +22,9 @@ test:
 	mix test
 	$(PY)/pytest gis -q
 
+check-assets:
+	cd assets && bun run typecheck
+
 fmt:
 	mix format
 	$(PY)/ruff format gis
@@ -23,6 +32,7 @@ fmt:
 check:
 	mix precommit
 	$(PY)/ruff check gis
+	$(MAKE) check-assets
 	$(PY)/pytest gis -q
 	@if [ -f priv/worlds/$(W)/nodes.geojson ]; then $(MAKE) validate-world determinism; else echo "skip world checks: no generated $(W) geography yet"; fi
 
