@@ -31,13 +31,16 @@ defmodule ThresholdWeb.Layouts do
     default: nil,
     doc: "the current [scope](https://phoenix.hexdocs.pm/scopes.html)"
 
+  attr :mode, :string, default: "editor"
+
   slot :inner_block, required: true
 
   def app(assigns) do
     ~H"""
     <header class="app-header">
       <a href="/" class="app-title">Threshold</a>
-      <span class="app-subtitle">geographic editor</span>
+      <span class="app-subtitle">{if @mode == "play", do: "exploration", else: "geographic editor"}</span>
+      <a href="/play" class="app-play-link">Explore</a>
     </header>
 
     <main class="app-main">

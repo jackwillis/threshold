@@ -89,6 +89,45 @@ defmodule Threshold.GameTest do
     assert Game.available_moves(world, %Player{location: "pn:1"}) == []
   end
 
+  test "a closure on an interior constituent edge blocks the whole multi-edge move" do
+    world =
+      world(fn {p, edges, b, a} ->
+        edge = hd(edges)
+        [first, last] = edge["geometry"]["coordinates"]
+        middle = Enum.zip_with(first, last, &((&1 + &2) / 2))
+
+        one =
+          edge
+          |> Map.put("id", "edge:1-99-101")
+          |> put_in(["properties", "id"], "edge:1-99-101")
+          |> put_in(["properties", "to"], "node:99")
+          |> put_in(["geometry", "coordinates"], [first, middle])
+
+        two =
+          edge
+          |> Map.put("id", "edge:99-2-102")
+          |> put_in(["properties", "id"], "edge:99-2-102")
+          |> put_in(["properties", "from"], "node:99")
+          |> put_in(["geometry", "coordinates"], [middle, last])
+
+        p = put_in(p, ["connections", Access.at(0), "edge_ids"], [one["id"], two["id"]])
+
+        closure = %{
+          "id" => "clo:interior",
+          "edge" => two["id"],
+          "kind" => "restricted",
+          "geometry_hash" => "deadbeef"
+        }
+
+        {:ok, open} = World.new("tiny", p, [one, two | tl(edges)], b, a)
+        assert {:ok, _, _} = Game.start(open)
+        {p, [one, two | tl(edges)], b, Map.put(a, "closures", [closure])}
+      end)
+
+    assert world.unavailable["pc:1-2"] == :closure
+    assert Game.available_moves(world, %Player{location: "pn:1"}) == []
+  end
+
   test "route excursion and mismatched generated geometry are rejected" do
     world =
       world(fn {p, edges, b, a} ->

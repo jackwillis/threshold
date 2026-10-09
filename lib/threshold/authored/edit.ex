@@ -29,8 +29,31 @@ defmodule Threshold.Authored.Edit do
   @spec update_location(Authored.t(), String.t(), map) :: result
   def update_location(doc, id, %{} = fields) do
     update_item(doc, "locations", id, fn loc ->
-      loc |> put_string(fields, "name") |> put_string(fields, "notes")
+      loc = loc |> put_string(fields, "name") |> put_string(fields, "notes")
+
+      case Map.fetch(fields, "movement_location") do
+        {:ok, ""} -> Map.delete(loc, "movement_location")
+        {:ok, value} -> Map.put(loc, "movement_location", value)
+        :error -> loc
+      end
     end)
+  end
+
+  @doc "Sets the explicit default spawn without changing other spawn identities."
+  def set_default_spawn(doc, location) do
+    spawns = doc["spawns"] || []
+    existing = Enum.find(spawns, & &1["default"])
+
+    spawn =
+      Map.merge(existing || %{"id" => Authored.new_id("spawns"), "zoom" => 18.5}, %{
+        "location" => location,
+        "default" => true
+      })
+
+    others =
+      Enum.reject(spawns, &(&1["id"] == spawn["id"])) |> Enum.map(&Map.put(&1, "default", false))
+
+    finish(Map.put(doc, "spawns", others ++ [spawn]))
   end
 
   @doc "Moves a location to a newly resolved anchor (this is also how a detached location is reconnected)."

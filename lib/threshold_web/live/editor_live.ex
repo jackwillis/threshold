@@ -52,7 +52,7 @@ defmodule ThresholdWeb.EditorLive do
   ]
 
   @modes ~w(inspect place move connect close boundary)
-  @mutations ~w(start_reconnect reconnect_location review_reference set_mode pick add_location move_location update_location update_connection update_closure set_playable_override detach_location close_edge delete_selected update_boundary discard save regenerate)
+  @mutations ~w(set_default_spawn start_reconnect reconnect_location review_reference set_mode pick add_location move_location update_location update_connection update_closure set_playable_override detach_location close_edge delete_selected update_boundary discard save regenerate)
 
   @impl true
   def mount(params, _session, socket) do
@@ -294,8 +294,25 @@ defmodule ThresholdWeb.EditorLive do
     end
   end
 
-  def handle_event("update_location", %{"location" => %{"id" => id} = fields}, socket),
-    do: edit(socket, &Edit.update_location(&1, id, fields))
+  def handle_event("update_location", %{"location" => %{"id" => id} = fields}, socket) do
+    target = fields["movement_location"]
+
+    if target in [nil, ""] or target in movement_options(socket.assigns.playable) do
+      edit(socket, &Edit.update_location(&1, id, fields))
+    else
+      {:noreply, put_flash(socket, :error, "Choose an existing playable location.")}
+    end
+  end
+
+  def handle_event("set_default_spawn", %{"id" => id}, socket) do
+    if playable_state(socket.assigns.playable) == "fresh" and
+         id in movement_options(socket.assigns.playable) do
+      edit(socket, &Edit.set_default_spawn(&1, id))
+    else
+      {:noreply,
+       put_flash(socket, :error, "Regenerate and choose an existing playable location.")}
+    end
+  end
 
   def handle_event("update_connection", %{"connection" => %{"id" => id} = fields}, socket),
     do: edit(socket, &Edit.update_connection(&1, id, fields))
@@ -610,6 +627,9 @@ defmodule ThresholdWeb.EditorLive do
     })
   end
 
+  defp movement_options(%{ids: ids}), do: Enum.sort(ids)
+  defp movement_options(_), do: []
+
   defp playable_state(:missing), do: "missing"
   defp playable_state(%{state: state}), do: Atom.to_string(state)
 
@@ -836,6 +856,7 @@ defmodule ThresholdWeb.EditorLive do
             refs={@refs}
             editable={@editable}
             geography={@geography}
+            movement_options={movement_options(@playable)}
           />
         </aside>
       </div>

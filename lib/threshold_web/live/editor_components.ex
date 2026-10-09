@@ -97,6 +97,7 @@ defmodule ThresholdWeb.EditorComponents do
   attr :editable, :boolean, required: true
 
   attr :geography, :map, default: nil
+  attr :movement_options, :list, default: []
 
   def inspector(%{selected: nil} = assigns) do
     ~H"""
@@ -136,6 +137,15 @@ defmodule ThresholdWeb.EditorComponents do
           phx-debounce="300"
           disabled={not @editable}
         >{@loc["notes"]}</textarea></label>
+        <.input
+          type="select"
+          name="location[movement_location]"
+          id="location-movement-attachment"
+          label="Nearby at playable location"
+          value={@loc["movement_location"] || ""}
+          options={[{"Not attached", ""}] ++ Enum.map(@movement_options, &{&1, &1})}
+          disabled={not @editable}
+        />
       </.form>
       <dl class="props">
         <dt>position</dt>
@@ -338,6 +348,20 @@ defmodule ThresholdWeb.EditorComponents do
         class="tool"
       >Clear</button>
     </div>
+    <button
+      id="set-default-spawn"
+      type="button"
+      phx-click="set_default_spawn"
+      phx-value-id={@id}
+      disabled={not @editable}
+      class="tool"
+    >Use as default spawn</button>
+    <p
+      :if={Enum.any?(@authored["spawns"] || [], &(&1["default"] and &1["location"] == @id))}
+      class="hint"
+    >
+      Default starting location
+    </p>
     <p class="hint">
       Retain keeps this location through simplification; Suppress lets it be simplified away. The decision is saved with your authored changes and applies the next time the playable layer is built.
     </p>

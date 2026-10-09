@@ -18,6 +18,7 @@ defmodule ThresholdWeb.Router do
     pipe_through :browser
 
     live "/", EditorLive
+    live "/play", PlayLive
     get "/worlds/:world/:layer", WorldController, :show
   end
 

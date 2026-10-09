@@ -38,6 +38,33 @@ defmodule ThresholdWeb.EditorEditingTest do
     id
   end
 
+  test "default spawn and explicit nearby attachment are authored changes", %{
+    conn: conn,
+    dir: dir
+  } do
+    {:ok, view, _} = live(conn, ~p"/")
+    render_hook(view, "set_default_spawn", %{"id" => "pn:1"})
+    assert [%{"location" => "pn:1", "default" => true}] = state(view)["authored"]["spawns"]
+    render_hook(view, "set_default_spawn", %{"id" => "pn:999"})
+    assert [%{"location" => "pn:1"}] = state(view)["authored"]["spawns"]
+    id = place(view)
+
+    view
+    |> form("#location-form-#{dom_id(id)}", location: %{id: id, movement_location: "pn:2"})
+    |> render_change()
+
+    assert [%{"movement_location" => "pn:2"}] = state(view)["authored"]["locations"]
+
+    render_hook(view, "update_location", %{
+      "location" => %{"id" => id, "movement_location" => "pn:999"}
+    })
+
+    assert [%{"movement_location" => "pn:2"}] = state(view)["authored"]["locations"]
+    view |> element("#save-button") |> render_click()
+    assert [%{"location" => "pn:1"}] = saved(dir)["spawns"]
+    assert [%{"movement_location" => "pn:2"}] = saved(dir)["locations"]
+  end
+
   test "tools are listed and the inspect tool is active at first", %{conn: conn} do
     {:ok, view, _} = live(conn, ~p"/")
     assert has_element?(view, "#tool-inspect.tool-active")
