@@ -30,6 +30,7 @@ Status: **Draft for discussion.** Companion to `design.md`. Phases are ordered s
 - Replace the landing page with the map page: MapLibre (vendored), basemap choice, boundary and extent overlays, edge styling by access, layer toggles, inspector, component list, attribution.
 - Tests: loader, staleness, controller, page renders.
 - **Done when:** the real Madison data can be explored and every imported property inspected.
+- **Status: implemented** (viewer, layer toggles, color modes, legend, components list, inspector, staleness banner). Verified in headless Firefox on the real data. Terra Draw is installed but not started until Phase 5.
 
 ## Phase 4: Authored layer, view and save
 
@@ -74,7 +75,7 @@ Recommendations in bold. Please push back on any.
 7. **Asset pipeline. DECIDED (revised): Bun + TypeScript.** `assets/` holds a TypeScript project (MapLibre, Terra Draw and its MapLibre adapter from npm; Phoenix JS from `deps/`). `bun build.ts` bundles to `priv/static/assets/js/app.js` (gitignored, built by `make setup`/`make assets`); `tsc --noEmit` type-checks in `make check`. The Terra Draw MapLibre adapter exists on npm (`terra-draw-maplibre-gl-adapter`), which resolved the earlier open question. No Node, no esbuild.
 8. **Basemap. DECIDED: none.** Only imported geography on a plain background, which keeps the app offline and makes the game world's extent obvious. An optional toggled basemap can be added later.
 9. **Path types and access policy. DECIDED in principle; details settled after inspecting real data.** Keep `inspect_all`. Import everything and classify rather than drop. Walkable network (graph): current whitelist plus `cycleway`. `road_context`: motorway/trunk and their links are drawn as map context but are not in the graph, so they cannot join components or anchor locations. Also context only: construction, proposed, platforms, indoor corridors. `vertical`: `highway=elevator` features are kept; the Monona Terrace bike elevator should be **traversable** (a vertical graph connection), and retain `level`/`layer` tags. How it is actually mapped in OSM is unknown until the first import. Acquire fetches standalone elevator nodes and multipolygon relations so options stay open. Stairs (`steps`) stay in the graph.
-10. **Context relations. DEFERRED until the first real import is inspected.** Include multipolygon buildings and water via relation handling, or accept the gap? **Include if it is cheap in Phase 1, else document it.**
+10. **Context relations. RESOLVED.** The first import includes building, park and water relations; both lakes render, so no further work is needed.
 11. **Concurrency model on save.** **DECIDED.** Single-user; reject a save if the file changed on disk since it was loaded.
 12. **Undo.** **DECIDED.** None beyond Discard in milestone 1.
 13. **Snapshot in Git. DECIDED.** Commit the snapshot and the generated files as-is (no LFS, no gzip, indented key-sorted JSON for readable diffs). Measured: about 1.8 MB compressed in `.git`. `make check` verifies the committed output is byte-identical to a rebuild.

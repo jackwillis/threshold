@@ -1,0 +1,71 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "edge:1-2-101",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -89.385,
+            43.074
+          ],
+          [
+            -89.38,
+            43.075
+          ]
+        ]
+      },
+      "properties": {
+        "id": "edge:1-2-101",
+        "from": "node:1",
+        "to": "node:2",
+        "component": 0,
+        "access_status": "unknown",
+        "classification": "street",
+        "highway": "residential",
+        "osm_ids": [
+          101
+        ],
+        "length_m": 100.0,
+        "inside_playable": true,
+        "crosses_boundary": false,
+        "geometry_hash": "deadbeef"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "edge:3-4-102",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -89.375,
+            43.076
+          ],
+          [
+            -89.374,
+            43.077
+          ]
+        ]
+      },
+      "properties": {
+        "id": "edge:3-4-102",
+        "from": "node:3",
+        "to": "node:4",
+        "component": 1,
+        "access_status": "restricted",
+        "classification": "path",
+        "highway": "footway",
+        "osm_ids": [
+          101
+        ],
+        "length_m": 100.0,
+        "inside_playable": true,
+        "crosses_boundary": false,
+        "geometry_hash": "deadbeef"
+      }
+    }
+  ]
+}

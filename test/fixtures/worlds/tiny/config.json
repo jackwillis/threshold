@@ -1,0 +1,8 @@
+{
+  "format_version": 1,
+  "name": "Tiny",
+  "buffer_m": 250,
+  "access_policy": "inspect_all",
+  "retain_all_components": true,
+  "source": "source/snapshot.osm"
+}

@@ -18,6 +18,7 @@ defmodule ThresholdWeb.Router do
     pipe_through :browser
 
     live "/", EditorLive
+    get "/worlds/:world/:layer", WorldController, :show
   end
 
   # Other scopes may use custom stacks.

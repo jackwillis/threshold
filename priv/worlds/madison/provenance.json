@@ -322,7 +322,7 @@
     "type": "Polygon"
   },
   "nodes": 4751,
-  "pipeline_sha256": "ab9e160e12fcfadc80eb80a48067908dfac63faa419366bad71eded49b2ad9fb",
+  "pipeline_sha256": "fa0a76d12ca3cb1339c9c6a0922bec7c55a4a84171432ec21a3206340eb03b31",
   "python": "3.12.14",
   "simplification": {
     "bidirectional": true,
@@ -355,5 +355,206 @@
     "retrieved_at": "2026-10-09T02:31:19.679177+00:00",
     "sha256": "5cf9ec50ccd1359f95dc47af0a7f1a5fb31cb71ed7edfedc0ffa900b9b0db67b",
     "source": "OpenStreetMap"
+  },
+  "summary": {
+    "components": [
+      {
+        "bounds": [
+          -89.3957638,
+          43.0672732,
+          -89.3652597,
+          43.083193
+        ],
+        "component": 0,
+        "edges": 6873,
+        "length_m": 158028.393,
+        "nodes": 4718
+      },
+      {
+        "bounds": [
+          -89.3868104,
+          43.0705951,
+          -89.3863567,
+          43.0709678
+        ],
+        "component": 1,
+        "edges": 3,
+        "length_m": 68.165,
+        "nodes": 4
+      },
+      {
+        "bounds": [
+          -89.3845806,
+          43.0692625,
+          -89.3845475,
+          43.0694462
+        ],
+        "component": 2,
+        "edges": 3,
+        "length_m": 22.359,
+        "nodes": 4
+      },
+      {
+        "bounds": [
+          -89.394888,
+          43.0721437,
+          -89.3946227,
+          43.0724725
+        ],
+        "component": 3,
+        "edges": 2,
+        "length_m": 58.004,
+        "nodes": 3
+      },
+      {
+        "bounds": [
+          -89.3948842,
+          43.0762112,
+          -89.3947152,
+          43.0762254
+        ],
+        "component": 4,
+        "edges": 1,
+        "length_m": 14.003,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3874921,
+          43.0752491,
+          -89.3873363,
+          43.0753709
+        ],
+        "component": 5,
+        "edges": 1,
+        "length_m": 18.536,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3799893,
+          43.0752581,
+          -89.3798844,
+          43.0753417
+        ],
+        "component": 6,
+        "edges": 1,
+        "length_m": 12.61,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3843864,
+          43.074531,
+          -89.3839447,
+          43.0748562
+        ],
+        "component": 7,
+        "edges": 2,
+        "length_m": 130.118,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3771159,
+          43.0752476,
+          -89.377081,
+          43.0752706
+        ],
+        "component": 8,
+        "edges": 1,
+        "length_m": 3.818,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3719425,
+          43.0782802,
+          -89.371891,
+          43.0783125
+        ],
+        "component": 9,
+        "edges": 1,
+        "length_m": 5.853,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3849656,
+          43.0764279,
+          -89.3849343,
+          43.0764506
+        ],
+        "component": 10,
+        "edges": 1,
+        "length_m": 3.582,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3928191,
+          43.075048,
+          -89.3927827,
+          43.0750522
+        ],
+        "component": 11,
+        "edges": 1,
+        "length_m": 3.085,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3774103,
+          43.0747733,
+          -89.3773847,
+          43.0747903
+        ],
+        "component": 12,
+        "edges": 1,
+        "length_m": 2.81,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3787531,
+          43.0726246,
+          -89.378367,
+          43.0730127
+        ],
+        "component": 13,
+        "edges": 1,
+        "length_m": 59.646,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3818907,
+          43.0703496,
+          -89.3814994,
+          43.0705298
+        ],
+        "component": 14,
+        "edges": 1,
+        "length_m": 38.003,
+        "nodes": 2
+      }
+    ],
+    "context_by_classification": {
+      "building": 1691,
+      "park": 18,
+      "pedestrian_area": 458,
+      "vertical": 12,
+      "water": 3
+    },
+    "edges_by_access": {
+      "public": 141,
+      "restricted": 417,
+      "unknown": 6335
+    },
+    "edges_by_classification": {
+      "alley": 63,
+      "path": 3819,
+      "street": 3011
+    }
   }
 }

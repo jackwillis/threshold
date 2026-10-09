@@ -1,0 +1,43 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "way:9",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -89.384,
+              43.0735
+            ],
+            [
+              -89.383,
+              43.0735
+            ],
+            [
+              -89.383,
+              43.0745
+            ],
+            [
+              -89.384,
+              43.0745
+            ],
+            [
+              -89.384,
+              43.0735
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "id": "way:9",
+        "osm_id": 9,
+        "osm_type": "way",
+        "classification": "building",
+        "building": "yes"
+      }
+    }
+  ]
+}

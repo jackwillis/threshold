@@ -275,6 +275,35 @@ def export_graph(graph, boundary):
     return collection(nodes), collection(edges), len(groups)
 
 
+def count_by(features, key):
+    counts = {}
+    for f in features:
+        value = str(f["properties"].get(key))
+        counts[value] = counts.get(value, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def summarize(nodes, edges, context):
+    """Counts the server shows without parsing the large GeoJSON files."""
+    details = {}
+    for edge in edges["features"]:
+        index = edge["properties"]["component"]
+        minx, miny, maxx, maxy = shape(edge["geometry"]).bounds
+        d = details.setdefault(index, {"component": index, "edges": 0, "length_m": 0.0, "bounds": [minx, miny, maxx, maxy]})
+        d["edges"] += 1
+        d["length_m"] = round(d["length_m"] + edge["properties"]["length_m"], 3)
+        b = d["bounds"]
+        d["bounds"] = [min(b[0], minx), min(b[1], miny), max(b[2], maxx), max(b[3], maxy)]
+    for node in nodes["features"]:
+        details[node["properties"]["component"]]["nodes"] = details[node["properties"]["component"]].get("nodes", 0) + 1
+    return {
+        "edges_by_access": count_by(edges["features"], "access_status"),
+        "edges_by_classification": count_by(edges["features"], "classification"),
+        "context_by_classification": count_by(context["features"], "classification"),
+        "components": [details[i] for i in sorted(details)],
+    }
+
+
 def build(world):
     cfg, boundary, extent = settings(world)
     source = world / cfg["source"]
@@ -316,6 +345,7 @@ def build(world):
                 continue  # e.g. ordinary pedestrian/footway lines, which are graph edges
             props.update({"osm_id": int(osm_id), "osm_type": kind, "classification": classification})
             context_features.append(feature(f"{kind}:{osm_id}", geometry, props))
+    context_collection = collection(context_features)
     provenance = {
         "format_version": 1,
         "source": manifest,
@@ -330,12 +360,13 @@ def build(world):
         "components": count,
         "nodes": len(nodes["features"]),
         "edges": len(edges["features"]),
+        "summary": summarize(nodes, edges, context_collection),
     }
     validate_graph(nodes, edges)
     for filename, data in [
         ("nodes.geojson", nodes),
         ("edges.geojson", edges),
-        ("context.geojson", collection(context_features)),
+        ("context.geojson", context_collection),
         ("provenance.json", provenance),
     ]:
         write(world / filename, data)

@@ -1,0 +1,110 @@
+{
+  "format_version": 1,
+  "source": {
+    "sha256": "abc123"
+  },
+  "config": {
+    "format_version": 1,
+    "name": "Tiny",
+    "buffer_m": 250,
+    "access_policy": "inspect_all",
+    "retain_all_components": true,
+    "source": "source/snapshot.osm"
+  },
+  "boundary": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          -89.39,
+          43.07
+        ],
+        [
+          -89.37,
+          43.07
+        ],
+        [
+          -89.37,
+          43.08
+        ],
+        [
+          -89.39,
+          43.08
+        ],
+        [
+          -89.39,
+          43.07
+        ]
+      ]
+    ]
+  },
+  "import_extent": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          -89.393,
+          43.068
+        ],
+        [
+          -89.367,
+          43.068
+        ],
+        [
+          -89.367,
+          43.082
+        ],
+        [
+          -89.393,
+          43.082
+        ],
+        [
+          -89.393,
+          43.068
+        ]
+      ]
+    ]
+  },
+  "components": 2,
+  "nodes": 4,
+  "edges": 2,
+  "summary": {
+    "edges_by_access": {
+      "restricted": 1,
+      "unknown": 1
+    },
+    "edges_by_classification": {
+      "path": 1,
+      "street": 1
+    },
+    "context_by_classification": {
+      "building": 1
+    },
+    "components": [
+      {
+        "component": 0,
+        "edges": 1,
+        "nodes": 2,
+        "length_m": 100.0,
+        "bounds": [
+          -89.385,
+          43.074,
+          -89.38,
+          43.075
+        ]
+      },
+      {
+        "component": 1,
+        "edges": 1,
+        "nodes": 2,
+        "length_m": 100.0,
+        "bounds": [
+          -89.375,
+          43.076,
+          -89.374,
+          43.077
+        ]
+      }
+    ]
+  }
+}
