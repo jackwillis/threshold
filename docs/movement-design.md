@@ -550,3 +550,7 @@ The player map now shows immediate destinations as bright clickable markers and 
 ### Two-stop walking, third-stop preview
 
 The clickable range is now one or two stops, with faint rings exactly three stops away. A two-stop click follows a server-chosen path through validated connections, spends two turns, and adds the intermediate location to visited progress. Route selection prefers fewer stops, then lower total distance, with stable ID ordering for ties. Both steps save atomically under the existing revision/turn checks; third-stop destinations remain unavailable. Browser verification in a separate scratch walk confirmed turn 0 to turn 2, three visited locations and restoration after reload. The full gate passed with 134 Elixir tests and 32 Python tests.
+
+### Spawn marking UI
+
+The editor's Spawn points section reveals playable points and lists marked starts. The inspector can mark a point, choose it as default, or remove its mark. The first mark becomes default; switching the default preserves every spawn identity. Removing the default does not silently select another point. Missing playable references remain visible for deliberate removal or repair. Gold rings identify marked points while the playable layer is visible. Browser verification used a scratch tiny world: marked two points, switched the default, saved and reloaded. The full gate passed with 136 Elixir tests and 32 Python tests.

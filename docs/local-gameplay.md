@@ -14,7 +14,7 @@ make assets
 make run
 ```
 
-Open <http://localhost:4000/play>. In the editor, enable the playable layer, select a location, choose **Use as default spawn**, and save. To make an authored place inspectable, select it, choose **Nearby at playable location**, and save. These changes are deliberate designer actions; no spawn is guessed automatically.
+Open <http://localhost:4000/play>. In the editor, open **Spawn points**, choose **Choose a point on the map**, click a blue playable point, and choose **Mark as spawn point**. The first mark becomes the default. Mark additional points and use **Use as default spawn** or **Make default** to choose the starting point; **Remove spawn mark** removes a mark. Save when finished. Gold rings identify marked points on the editor map. To make an authored place inspectable, select it, choose **Nearby at playable location**, and save. These changes are deliberate designer actions; no spawn is guessed automatically.
 
 Compose publishes PostgreSQL on loopback only. The `postgres_data` named volume preserves saves when containers stop or are recreated. `docker compose stop` stops the database without removing it. The default password is for this local setup. You can override `THRESHOLD_POSTGRES_PASSWORD`, `THRESHOLD_POSTGRES_PORT`, or `THRESHOLD_POSTGRES_TEST_PORT` in a local `.env` file; update your connection URLs accordingly. Compose reads `.env`, while Phoenix reads the exported URL.
 

@@ -65,6 +65,48 @@ defmodule ThresholdWeb.EditorEditingTest do
     assert [%{"movement_location" => "pn:2"}] = saved(dir)["locations"]
   end
 
+  test "spawn UI marks several points, switches default, removes marks and saves", %{
+    conn: conn,
+    dir: dir
+  } do
+    {:ok, view, _} = live(conn, ~p"/")
+    view |> element("#choose-spawn") |> render_click()
+    assert state(view)["layers"]["playable"]
+
+    pick = fn id ->
+      render_hook(view, "pick", %{
+        "layer" => "playable-location",
+        "id" => id,
+        "properties" => %{"degree" => 1, "members" => 1, "component" => 0, "reasons" => []}
+      })
+    end
+
+    pick.("pn:1")
+    view |> element("#mark-spawn") |> render_click()
+    assert [%{"location" => "pn:1", "default" => true}] = state(view)["authored"]["spawns"]
+    refute has_element?(view, "#mark-spawn")
+    assert has_element?(view, "#remove-spawn")
+    pick.("pn:2")
+    view |> element("#mark-spawn") |> render_click()
+    view |> element("#set-default-spawn") |> render_click()
+
+    assert [
+             %{"location" => "pn:1", "default" => false},
+             %{"location" => "pn:2", "default" => true}
+           ] = state(view)["authored"]["spawns"]
+
+    view |> element("#remove-spawn") |> render_click()
+    assert has_element?(view, "#spawn-default-warning")
+    pick.("pn:1")
+    view |> element("#set-default-spawn") |> render_click()
+    render_hook(view, "add_spawn", %{"id" => "pn:999"})
+    assert length(state(view)["authored"]["spawns"]) == 1
+    view |> element("#save-button") |> render_click()
+    assert [%{"location" => "pn:1", "default" => true}] = saved(dir)["spawns"]
+    {:ok, restored, _} = live(build_conn(), ~p"/")
+    assert has_element?(restored, "#spawn-points", "pn:1")
+  end
+
   test "tools are listed and the inspect tool is active at first", %{conn: conn} do
     {:ok, view, _} = live(conn, ~p"/")
     assert has_element?(view, "#tool-inspect.tool-active")

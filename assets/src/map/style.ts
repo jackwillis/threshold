@@ -37,7 +37,7 @@ export const LAYER_GROUPS: Record<string, string[]> = {
   vertical: ["ctx-vertical-fill", "ctx-vertical-point"],
   boundary: ["boundary-line", "boundary-mask"],
   extent: ["extent-line"],
-  playable: ["playable-connection", "playable-location"],
+  playable: ["playable-connection", "playable-spawn-halo", "playable-location"],
   authored: ["authored-closure-halo", "authored-closure", "authored-connection", "authored-location"],
 };
 
@@ -104,6 +104,8 @@ export function layerSpecs(colorBy: ColorBy, palette: Palette): LayerSpecificati
     },
     // Derived candidate playable layer (hidden by default): straight abstractions of the underlying edges.
     { id: "playable-connection", type: "line", source: "playable-connections", paint: { "line-color": "#1f9bd7", "line-width": 2, "line-opacity": 0.85 } },
+    { id: "playable-spawn-halo", type: "circle", source: "playable-locations", filter: ["==", ["get", "spawn"], true],
+      paint: { "circle-radius": 13, "circle-color": "#e8b84a", "circle-opacity": 0.15, "circle-stroke-color": "#c28d17", "circle-stroke-width": 2 } },
     {
       id: "playable-location",
       type: "circle",

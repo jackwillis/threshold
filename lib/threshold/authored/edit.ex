@@ -39,21 +39,45 @@ defmodule Threshold.Authored.Edit do
     end)
   end
 
-  @doc "Sets the explicit default spawn without changing other spawn identities."
-  def set_default_spawn(doc, location) do
+  @doc "Marks a playable point as a spawn. The first mark becomes the default."
+  def add_spawn(doc, location) do
     spawns = doc["spawns"] || []
-    existing = Enum.find(spawns, & &1["default"])
 
-    spawn =
-      Map.merge(existing || %{"id" => Authored.new_id("spawns"), "zoom" => 18.5}, %{
+    if Enum.any?(spawns, &(&1["location"] == location)) do
+      {:ok, doc}
+    else
+      spawn = %{
+        "id" => Authored.new_id("spawns"),
         "location" => location,
-        "default" => true
-      })
+        "default" => spawns == [],
+        "zoom" => 18.5
+      }
 
-    others =
-      Enum.reject(spawns, &(&1["id"] == spawn["id"])) |> Enum.map(&Map.put(&1, "default", false))
+      finish(Map.put(doc, "spawns", spawns ++ [spawn]))
+    end
+  end
 
-    finish(Map.put(doc, "spawns", others ++ [spawn]))
+  @doc "Chooses the default while preserving every marked spawn's identity."
+  def set_default_spawn(doc, location) do
+    with {:ok, doc} <- add_spawn(doc, location) do
+      finish(
+        Map.update!(doc, "spawns", fn spawns ->
+          Enum.map(spawns, &Map.put(&1, "default", &1["location"] == location))
+        end)
+      )
+    end
+  end
+
+  @doc "Removes a spawn mark; removing the default requires an explicit new choice."
+  def remove_spawn(doc, location) do
+    finish(
+      Map.update(
+        doc,
+        "spawns",
+        [],
+        &Enum.reject(&1, fn spawn -> spawn["location"] == location end)
+      )
+    )
   end
 
   @doc "Moves a location to a newly resolved anchor (this is also how a detached location is reconnected)."

@@ -13,7 +13,7 @@ type Connection = { id: string; from: string; to: string; kind: string; notes: s
 type Closure = { id: string; edge: string; kind: string; reason: string };
 
 export type PlayableOverride = { id: string; action: "retain" | "suppress" };
-export type Authored = { locations: Location[]; connections: Connection[]; closures: Closure[]; playable_overrides?: PlayableOverride[] };
+export type Authored = { locations: Location[]; connections: Connection[]; closures: Closure[]; playable_overrides?: PlayableOverride[]; spawns?: { id: string; location: string; default: boolean; zoom?: number }[] };
 export type RefStatus = Record<string, Status>;
 
 export const EMPTY_AUTHORED: Authored = { locations: [], connections: [], closures: [] };

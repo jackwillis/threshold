@@ -94,3 +94,5 @@ body { display: flex; flex-direction: column; font-family: system-ui, sans-serif
 #play-error { margin: 16px 0; padding: 12px; background: #f7e9dc; line-height: 1.6; }
 .play-panel button:focus-visible, .play-recenter:focus-visible { outline: 3px solid #139884; outline-offset: 3px; }
 @media (max-width: 700px) { .play-layout { grid-template-columns: 1fr; grid-template-rows: 55vh auto; height: auto; min-height: 100%; } .play-panel { border-left: 0; border-top: 1px solid #d9dacf; } }
+.badge-spawn { background: #e8b84a; color: #372800; }
+#spawn-points .review li { flex-wrap: wrap; gap: .4rem; }

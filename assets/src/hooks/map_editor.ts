@@ -265,10 +265,11 @@ export const MapEditor = {
   showPlayable(this: Hook, map: maplibregl.Map, state: ViewState) {
     if (this.playableBase.length === 0) return;
     const overrides = new Map((state.authored.playable_overrides ?? []).map((o) => [o.id, o.action]));
+    const spawns = new Map((state.authored.spawns ?? []).map(s => [s.location, s]));
     const features: Feature<Point, Props>[] = this.playableBase.map((l) => ({
       type: "Feature",
       geometry: { type: "Point", coordinates: l.point },
-      properties: { id: l.id, classification: "playable-location", reasons: l.reasons, members: l.members, degree: l.degree, component: l.component, override: overrides.get(l.id) ?? null },
+      properties: { id: l.id, classification: "playable-location", reasons: l.reasons, members: l.members, degree: l.degree, component: l.component, override: overrides.get(l.id) ?? null, spawn: spawns.has(l.id), default_spawn: spawns.get(l.id)?.default ?? false },
     }));
     (map.getSource("playable-locations") as maplibregl.GeoJSONSource).setData({ type: "FeatureCollection", features });
     indexFeatures({ type: "FeatureCollection", features }, this.features);

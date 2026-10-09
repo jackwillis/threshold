@@ -52,7 +52,7 @@ defmodule ThresholdWeb.EditorLive do
   ]
 
   @modes ~w(inspect place move connect close boundary)
-  @mutations ~w(set_default_spawn start_reconnect reconnect_location review_reference set_mode pick add_location move_location update_location update_connection update_closure set_playable_override detach_location close_edge delete_selected update_boundary discard save regenerate)
+  @mutations ~w(add_spawn remove_spawn choose_spawn set_default_spawn start_reconnect reconnect_location review_reference set_mode pick add_location move_location update_location update_connection update_closure set_playable_override detach_location close_edge delete_selected update_boundary discard save regenerate)
 
   @impl true
   def mount(params, _session, socket) do
@@ -304,15 +304,31 @@ defmodule ThresholdWeb.EditorLive do
     end
   end
 
-  def handle_event("set_default_spawn", %{"id" => id}, socket) do
+  def handle_event("choose_spawn", _, socket) do
+    {:noreply,
+     socket
+     |> assign(:mode, "inspect")
+     |> assign(:pending_from, nil)
+     |> assign(:reconnecting, nil)
+     |> assign_view(%{
+       "color_by" => socket.assigns.color_by,
+       "layers" => Map.put(socket.assigns.layers, "playable", true)
+     })}
+  end
+
+  def handle_event(event, %{"id" => id}, socket) when event in ~w(add_spawn set_default_spawn) do
     if playable_state(socket.assigns.playable) == "fresh" and
          id in movement_options(socket.assigns.playable) do
-      edit(socket, &Edit.set_default_spawn(&1, id))
+      operation = if event == "add_spawn", do: &Edit.add_spawn/2, else: &Edit.set_default_spawn/2
+      edit(socket, &operation.(&1, id))
     else
       {:noreply,
        put_flash(socket, :error, "Regenerate and choose an existing playable location.")}
     end
   end
+
+  def handle_event("remove_spawn", %{"id" => id}, socket),
+    do: edit(socket, &Edit.remove_spawn(&1, id))
 
   def handle_event("update_connection", %{"connection" => %{"id" => id} = fields}, socket),
     do: edit(socket, &Edit.update_connection(&1, id, fields))
@@ -677,6 +693,67 @@ defmodule ThresholdWeb.EditorLive do
             Use Regenerate geography below.
           </div>
 
+          <section id="spawn-points">
+            <h3>Spawn points</h3>
+            <p class="hint">
+              Mark playable points where a walk can begin. Gold rings show spawn points.
+            </p>
+            <button
+              id="choose-spawn"
+              type="button"
+              phx-click="choose_spawn"
+              class="tool"
+              disabled={not @editable or playable_state(@playable) != "fresh"}
+            >Choose a point on the map</button>
+            <p class="hint">
+              Click a blue playable point, then choose Mark as spawn point in the inspector.
+            </p>
+            <p :if={(@authored["spawns"] || []) == []} class="hint">No spawn points marked.</p>
+            <p
+              :if={
+                (@authored["spawns"] || []) != [] and
+                  not Enum.any?(@authored["spawns"], & &1["default"])
+              }
+              id="spawn-default-warning"
+              class="banner banner-warn"
+            >
+              Choose a default spawn before playing.
+            </p>
+            <ul class="review">
+              <li
+                :for={spawn <- @authored["spawns"] || []}
+                id={"spawn-#{String.replace(spawn["id"], ":", "-")}"}
+              >
+                <button
+                  type="button"
+                  phx-click="focus_object"
+                  phx-value-id={spawn["location"]}
+                  class="link-button"
+                >{spawn["location"]}</button>
+                <span :if={spawn["default"]} class="badge badge-spawn">Default</span>
+                <span
+                  :if={spawn["location"] not in movement_options(@playable)}
+                  class="badge badge-missing"
+                >Missing point</span>
+                <button
+                  :if={not spawn["default"]}
+                  type="button"
+                  phx-click="set_default_spawn"
+                  phx-value-id={spawn["location"]}
+                  disabled={not @editable or playable_state(@playable) != "fresh"}
+                  class="link-button"
+                >Make default</button>
+                <button
+                  type="button"
+                  phx-click="remove_spawn"
+                  phx-value-id={spawn["location"]}
+                  disabled={not @editable}
+                  class="link-button"
+                >Remove mark</button>
+              </li>
+            </ul>
+          </section>
+
           <section id="regeneration">
             <h3>Regenerate geography</h3>
             <p class="hint">
@@ -857,6 +934,7 @@ defmodule ThresholdWeb.EditorLive do
             editable={@editable}
             geography={@geography}
             movement_options={movement_options(@playable)}
+            playable_fresh={playable_state(@playable) == "fresh"}
           />
         </aside>
       </div>

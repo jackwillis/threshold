@@ -16,6 +16,23 @@ defmodule Threshold.Authored.EditTest do
     {doc, id}
   end
 
+  test "spawn marks are idempotent and switching defaults preserves their identities" do
+    assert {:ok, first} = Edit.add_spawn(empty(), "pn:1")
+    assert [%{"default" => true, "id" => first_id}] = first["spawns"]
+    assert {:ok, ^first} = Edit.add_spawn(first, "pn:1")
+    assert {:ok, both} = Edit.add_spawn(first, "pn:2")
+    assert [%{"id" => ^first_id}, %{"default" => false, "id" => second_id}] = both["spawns"]
+    assert {:ok, chosen} = Edit.set_default_spawn(both, "pn:2")
+
+    assert [%{"id" => ^first_id, "default" => false}, %{"id" => ^second_id, "default" => true}] =
+             chosen["spawns"]
+
+    assert {:ok, removed} = Edit.remove_spawn(chosen, "pn:2")
+    assert [%{"id" => ^first_id, "default" => false}] = removed["spawns"]
+    assert {:ok, _} = Edit.set_default_spawn(removed, "pn:1")
+    assert {:error, _} = Edit.add_spawn(empty(), "invented-point")
+  end
+
   test "closure reconnect rejects absent and already closed targets" do
     {:ok, doc, first} = Edit.add_closure(empty(), "edge:1-2-101", @geography)
     {:ok, doc, _} = Edit.add_closure(doc, "edge:3-4-102", @geography)

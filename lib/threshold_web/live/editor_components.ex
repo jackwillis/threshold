@@ -98,6 +98,7 @@ defmodule ThresholdWeb.EditorComponents do
 
   attr :geography, :map, default: nil
   attr :movement_options, :list, default: []
+  attr :playable_fresh, :boolean, default: false
 
   def inspector(%{selected: nil} = assigns) do
     ~H"""
@@ -299,7 +300,13 @@ defmodule ThresholdWeb.EditorComponents do
     override =
       Enum.find_value(assigns.authored["playable_overrides"], &(&1["id"] == id && &1["action"]))
 
-    assigns = assign(assigns, id: id, props: props, override: override)
+    assigns =
+      assign(assigns,
+        id: id,
+        props: props,
+        override: override,
+        spawn: Enum.find(assigns.authored["spawns"] || [], &(&1["location"] == id))
+      )
 
     ~H"""
     <h3 class="mono">{@id}</h3>
@@ -348,20 +355,38 @@ defmodule ThresholdWeb.EditorComponents do
         class="tool"
       >Clear</button>
     </div>
-    <button
-      id="set-default-spawn"
-      type="button"
-      phx-click="set_default_spawn"
-      phx-value-id={@id}
-      disabled={not @editable}
-      class="tool"
-    >Use as default spawn</button>
-    <p
-      :if={Enum.any?(@authored["spawns"] || [], &(&1["default"] and &1["location"] == @id))}
-      class="hint"
-    >
-      Default starting location
+    <h3>Spawn point</h3>
+    <p :if={@spawn} class="hint">
+      {if @spawn["default"], do: "Default starting point", else: "Marked starting point"}
     </p>
+    <div class="actions">
+      <button
+        :if={is_nil(@spawn)}
+        id="mark-spawn"
+        type="button"
+        phx-click="add_spawn"
+        phx-value-id={@id}
+        disabled={not @editable or not @playable_fresh}
+        class="tool"
+      >Mark as spawn point</button>
+      <button
+        id="set-default-spawn"
+        type="button"
+        phx-click="set_default_spawn"
+        phx-value-id={@id}
+        disabled={not @editable or not @playable_fresh or (@spawn && @spawn["default"])}
+        class="tool"
+      >Use as default spawn</button>
+      <button
+        :if={@spawn}
+        id="remove-spawn"
+        type="button"
+        phx-click="remove_spawn"
+        phx-value-id={@id}
+        disabled={not @editable}
+        class="tool"
+      >Remove spawn mark</button>
+    </div>
     <p class="hint">
       Retain keeps this location through simplification; Suppress lets it be simplified away. The decision is saved with your authored changes and applies the next time the playable layer is built.
     </p>
