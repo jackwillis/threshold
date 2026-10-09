@@ -66,7 +66,7 @@ type Hook = {
 };
 
 type PlayableLocation = { id: string; point: [number, number]; node: string; members: number; reasons: string[]; component: number; degree: number; override: string | null };
-type PlayableConnection = { id: string; from: string; to: string; length_m: number; classes: string[]; parallel: number; edge_ids: string[] };
+type PlayableConnection = { id: string; from: string; to: string; length_m: number; classes: string[]; parallel: number; edge_ids: string[]; geometry?: LineString; route_classes?: string[] };
 type PlayableDoc = { locations: PlayableLocation[]; connections: PlayableConnection[] };
 
 const EMPTY: FeatureCollection = { type: "FeatureCollection", features: [] };
@@ -247,6 +247,8 @@ export const MapEditor = {
     const closure = state.authored.closures.find((c) => c.id === id);
     if (closure) return this.features.get(closure.edge) as Feature | undefined;
     if (id.startsWith("pc:")) {
+      const feature = this.features.get(id);
+      if (feature?.geometry.type === "LineString" && feature.properties.route_geometry === true) return feature as Feature;
       const connection = this.features.get(id)?.properties.edge_ids;
       if (!Array.isArray(connection)) return undefined;
       const lines: Position[][] = [];
@@ -436,8 +438,8 @@ export const MapEditor = {
           if (!from || !to) continue;
           lines.push({
             type: "Feature",
-            geometry: { type: "LineString", coordinates: [from.point, to.point] },
-            properties: { id: c.id, classification: "playable-connection", length_m: c.length_m, classes: c.classes, parallel: c.parallel, edge_ids: c.edge_ids },
+            geometry: c.geometry ?? { type: "LineString", coordinates: [from.point, to.point] },
+            properties: { id: c.id, classification: "playable-connection", length_m: c.length_m, classes: c.classes, parallel: c.parallel, edge_ids: c.edge_ids, route_classes: c.route_classes, route_geometry: !!c.geometry },
           });
         }
         const connections: FeatureCollection<LineString, Props> = { type: "FeatureCollection", features: lines };

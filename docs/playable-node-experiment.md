@@ -71,3 +71,7 @@ Provisional choices made while the designer was undecided (change them in the mo
 Result on Madison: 993 locations, 1,631 connections, 20 of 20 components kept, 0 wrongly joined, median connection 42.3 m, 38% in 40-100 m, 14% over 100 m.
 
 The editor shows the layer (off by default), its diagnostics and staleness, and lets a designer **retain** or **suppress** a candidate location. Decisions are stored as `playable_overrides` in `authored.json` and take effect the next time the layer is built; locations that no longer exist are reported as unmatched. Retain keeps a location through simplification; suppress lets it be simplified away unless it is a junction or dead end.
+
+## Route geometry correction
+
+The initial connection lengths omitted paths inside clusters and some source-edge lists were disconnected. The repaired layer retains complete oriented routes and draws source polylines. Location and component counts remain unchanged; the corrected Madison median is 58.0 m, with 42.4% of connections at 40–100 m and 27.0% over 100 m. See [playable-route-review.md](playable-route-review.md) for the audit and remaining traversal-policy questions. The earlier results above describe the original approximation.

@@ -105,3 +105,39 @@ def test_radius_changes_granularity(playable):
     run(playable, "playable", "--radius", "200")
     assert len(load(playable)["locations"]) <= fine
     assert load(playable)["params"]["radius_m"] == 200.0
+
+
+@pytest.mark.parametrize("radius", [25, 200, 600])
+def test_connections_are_continuous_physical_routes(worlds_dir, radius):
+    run(worlds_dir, "build")
+    run(worlds_dir, "playable", "--radius", str(radius))
+    doc = load(worlds_dir)
+    locs = {loc["id"]: loc for loc in doc["locations"]}
+    edges = {edge["id"]: edge for edge in load(worlds_dir, "edges.geojson")["features"]}
+    for connection in doc["connections"]:
+        path = connection["route_nodes"]
+        assert path[0] == locs[connection["from"]]["node"]
+        assert path[-1] == locs[connection["to"]]["node"]
+        assert len(path) == len(connection["edge_ids"]) + 1
+        coordinates = []
+        length = 0
+        classes = set()
+        for a, b, edge_id in zip(path, path[1:], connection["edge_ids"]):
+            edge = edges[edge_id]
+            props = edge["properties"]
+            assert {a, b} == {props["from"], props["to"]}
+            assert props["access_status"] != "restricted"
+            assert props.get("service") not in {"driveway", "parking_aisle", "drive-through", "emergency_access"}
+            segment = edge["geometry"]["coordinates"]
+            if props["from"] != a:
+                segment = list(reversed(segment))
+            if coordinates:
+                assert coordinates[-1] == segment[0]
+            coordinates.extend(segment if not coordinates else segment[1:])
+            length += props["length_m"]
+            classes.add(props["classification"])
+        assert connection["geometry"] == {"type": "LineString", "coordinates": coordinates}
+        assert coordinates[0] == locs[connection["from"]]["point"]
+        assert coordinates[-1] == locs[connection["to"]]["point"]
+        assert connection["length_m"] == round(length, 1)
+        assert connection["route_classes"] == sorted(classes)

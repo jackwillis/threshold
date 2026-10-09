@@ -355,7 +355,7 @@ defmodule ThresholdWeb.EditorComponents do
       <dt>length</dt>
       <dd>{@props["length_m"]} m</dd>
       <dt>route types</dt>
-      <dd>{Enum.join(@props["classes"] || [], ", ")}</dd>
+      <dd>{Enum.join(@props["route_classes"] || @props["classes"] || [], ", ")}</dd>
       <dt>parallel routes</dt>
       <dd>{@props["parallel"]}</dd>
       <dt>underlying edges</dt>

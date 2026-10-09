@@ -14,6 +14,7 @@ import hashlib
 import json
 import logging
 import math
+from itertools import pairwise
 
 import networkx as nx
 from shapely.geometry import Point, shape
@@ -130,10 +131,13 @@ def build_playable(world, radius_m=DEFAULT_RADIUS_M):
         if a != b and d["cls"] != "alley" and (not walk.has_edge(a, b) or walk[a][b]["length"] > d["length"]):
             walk.add_edge(a, b, length=d["length"])
     rep = {}
+    cluster_paths = {}
     for seed in sorted(node_ids, key=lambda n: (-g.degree(n), n)):
         if seed in rep:
             continue
-        for m in sorted(nx.single_source_dijkstra_path_length(walk, seed, cutoff=radius_m, weight="length")):
+        paths = nx.single_source_dijkstra_path(walk, seed, cutoff=radius_m, weight="length")
+        cluster_paths[seed] = paths
+        for m in sorted(paths):
             rep.setdefault(m, seed)
     members = {}
     for n, r in rep.items():
@@ -143,21 +147,47 @@ def build_playable(world, radius_m=DEFAULT_RADIUS_M):
         if overrides.get(f"pn:{r.removeprefix('node:')}") == "suppress":
             cluster_special[r] = set()
 
-    # Collapse onto cluster representatives, keeping the shortest of parallel connections.
+    # A cluster representative may be several routing edges away from the boundary edge.
+    # Keep those internal paths as well, so each candidate connection is a continuous walk.
+    def internal_edges(path):
+        return [
+            min((d for d in g[a][b].values() if d["cls"] != "alley"), key=lambda d: (d["length"], d["id"]))["id"]
+            for a, b in pairwise(path)
+        ]
+
+    by_edge = {e["id"]: e for e in core}
+
+    def route_data(path, edge_ids):
+        return {
+            "route_nodes": path,
+            "edge_ids": edge_ids,
+            "length": sum(by_edge[id_]["properties"]["length_m"] for id_ in edge_ids),
+            "classes": {by_edge[id_]["properties"]["classification"] for id_ in edge_ids},
+        }
+
+    def oriented(data, start):
+        if data["route_nodes"][0] == start:
+            return data["route_nodes"], data["edge_ids"]
+        return list(reversed(data["route_nodes"])), list(reversed(data["edge_ids"]))
+
+    # Collapse onto cluster representatives, keeping the shortest complete parallel route.
     c = nx.Graph()
     c.add_nodes_from(sorted(members))  # a component that collapses to one location must still exist
     for a, b, d in sorted(g.edges(data=True), key=lambda t: t[2]["id"]):
         ra, rb = rep[a], rep[b]
         if ra == rb:
             continue
+        left, right = cluster_paths[ra][a], cluster_paths[rb][b]
+        route = route_data(left + list(reversed(right)), internal_edges(left) + [d["id"]] + list(reversed(internal_edges(right))))
         if c.has_edge(ra, rb):
-            e = c[ra][rb]
-            e["parallel"] += 1
-            e["classes"].add(d["cls"])
-            if d["length"] < e["length"]:
-                e["length"], e["edge_ids"] = d["length"], [d["id"]]
+            existing = c[ra][rb]
+            existing["parallel"] += 1
+            classes = existing["classes"] | route["classes"]
+            if (route["length"], route["edge_ids"]) < (existing["length"], existing["edge_ids"]):
+                existing.update(route)
+            existing["classes"] = classes
         else:
-            c.add_edge(ra, rb, length=d["length"], classes={d["cls"]}, parallel=1, edge_ids=[d["id"]])
+            c.add_edge(ra, rb, **route, parallel=1)
 
     # Contract non-special pass-through locations. A "suppress" override simply does not make a location special.
     changed = True
@@ -170,13 +200,15 @@ def build_playable(world, radius_m=DEFAULT_RADIUS_M):
             if a == b or c.has_edge(a, b):
                 continue
             da, db = c[n][a], c[n][b]
+            left, left_edges = oriented(da, a)
+            right, right_edges = oriented(db, n)
+            route = route_data(left + right[1:], left_edges + right_edges)
+            route["classes"] = da["classes"] | db["classes"]
             c.add_edge(
                 a,
                 b,
-                length=da["length"] + db["length"],
-                classes=da["classes"] | db["classes"],
+                **route,
                 parallel=da["parallel"] + db["parallel"],
-                edge_ids=da["edge_ids"] + db["edge_ids"],
             )
             c.remove_node(n)
             changed = True
@@ -200,9 +232,32 @@ def build_playable(world, radius_m=DEFAULT_RADIUS_M):
                 "override": overrides.get(lid(n)),
             }
         )
+
+    def geometry(path, edge_ids):
+        coordinates = []
+        if len(path) != len(edge_ids) + 1:
+            raise ValueError("Playable route node/edge count mismatch")
+        for a, b, id_ in zip(path, path[1:], edge_ids):
+            edge = by_edge[id_]
+            props = edge["properties"]
+            if (a, b) == (props["from"], props["to"]):
+                segment = edge["geometry"]["coordinates"]
+            elif (b, a) == (props["from"], props["to"]):
+                segment = list(reversed(edge["geometry"]["coordinates"]))
+            else:
+                raise ValueError(f"Disconnected playable route at {id_}")
+            if coordinates and coordinates[-1] != segment[0]:
+                raise ValueError(f"Playable route geometry has a gap at {id_}")
+            coordinates.extend(segment if not coordinates else segment[1:])
+        return {"type": "LineString", "coordinates": coordinates}
+
     connections = []
     for a, b, d in sorted(c.edges(data=True), key=lambda t: tuple(sorted((lid(t[0]), lid(t[1]))))):
-        a_id, b_id = sorted((lid(a), lid(b)))
+        a, b = sorted((a, b), key=lid)
+        a_id, b_id = lid(a), lid(b)
+        path, edge_ids = oriented(d, a)
+        if path[0] != a or path[-1] != b:
+            raise ValueError("Playable route does not meet its locations")
         connections.append(
             {
                 "id": f"pc:{a_id.removeprefix('pn:')}-{b_id.removeprefix('pn:')}",
@@ -210,8 +265,11 @@ def build_playable(world, radius_m=DEFAULT_RADIUS_M):
                 "to": b_id,
                 "length_m": round(d["length"], 1),
                 "classes": sorted(d["classes"]),
+                "route_classes": sorted({by_edge[id_]["properties"]["classification"] for id_ in edge_ids}),
                 "parallel": d["parallel"],
-                "edge_ids": d["edge_ids"],
+                "edge_ids": edge_ids,
+                "route_nodes": path,
+                "geometry": geometry(path, edge_ids),
             }
         )
 
