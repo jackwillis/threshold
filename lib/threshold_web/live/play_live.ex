@@ -129,6 +129,7 @@ defmodule ThresholdWeb.PlayLive do
       point: point,
       turn: player.turn,
       moves: moves,
+      preview: Game.two_stop_preview(world, player),
       visited:
         for(
           id <- player.visited,
@@ -185,7 +186,9 @@ defmodule ThresholdWeb.PlayLive do
               <span><strong id="player-visited">{MapSet.size(@player.visited)}</strong> places visited</span>
             </div>
             <h2>Your next step</h2>
-            <p class="play-hint">Choose a glowing marker or a direction below.</p>
+            <p class="play-hint">
+              Choose a glowing marker or a direction below. Faint rings show places two stops away.
+            </p>
             <div id="available-moves" class="play-moves">
               <button
                 :for={{move, index} <- Enum.with_index(@moves)}

@@ -37,6 +37,59 @@ defmodule Threshold.GameTest do
     assert player.location == "pn:1" and player.turn == 0 and MapSet.size(player.visited) == 1
   end
 
+  test "two-stop previews are deduplicated, exclude closer locations, and cannot be used as moves" do
+    world = world()
+    connection = world.connections["pc:1-2"]
+
+    link = fn id, from, to ->
+      Map.merge(connection, %{
+        "id" => id,
+        "from" => from,
+        "to" => to,
+        "geometry" => %{
+          "type" => "LineString",
+          "coordinates" => [world.locations[from]["point"], world.locations[to]["point"]]
+        }
+      })
+    end
+
+    # Two legal paths to pn:4, plus a cycle between immediate neighbors.
+    world = %{
+      world
+      | connections:
+          Map.new(
+            [
+              connection,
+              link.("pc:1-3", "pn:1", "pn:3"),
+              link.("pc:2-3", "pn:2", "pn:3"),
+              link.("pc:2-4", "pn:2", "pn:4"),
+              link.("pc:3-4", "pn:3", "pn:4")
+            ],
+            &{&1["id"], &1}
+          )
+    }
+
+    player = %Player{location: "pn:1"}
+    assert [%{destination: "pn:4", point: point}] = Game.two_stop_preview(world, player)
+    assert point == world.locations["pn:4"]["point"]
+    assert {:error, :unavailable} = Game.move(world, player, "pn:4")
+    assert player.turn == 0
+
+    assert [%{destination: "pn:3"}] =
+             Game.two_stop_preview(
+               %{world | connections: Map.take(world.connections, ["pc:1-2", "pc:2-3"])},
+               player
+             )
+  end
+
+  test "two-stop previews do not cross restricted connections" do
+    world = world()
+    # The imported pn:3-pn:4 route was filtered out by the access policy.
+    connection = Map.merge(world.connections["pc:1-2"], %{"id" => "pc:1-3", "to" => "pn:3"})
+    world = %{world | connections: Map.put(world.connections, "pc:1-3", connection)}
+    assert Game.two_stop_preview(world, %Player{location: "pn:1"}) == []
+  end
+
   test "missing/defaultless/isolated spawns are rejected" do
     assert {:error, _} = Game.start(%{world() | spawns: []})
 

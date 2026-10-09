@@ -4,7 +4,7 @@ import { BACKGROUND, layerSpecs } from "../map/style";
 
 type Point = [number, number];
 type Move = { destination: string; point: Point; geometry: LineString };
-type State = { point: Point; turn: number; moves: Move[]; visited: Point[]; movement: { turn: number; geometry: LineString } | null; camera: number; zoom: number };
+type State = { point: Point; turn: number; moves: Move[]; preview: { destination: string; point: Point }[]; visited: Point[]; movement: { turn: number; geometry: LineString } | null; camera: number; zoom: number };
 type Hook = {
   el: HTMLElement; map?: maplibregl.Map; ready: boolean; removed: boolean;
   lastTurn: number; lastCamera: number; frame?: number; animating: boolean;
@@ -50,9 +50,10 @@ export const PlayerMap = {
             map.addLayer(layer);
           }
         }
-        for (const name of ["visited", "moves", "player", "route"]) map.addSource(name, { type: "geojson", data: empty });
+        for (const name of ["visited", "preview", "moves", "player", "route"]) map.addSource(name, { type: "geojson", data: empty });
         map.addLayer({ id: "walk-route", type: "line", source: "route", paint: { "line-color": "#128d7a", "line-width": 4, "line-opacity": 0.4 } });
         map.addLayer({ id: "visited-points", type: "circle", source: "visited", paint: { "circle-color": "#537468", "circle-radius": 3, "circle-opacity": 0.65 } });
+        map.addLayer({ id: "preview-marker", type: "circle", source: "preview", paint: { "circle-color": "#f4f1ea", "circle-radius": 5, "circle-opacity": 0.6, "circle-stroke-color": "#537e70", "circle-stroke-width": 1.5, "circle-stroke-opacity": 0.55 } });
         map.addLayer({ id: "move-glow", type: "circle", source: "moves", paint: { "circle-color": "#16b69e", "circle-radius": 22, "circle-opacity": 0.3, "circle-blur": 0.6 } });
         map.addLayer({ id: "move-marker", type: "circle", source: "moves", paint: { "circle-color": "#139884", "circle-radius": 8, "circle-stroke-color": "#fffdf4", "circle-stroke-width": 2 } });
         map.addLayer({ id: "player-halo", type: "circle", source: "player", paint: { "circle-color": "#253d36", "circle-radius": 17, "circle-opacity": 0.12 } });
@@ -78,6 +79,7 @@ export const PlayerMap = {
     if (!this.ready) return;
     const state = this.state();
     this.set("visited", points(state.visited));
+    this.set("preview", points(state.preview.map(p => p.point)));
     this.set("moves", points(state.moves.map(m => m.point), state.moves.map(m => m.destination)));
     if (this.lastTurn >= 0 && state.turn !== this.lastTurn && state.movement?.turn === state.turn) {
       this.animate(state);
@@ -87,7 +89,7 @@ export const PlayerMap = {
   },
   frameCamera(this: Hook, state: State, duration: number) {
     const bounds = new maplibregl.LngLatBounds(state.point, state.point);
-    for (const move of state.moves) bounds.extend(move.point);
+    for (const location of [...state.moves, ...state.preview]) bounds.extend(location.point);
     this.map?.fitBounds(bounds, { padding: 85, maxZoom: state.zoom, duration });
   },
   animate(this: Hook, state: State) {

@@ -41,6 +41,21 @@ defmodule Threshold.Game do
     |> Enum.sort_by(& &1.destination)
   end
 
+  @doc "Visible locations exactly two legal stops away; these are previews, not moves."
+  def two_stop_preview(%World{} = world, %Player{} = player) do
+    next = available_moves(world, player)
+    immediate = MapSet.new([player.location | Enum.map(next, & &1.destination)])
+
+    next
+    |> Enum.flat_map(fn move ->
+      available_moves(world, %{player | location: move.destination})
+    end)
+    |> Enum.reject(&MapSet.member?(immediate, &1.destination))
+    |> Enum.uniq_by(& &1.destination)
+    |> Enum.map(&Map.take(&1, [:destination, :point]))
+    |> Enum.sort_by(& &1.destination)
+  end
+
   def move(%World{} = world, %Player{} = player, destination) do
     case Enum.find(available_moves(world, player), &(&1.destination == destination)) do
       nil ->
