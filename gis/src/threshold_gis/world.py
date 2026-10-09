@@ -34,7 +34,38 @@ TAGS = [
     "layer",
     "foot:conditional",
     "access:conditional",
+    # Distinguish sidewalks from crossings and keep what a designer needs to judge a route.
+    "footway",
+    "crossing",
+    "crossing:markings",
+    "crossing:signals",
+    "sidewalk",
+    "sidewalk:both",
+    "sidewalk:left",
+    "sidewalk:right",
+    "lit",
+    "level",
+    "indoor",
 ]
+# Simplification must not merge edges that differ in these, or a crossing could be absorbed into a
+# sidewalk (938 such merges happened before this list included footway, crossing and layer attributes).
+SIMPLIFY_DIFFER = ["access", "foot", "highway", "service", "footway", "crossing", "bridge", "tunnel", "layer", "level"]
+# Highway types where OSM's default is that walking is allowed without an explicit foot/access tag.
+DEFAULT_WALKABLE = {
+    "footway",
+    "pedestrian",
+    "path",
+    "steps",
+    "residential",
+    "living_street",
+    "unclassified",
+    "tertiary",
+    "tertiary_link",
+    "secondary",
+    "secondary_link",
+    "primary",
+    "primary_link",
+}
 HIGHWAYS = {
     "residential",
     "living_street",
@@ -167,6 +198,15 @@ def access(tags):
     return "unknown"
 
 
+def access_basis(props):
+    """Why `access_status` has its value: an explicit tag, the OSM default for the highway type, or neither."""
+    if props.get("foot") is not None or props.get("access") is not None:
+        return "explicit"
+    highway = props.get("highway")
+    highways = highway if isinstance(highway, list) else [highway]
+    return "default_allowed" if all(h in DEFAULT_WALKABLE for h in highways) else "uncertain"
+
+
 def filtered_xml(raw, cfg):
     root = ET.fromstring(raw)
     for way in list(root.findall("way")):
@@ -201,6 +241,7 @@ def make_edge(id_, geom_hash, u, v, coords, osmids, data, boundary, component_ma
             "osm_ids": osmids,
             "classification": classification,
             "access_status": access(props),
+            "access_basis": access_basis(props),
             "component": component_map[u],
             "length_m": round(float(data.get("length", 0)), 3),
             "inside_playable": boundary.covers(geometry),
@@ -299,6 +340,7 @@ def summarize(nodes, edges, context):
     return {
         "edges_by_access": count_by(edges["features"], "access_status"),
         "edges_by_classification": count_by(edges["features"], "classification"),
+        "edges_by_access_basis": count_by(edges["features"], "access_basis"),
         "context_by_classification": count_by(context["features"], "classification"),
         "components": [details[i] for i in sorted(details)],
     }
@@ -321,7 +363,7 @@ def build(world):
         filtered.write_bytes(filtered_xml(raw, cfg))
         graph = ox.graph_from_xml(filtered, bidirectional=True, simplify=False, retain_all=True)
     graph = ox.truncate.truncate_graph_polygon(graph, extent, truncate_by_edge=True)
-    graph = ox.simplification.simplify_graph(graph, edge_attrs_differ=["access", "foot", "highway", "service"], remove_rings=False)
+    graph = ox.simplification.simplify_graph(graph, edge_attrs_differ=SIMPLIFY_DIFFER, remove_rings=False)
     # Nodes left over from filtered-out ways (building corners etc.) are not network components.
     graph.remove_nodes_from(list(nx.isolates(graph)))
     if not cfg["retain_all_components"]:
@@ -356,7 +398,7 @@ def build(world):
         "software": {p: importlib.metadata.version(p) for p in ["osmnx", "networkx", "shapely", "geopandas", "pyproj"]},
         "python": sys.version.split()[0],
         "pipeline_sha256": digest(Path(__file__).read_bytes()),
-        "simplification": {"edge_attrs_differ": ["access", "foot", "highway", "service"], "remove_rings": False, "bidirectional": True},
+        "simplification": {"edge_attrs_differ": SIMPLIFY_DIFFER, "remove_rings": False, "bidirectional": True},
         "components": count,
         "nodes": len(nodes["features"]),
         "edges": len(edges["features"]),

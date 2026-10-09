@@ -31,6 +31,17 @@ defmodule ThresholdWeb.EditorLiveTest do
     assert has_element?(view, "#legend", "connected component")
   end
 
+  test "access basis is a color mode with its own legend", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/")
+
+    view |> form("#view-form", view: %{"color_by" => "access_basis"}) |> render_change()
+
+    assert has_element?(view, "#legend", "default_allowed")
+    assert has_element?(view, "#legend", "explicit")
+    assert has_element?(view, "#legend", "uncertain")
+    assert map_state(render(view))["colorBy"] == "access_basis"
+  end
+
   test "fresh geography shows no stale banner", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/")
     refute has_element?(view, "#stale-banner")

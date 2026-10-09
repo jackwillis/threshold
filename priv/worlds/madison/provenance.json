@@ -36,7 +36,7 @@
     "source": "source/snapshot.osm"
   },
   "crs": "EPSG:4326",
-  "edges": 6893,
+  "edges": 7899,
   "format_version": 1,
   "import_extent": {
     "coordinates": [
@@ -321,8 +321,8 @@
     ],
     "type": "Polygon"
   },
-  "nodes": 4751,
-  "pipeline_sha256": "fa0a76d12ca3cb1339c9c6a0922bec7c55a4a84171432ec21a3206340eb03b31",
+  "nodes": 5757,
+  "pipeline_sha256": "fd68441b0e8cfbeeb9731202ef6e1ef19b2fa0129b95f0a66aa16c9295e988f7",
   "python": "3.12.14",
   "simplification": {
     "bidirectional": true,
@@ -330,7 +330,13 @@
       "access",
       "foot",
       "highway",
-      "service"
+      "service",
+      "footway",
+      "crossing",
+      "bridge",
+      "tunnel",
+      "layer",
+      "level"
     ],
     "remove_rings": false
   },
@@ -366,9 +372,9 @@
           43.083193
         ],
         "component": 0,
-        "edges": 6873,
-        "length_m": 158028.393,
-        "nodes": 4718
+        "edges": 7879,
+        "length_m": 158028.402,
+        "nodes": 5724
       },
       {
         "bounds": [
@@ -547,14 +553,19 @@
       "water": 3
     },
     "edges_by_access": {
-      "public": 141,
-      "restricted": 417,
-      "unknown": 6335
+      "public": 171,
+      "restricted": 432,
+      "unknown": 7296
+    },
+    "edges_by_access_basis": {
+      "default_allowed": 5972,
+      "explicit": 603,
+      "uncertain": 1324
     },
     "edges_by_classification": {
-      "alley": 63,
-      "path": 3819,
-      "street": 3011
+      "alley": 69,
+      "path": 4769,
+      "street": 3061
     }
   }
 }

@@ -26,6 +26,9 @@ NODES = [
     (13, -89.3815, 43.0756),
     (14, -89.3810, 43.0756),
     (15, -89.3600, 43.0750),
+    (18, -89.3830, 43.0732),
+    (19, -89.3826, 43.0732),
+    (20, -89.3822, 43.0732),
 ]
 # (id, node refs, tags)
 WAYS = [
@@ -37,6 +40,8 @@ WAYS = [
     (106, [3, 15], {"highway": "residential"}),  # leaves the playable boundary and the import extent
     (201, [12, 13, 14, 12], {"building": "yes"}),
     (107, [1, 5], {"highway": "cycleway"}),
+    (301, [18, 19], {"highway": "footway", "footway": "sidewalk"}),
+    (302, [19, 20], {"highway": "footway", "footway": "crossing", "crossing": "marked"}),  # must not merge with 301
     (202, [6, 7, 8, 9, 6], {"highway": "pedestrian", "area": "yes"}),  # plaza polygon: context, not edges
 ]
 

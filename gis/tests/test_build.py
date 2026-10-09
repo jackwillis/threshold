@@ -34,9 +34,9 @@ def test_build_is_deterministic(worlds_dir):
 
 def test_disconnected_component_retained(built):
     edges = load(built, "edges.geojson")["features"]
-    assert len({e["properties"]["component"] for e in edges}) == 3  # main network, loop, private footway
+    assert len({e["properties"]["component"] for e in edges}) == 4  # main network, loop, private footway, sidewalk+crossing pair
     # Building corners must not be counted as network components.
-    assert load(built, "provenance.json")["components"] == 3
+    assert load(built, "provenance.json")["components"] == 4
 
 
 def test_access_classification(built):
@@ -125,3 +125,29 @@ def test_cycleway_in_graph(built):
 def test_elevator_node_kept_as_vertical_context(built):
     context = load(built, "context.geojson")["features"]
     assert any(f["properties"]["classification"] == "vertical" and f["properties"].get("name") == "Test Elevator" for f in context)
+
+
+def test_sidewalk_and_crossing_are_not_merged_and_keep_their_tags(built):
+    edges = load(built, "edges.geojson")["features"]
+    sidewalk = [e for e in edges if 301 in e["properties"]["osm_ids"]]
+    crossing = [e for e in edges if 302 in e["properties"]["osm_ids"]]
+    assert len(sidewalk) == 1 and len(crossing) == 1
+    assert sidewalk[0]["id"] != crossing[0]["id"]
+    assert sidewalk[0]["properties"]["footway"] == "sidewalk"
+    assert crossing[0]["properties"]["footway"] == "crossing"
+    assert crossing[0]["properties"]["crossing"] == "marked"
+    assert all(301 not in e["properties"]["osm_ids"] or 302 not in e["properties"]["osm_ids"] for e in edges)
+
+
+def test_access_basis(built):
+    edges = {e["properties"]["osm_ids"][0]: e["properties"] for e in load(built, "edges.geojson")["features"]}
+    assert edges[105]["access_basis"] == "explicit"  # access=private
+    assert edges[101]["access_basis"] == "default_allowed"  # residential, no tag
+    assert edges[103]["access_basis"] == "uncertain"  # service alley, no tag
+    assert edges[301]["access_basis"] == "default_allowed"  # footway
+    assert edges[107]["access_basis"] == "uncertain"  # cycleway
+
+
+def test_access_basis_in_summary(built):
+    summary = load(built, "provenance.json")["summary"]["edges_by_access_basis"]
+    assert set(summary) <= {"explicit", "default_allowed", "uncertain"} and sum(summary.values()) == load(built, "provenance.json")["edges"]

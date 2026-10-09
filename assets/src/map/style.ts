@@ -1,7 +1,7 @@
 import type { ExpressionSpecification, LayerSpecification } from "maplibre-gl";
 
 export type Palette = Record<string, Record<string, string>>;
-export type ColorBy = "access_status" | "classification" | "component";
+export type ColorBy = "access_status" | "access_basis" | "classification" | "component";
 
 // Plain background only: no basemap by design (offline; the world's extent stays obvious).
 export const BACKGROUND = "#f4f1ea";

@@ -58,3 +58,10 @@ Fourteen small components remain (6,873-edge main network, 14 pieces of 1-3 edge
 2. Decide on a derived access basis (see Access).
 3. Use the playable-node experiment to handle plazas (derived connections), building entrances (candidates), and driveways (deprioritized) rather than altering the imported graph.
 4. Revisit this review after any new snapshot.
+
+## Follow-up applied (same day)
+
+- The importer now retains `footway`, `crossing`, `crossing:markings`, `crossing:signals`, `sidewalk*`, `lit`, `level` and `indoor`.
+- Fixing the retained tags exposed a larger problem: the simplifier had merged 938 edges that differed in footway type, crossing, layer, tunnel or bridge status. Those attributes now prevent merging. Regenerating raised edges from 6,893 to 7,899 (nodes 4,751 to 5,757); crossings are now 1,052 distinct edges and no tag is list-valued. A fixture regression test fails under the old behaviour.
+- `access_basis` is a new derived field (`explicit`, `default_allowed`, `uncertain`) beside the unchanged `access_status`: 603 explicit, 5,972 default-allowed, 1,324 uncertain. The viewer has an "Access basis" color mode.
+- Edge IDs changed for the edges that had been merged (5,951 of 6,893 IDs are unchanged). No authored data referenced them.

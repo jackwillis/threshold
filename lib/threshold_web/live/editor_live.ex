@@ -21,7 +21,13 @@ defmodule ThresholdWeb.EditorLive do
       {"restricted", "#d64545"},
       {"mixed", "#8e5bd6"}
     ],
-    "classification" => [{"street", "#3b4a5a"}, {"alley", "#d98324"}, {"path", "#2f7fc1"}]
+    "classification" => [{"street", "#3b4a5a"}, {"alley", "#d98324"}, {"path", "#2f7fc1"}],
+    # Why access_status has its value: a tag on the way, OSM's default for the highway type, or neither.
+    "access_basis" => [
+      {"explicit", "#2f7fc1"},
+      {"default_allowed", "#2e9e5b"},
+      {"uncertain", "#e0a020"}
+    ]
   }
 
   @layer_options [
