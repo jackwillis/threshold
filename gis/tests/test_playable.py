@@ -141,3 +141,25 @@ def test_connections_are_continuous_physical_routes(worlds_dir, radius):
         assert coordinates[-1] == locs[connection["to"]]["point"]
         assert connection["length_m"] == round(length, 1)
         assert connection["route_classes"] == sorted(classes)
+
+
+@pytest.mark.parametrize("retained", [["18"], ["18", "20"]])
+def test_retained_location_survives_absorption_by_a_neighbor(worlds_dir, retained):
+    run(worlds_dir, "build")
+    run(worlds_dir, "playable", "--radius", "100")
+    assert "pn:18" not in locations(worlds_dir)
+    (worlds_dir / "test/authored.json").write_text(
+        json.dumps({"playable_overrides": [{"id": f"pn:{node}", "action": "retain"} for node in retained]})
+    )
+    run(worlds_dir, "playable", "--radius", "100")
+    for node in retained:
+        kept = locations(worlds_dir)[f"pn:{node}"]
+        assert kept["node"] == f"node:{node}"
+        assert kept["override"] == "retain"
+        assert "retained" in kept["reasons"]
+    assert load(worlds_dir)["diagnostics"]["overrides_unmatched"] == []
+    assert load(worlds_dir)["diagnostics"]["components_wrongly_merged"] == 0
+    assert load(worlds_dir)["diagnostics"]["source_components_lost"] == 0
+    first = (worlds_dir / "test/playable.json").read_bytes()
+    run(worlds_dir, "playable", "--radius", "100")
+    assert (worlds_dir / "test/playable.json").read_bytes() == first

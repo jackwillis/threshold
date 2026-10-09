@@ -57,7 +57,7 @@ Recorded in `docs/implementation-plan.md` (numbered). In short: LiveView plus on
 
 ## Known limitations and open items
 
-1. **Phase 6 (next planned):** in-UI regeneration (shelling out to `build`/`playable` via `Threshold.Importer`, which exists and is tested but is not yet wired to a UI action) and a reference "reconnect" workflow beyond the existing Move tool.
+1. **Phase 6 completed:** staged offline regeneration (`build`/`playable`/`validate`) and deliberate location/closure reconnect actions are wired to the editor. Boundary regeneration and a simulated moved/deleted source update were exercised in scratch worlds. See `implementation-status.md`.
 2. Provisional playable-layer choices awaiting the designer: alley protection (on), plaza gaps (not bridged), radius 25 m, whether suppression may remove junctions. See `docs/playable-node-experiment.md`.
 3. The 96% `unknown` access problem is explained (`access_basis`) but not otherwise acted on.
 4. No map labels (need a font source, which conflicts with offline); names show in the inspector.
@@ -68,4 +68,4 @@ Recorded in `docs/implementation-plan.md` (numbered). In short: LiveView plus on
 
 1. Run `make setup && make check` and confirm green on your machine (needs Elixir 1.19/OTP 26, Python 3.12, and Bun; see README).
 2. Read `docs/implementation-plan.md` (decisions and phases) and `docs/implementation-status.md` (verified vs not).
-3. Ask the designer what felt wrong when using the playable layer on the real map; that, plus the Phase 6 regeneration button, is the highest-value next work.
+3. Review `docs/playable-route-review.md`: candidate connections now retain complete ordered walking routes and actual geometry. The 993 locations and 1,631 connections remain; corrected median length is 58.0 m. Retain overrides protect exact nodes during clustering. Before persistent movement, settle traversal policy for access values, authored closures and routes leaving the playable boundary.

@@ -132,13 +132,15 @@ def build_playable(world, radius_m=DEFAULT_RADIUS_M):
             walk.add_edge(a, b, length=d["length"])
     rep = {}
     cluster_paths = {}
-    for seed in sorted(node_ids, key=lambda n: (-g.degree(n), n)):
+    # Retain promises this exact location, even if a larger neighboring cluster could absorb it.
+    for seed in sorted(node_ids, key=lambda n: ("retained" not in special[n], -g.degree(n), n)):
         if seed in rep:
             continue
         paths = nx.single_source_dijkstra_path(walk, seed, cutoff=radius_m, weight="length")
         cluster_paths[seed] = paths
         for m in sorted(paths):
-            rep.setdefault(m, seed)
+            if m == seed or "retained" not in special[m]:
+                rep.setdefault(m, seed)
     members = {}
     for n, r in rep.items():
         members.setdefault(r, []).append(n)
@@ -151,8 +153,7 @@ def build_playable(world, radius_m=DEFAULT_RADIUS_M):
     # Keep those internal paths as well, so each candidate connection is a continuous walk.
     def internal_edges(path):
         return [
-            min((d for d in g[a][b].values() if d["cls"] != "alley"), key=lambda d: (d["length"], d["id"]))["id"]
-            for a, b in pairwise(path)
+            min((d for d in g[a][b].values() if d["cls"] != "alley"), key=lambda d: (d["length"], d["id"]))["id"] for a, b in pairwise(path)
         ]
 
     by_edge = {e["id"]: e for e in core}

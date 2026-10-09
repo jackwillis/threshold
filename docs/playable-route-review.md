@@ -34,6 +34,6 @@ Synthetic automated tests cover endpoint continuity, source-edge direction, reta
 - Cluster paths can pass through nodes assigned to other clusters. The routes are real network walks, but the abstraction is not guaranteed to offer globally optimal travel. Compare game routing with source-network shortest paths before committing to movement costs.
 - Parallel route alternatives are summarized rather than exported individually. A blocked selected route may require recomputing an alternative on the source network.
 - The available-map tests do not establish completeness of OSM entrances, crossings or elevator connectivity. No plaza gaps are bridged and no synthetic shortcuts are added.
-- Retaining a node absorbed into another cluster remains a separate override limitation to evaluate before further authoring UX changes.
+- Retain overrides now seed clustering first, ensuring the exact retained source node survives rather than being absorbed by a neighboring representative. Synthetic tests cover absorption, component integrity and deterministic rebuilds.
 
 These limits call for a small movement experiment and targeted route review, rather than more infrastructure. PostgreSQL-backed player state can follow once traversal rules are settled.
