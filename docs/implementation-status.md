@@ -27,7 +27,7 @@ Finishing and reviewing the editor milestone (plan Phases 5-6): the Phase 5 tool
 ## Planned
 
 1. Apply the agreed fixes from the network review (retain sidewalk/crossing tags; decide on a derived access basis).
-2. Playable-node experiment: generate two or three candidate location networks from the same data and compare density and connectivity (hypothesis: roughly 40-100 m between ordinary locations) before choosing an approach. Imported routing topology and playable locations stay distinct.
+2. Playable-node approach: an experiment compared candidate networks ([playable-node-experiment.md](playable-node-experiment.md)); graph-radius clustering preserved connectivity, proximity merging did not. Next: decide whether to productize it as a derived layer and how to treat alleys and plazas. Imported routing topology and playable locations stay distinct.
 3. PostgreSQL/PostGIS and Ecto, introduced with the first persistent gameplay increment. World files remain the reproducible source artifacts.
 4. Smallest playable movement system in Elixir (destination, route, confirm, stop on interruption).
 
