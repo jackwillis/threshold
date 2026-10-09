@@ -50,7 +50,8 @@ defmodule Threshold.World do
   def load(name) do
     with {:ok, dir} <- dir(name),
          {:ok, config} <- read_json(Path.join(dir, "config.json")),
-         {:ok, boundary} <- read_json(Path.join(dir, "boundary.geojson")) do
+         {:ok, boundary_text} <- File.read(Path.join(dir, "boundary.geojson")),
+         {:ok, boundary} <- Jason.decode(boundary_text) do
       provenance =
         case read_json(Path.join(dir, "provenance.json")) do
           {:ok, data} -> data
@@ -63,6 +64,7 @@ defmodule Threshold.World do
          dir: dir,
          config: config,
          boundary: boundary,
+         boundary_hash: Threshold.Boundary.hash(boundary_text),
          provenance: provenance,
          staleness: staleness(dir, config, boundary, provenance)
        }}

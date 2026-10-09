@@ -1,12 +1,16 @@
 defmodule ThresholdWeb.EditorLive do
   @moduledoc """
-  Map editor shell: layer controls, legend, components list and inspector. The map itself is
-  owned by the `MapEditor` JS hook (assets/src/hooks), which reads `data-state` and reports
-  selections back with `pushEvent`.
+  Map editor. The server owns the working copy of the authored layer and the boundary; the map is
+  a view of it (the `MapEditor` JS hook reads `data-state`) and reports gestures back as events.
+  Nothing touches disk until Save, which refuses to overwrite files changed in the meantime.
   """
   use ThresholdWeb, :live_view
 
-  alias Threshold.{Authored, Geography, References, World}
+  import ThresholdWeb.EditorComponents
+
+  alias Threshold.Authored
+  alias Threshold.Authored.Edit
+  alias Threshold.{Boundary, Geography, References, World}
 
   # Single source for the palette: it drives the legend here and the map via data-state.
   @palette %{
@@ -39,24 +43,25 @@ defmodule ThresholdWeb.EditorLive do
     {"Component", "component"}
   ]
 
+  @modes ~w(inspect place move connect close boundary)
+
   @impl true
   def mount(params, _session, socket) do
     name = params["world"] || World.default_name()
 
     case World.load(name) do
-      {:ok, world} ->
+      {:ok, _world} ->
         {:ok,
          socket
          |> assign(:page_title, "Editor")
-         |> assign(:world, world)
          |> assign(:loading, true)
          |> assign(:load_error, nil)
-         |> assign(:selected, nil)
+         |> assign(:rev, 0)
          |> assign(:focus, %{"n" => 0, "bounds" => nil, "object" => nil})
          |> assign(:layer_options, @layer_options)
          |> assign(:color_options, @color_options)
          |> assign(:palette, @palette)
-         |> load_authored()
+         |> load_world(name)
          |> assign_view(%{"color_by" => "access_status", "layers" => default_layers()})}
 
       {:error, :not_found} ->
@@ -65,54 +70,60 @@ defmodule ThresholdWeb.EditorLive do
     end
   end
 
-  # The authored file is the only one the editor writes. An invalid file is reported, never "fixed".
-  defp load_authored(socket) do
-    dir = socket.assigns.world.dir
+  # (Re)reads everything from disk, discarding any working copy.
+  defp load_world(socket, name) do
+    {:ok, world} = World.load(name)
+    dir = world.dir
+    geography = with {:ok, g} <- Geography.index(dir), do: g
 
+    socket =
+      socket
+      |> assign(:world, world)
+      |> assign(:geography, if(is_map(geography), do: geography))
+      |> assign(:boundary, world.boundary["geometry"])
+      |> assign(:saved_boundary, world.boundary["geometry"])
+      |> assign(:boundary_hash, world.boundary_hash)
+      |> assign(:mode, "inspect")
+      |> assign(:pending_from, nil)
+      |> assign(:selected, nil)
+
+    # An invalid authored file is reported and never "fixed"; editing is disabled while it is invalid.
     case Authored.load(dir) do
       {:ok, authored, hash} ->
-        refs =
-          case Geography.index(dir) do
-            {:ok, geography} -> References.resolve(authored, geography)
-            :error -> []
-          end
-
         socket
         |> assign(:authored, authored)
+        |> assign(:saved_authored, authored)
         |> assign(:authored_hash, hash)
         |> assign(:authored_errors, [])
-        |> assign(:refs, refs)
+        |> refresh_refs()
 
       {:error, errors} ->
         socket
         |> assign(:authored, Authored.empty())
+        |> assign(:saved_authored, Authored.empty())
         |> assign(:authored_hash, nil)
         |> assign(:authored_errors, errors)
         |> assign(:refs, [])
     end
   end
 
-  # Worst status per authored object: missing > moved > ok.
-  defp ref_status(refs) do
-    rank = %{missing: 2, moved: 1, ok: 0}
+  defp refresh_refs(%{assigns: %{geography: nil}} = socket), do: assign(socket, :refs, [])
 
-    refs
-    |> Enum.group_by(& &1.object, & &1.status)
-    |> Map.new(fn {object, statuses} ->
-      {object, statuses |> Enum.max_by(&rank[&1]) |> Atom.to_string()}
-    end)
-  end
+  defp refresh_refs(%{assigns: a} = socket),
+    do: assign(socket, :refs, References.resolve(a.authored, a.geography))
 
   defp default_layers, do: Map.new(@layer_options, fn {key, _} -> {key, key != "nodes"} end)
 
   defp assign_view(socket, %{"color_by" => color_by, "layers" => layers}) do
-    form =
-      layers
-      |> Map.put("color_by", color_by)
-      |> then(&to_form(&1, as: :view))
-
+    form = layers |> Map.put("color_by", color_by) |> then(&to_form(&1, as: :view))
     socket |> assign(:color_by, color_by) |> assign(:layers, layers) |> assign(:form, form)
   end
+
+  defp editable?(assigns), do: assigns.authored_errors == [] and assigns.geography != nil
+
+  defp dirty?(a), do: a.authored != a.saved_authored or a.boundary != a.saved_boundary
+
+  # --- Events -------------------------------------------------------------------------
 
   @impl true
   def handle_event("view", %{"view" => params}, socket) do
@@ -125,34 +136,296 @@ defmodule ThresholdWeb.EditorLive do
      })}
   end
 
+  # Forms use phx-change only; this stops Enter from submitting them natively.
+  def handle_event("noop", _params, socket), do: {:noreply, socket}
+
   def handle_event("map_loaded", _params, socket),
     do: {:noreply, assign(socket, loading: false, load_error: nil)}
 
-  def handle_event("map_failed", %{"message" => message}, socket) do
-    {:noreply, assign(socket, loading: false, load_error: message)}
-  end
-
-  def handle_event("select", %{"layer" => layer, "id" => id, "properties" => props}, socket) do
-    {:noreply, assign(socket, :selected, %{layer: layer, id: id, properties: props})}
-  end
-
-  def handle_event("clear_selection", _params, socket),
-    do: {:noreply, assign(socket, :selected, nil)}
+  def handle_event("map_failed", %{"message" => message}, socket),
+    do: {:noreply, assign(socket, loading: false, load_error: message)}
 
   def handle_event("focus_component", %{"index" => index}, socket) do
     index = String.to_integer(index)
     component = Enum.find(components(socket.assigns.world), &(&1["component"] == index))
-    focus = %{"n" => socket.assigns.focus["n"] + 1, "bounds" => component && component["bounds"]}
-    {:noreply, assign(socket, :focus, focus)}
+    {:noreply, focus(socket, %{"bounds" => component && component["bounds"], "object" => nil})}
   end
 
-  def handle_event("focus_object", %{"id" => id}, socket) do
-    focus = %{"n" => socket.assigns.focus["n"] + 1, "bounds" => nil, "object" => id}
-    {:noreply, assign(socket, :focus, focus)}
+  def handle_event("focus_object", %{"id" => id}, socket),
+    do: {:noreply, focus(socket, %{"bounds" => nil, "object" => id})}
+
+  def handle_event("set_mode", %{"mode" => mode}, socket) when mode in @modes do
+    if mode == "inspect" or editable?(socket.assigns) do
+      {:noreply, socket |> assign(:mode, mode) |> assign(:pending_from, nil)}
+    else
+      {:noreply,
+       put_flash(
+         socket,
+         :error,
+         "Editing is disabled until authored.json is valid and geography is built."
+       )}
+    end
   end
+
+  def handle_event("clear_selection", _params, socket) do
+    {:noreply, socket |> assign(:selected, nil) |> assign(:pending_from, nil)}
+  end
+
+  # A click on the map. What it means depends on the active tool.
+  def handle_event("pick", %{"layer" => layer, "id" => id} = params, socket) do
+    {:noreply, pick(socket.assigns.mode, layer, id, params["properties"] || %{}, socket)}
+  end
+
+  def handle_event("add_location", %{"anchor" => request}, socket) do
+    with :ok <- allow_edit(socket),
+         {:ok, doc, id} <-
+           Edit.add_location(socket.assigns.authored, request, socket.assigns.geography) do
+      {:noreply,
+       socket |> apply_edit(doc) |> select("authored-location", id) |> assign(:mode, "inspect")}
+    else
+      {:error, message} -> {:noreply, put_flash(socket, :error, message)}
+    end
+  end
+
+  def handle_event("move_location", %{"id" => id, "anchor" => request}, socket) do
+    with :ok <- allow_edit(socket),
+         {:ok, doc} <-
+           Edit.move_location(socket.assigns.authored, id, request, socket.assigns.geography) do
+      {:noreply, socket |> apply_edit(doc) |> bump_rev()}
+    else
+      {:error, message} -> {:noreply, socket |> put_flash(:error, message) |> bump_rev()}
+    end
+  end
+
+  def handle_event("update_location", %{"location" => %{"id" => id} = fields}, socket),
+    do: edit(socket, &Edit.update_location(&1, id, fields))
+
+  def handle_event("update_connection", %{"connection" => %{"id" => id} = fields}, socket),
+    do: edit(socket, &Edit.update_connection(&1, id, fields))
+
+  def handle_event("update_closure", %{"closure" => %{"id" => id} = fields}, socket),
+    do: edit(socket, &Edit.update_closure(&1, id, fields))
+
+  def handle_event("detach_location", %{"id" => id}, socket),
+    do: edit(socket, &Edit.detach_location(&1, id))
+
+  def handle_event("close_edge", %{"id" => id}, socket) do
+    case Edit.add_closure(socket.assigns.authored, id, socket.assigns.geography) do
+      {:ok, doc, closure_id} ->
+        {:noreply, socket |> apply_edit(doc) |> select("authored-closure", closure_id)}
+
+      {:error, message} ->
+        {:noreply, put_flash(socket, :error, message)}
+    end
+  end
+
+  def handle_event(
+        "delete_selected",
+        _params,
+        %{assigns: %{selected: %{layer: "authored-location", id: id}}} = socket
+      ) do
+    case Edit.delete_location(socket.assigns.authored, id) do
+      {:ok, doc, removed} ->
+        {:noreply,
+         socket
+         |> apply_edit(doc)
+         |> assign(:selected, nil)
+         |> put_flash(:info, deleted_message(removed))}
+
+      {:error, message} ->
+        {:noreply, put_flash(socket, :error, message)}
+    end
+  end
+
+  def handle_event(
+        "delete_selected",
+        _params,
+        %{assigns: %{selected: %{layer: "authored-connection", id: id}}} = socket
+      ),
+      do: delete_item(socket, "connections", id)
+
+  def handle_event(
+        "delete_selected",
+        _params,
+        %{assigns: %{selected: %{layer: "authored-closure", id: id}}} = socket
+      ),
+      do: delete_item(socket, "closures", id)
+
+  def handle_event("delete_selected", _params, socket), do: {:noreply, socket}
+
+  def handle_event("update_boundary", %{"coordinates" => ring}, socket) do
+    with :ok <- allow_edit(socket), {:ok, geometry} <- Boundary.polygon(ring) do
+      {:noreply, socket |> assign(:boundary, geometry) |> bump_rev()}
+    else
+      {:error, message} -> {:noreply, socket |> put_flash(:error, message) |> bump_rev()}
+    end
+  end
+
+  def handle_event("discard", _params, socket) do
+    {:noreply,
+     socket
+     |> load_world(socket.assigns.world.name)
+     |> put_flash(:info, "Changes discarded; reloaded from disk.")}
+  end
+
+  def handle_event("save", _params, socket) do
+    {socket, notes} = save_authored(socket, socket.assigns, [])
+    {socket, notes} = save_boundary(socket, socket.assigns, notes)
+    notes = Enum.reverse(notes)
+
+    socket =
+      case Enum.find(notes, &match?({:error, _}, &1)) do
+        {:error, message} ->
+          put_flash(socket, :error, message)
+
+        nil ->
+          if notes == [],
+            do: socket,
+            else: put_flash(socket, :info, notes |> Enum.map(&elem(&1, 1)) |> Enum.join(" "))
+      end
+
+    {:noreply, socket}
+  end
+
+  # --- Event helpers ------------------------------------------------------------------
+
+  # Tells the map to re-sync its drawing layer even if the server data did not change (e.g. a rejected edit).
+  defp bump_rev(socket), do: update(socket, :rev, &(&1 + 1))
+
+  defp focus(socket, attrs),
+    do: assign(socket, :focus, Map.merge(%{"n" => socket.assigns.focus["n"] + 1}, attrs))
+
+  defp pick("connect", "authored-location", id, _props, socket) do
+    case socket.assigns.pending_from do
+      nil ->
+        assign(socket, :pending_from, id)
+
+      ^id ->
+        assign(socket, :pending_from, nil)
+
+      from ->
+        case Edit.add_connection(socket.assigns.authored, from, id) do
+          {:ok, doc, conn_id} ->
+            socket
+            |> apply_edit(doc)
+            |> assign(:pending_from, nil)
+            |> select("authored-connection", conn_id)
+
+          {:error, message} ->
+            socket |> assign(:pending_from, nil) |> put_flash(:error, message)
+        end
+    end
+  end
+
+  defp pick("connect", _layer, _id, _props, socket), do: socket
+
+  defp pick("close", "edges", id, _props, socket) do
+    case Edit.add_closure(socket.assigns.authored, id, socket.assigns.geography) do
+      {:ok, doc, closure_id} ->
+        socket |> apply_edit(doc) |> select("authored-closure", closure_id)
+
+      {:error, message} ->
+        put_flash(socket, :error, message)
+    end
+  end
+
+  defp pick("close", _layer, _id, _props, socket), do: socket
+
+  defp pick(_mode, layer, id, props, socket),
+    do: assign(socket, :selected, %{layer: layer, id: id, properties: props})
+
+  defp select(socket, layer, id),
+    do: assign(socket, :selected, %{layer: layer, id: id, properties: %{}})
+
+  defp deleted_message([]), do: "Location deleted."
+
+  defp deleted_message(removed),
+    do: "Location deleted along with #{length(removed)} connection(s)."
+
+  defp delete_item(socket, collection, id) do
+    case Edit.delete(socket.assigns.authored, collection, id) do
+      {:ok, doc} -> {:noreply, socket |> apply_edit(doc) |> assign(:selected, nil)}
+      {:error, message} -> {:noreply, put_flash(socket, :error, message)}
+    end
+  end
+
+  defp allow_edit(socket),
+    do: if(editable?(socket.assigns), do: :ok, else: {:error, "Editing is disabled."})
+
+  defp edit(socket, fun) do
+    case fun.(socket.assigns.authored) do
+      {:ok, doc} -> {:noreply, apply_edit(socket, doc)}
+      {:error, message} -> {:noreply, put_flash(socket, :error, message)}
+    end
+  end
+
+  defp apply_edit(socket, doc), do: socket |> assign(:authored, doc) |> refresh_refs()
+
+  # --- Saving ------------------------------------------------------------------------
+
+  defp save_authored(socket, a, notes) do
+    if a.authored != a.saved_authored do
+      case Authored.save(a.world.dir, a.authored, a.authored_hash) do
+        {:ok, hash} ->
+          {socket |> assign(:saved_authored, a.authored) |> assign(:authored_hash, hash),
+           [{:ok, "Authored layer saved."} | notes]}
+
+        {:error, :conflict} ->
+          {socket, [{:error, conflict_message("authored.json")} | notes]}
+
+        {:error, other} ->
+          {socket, [{:error, "Could not save authored.json: #{inspect(other)}"} | notes]}
+      end
+    else
+      {socket, notes}
+    end
+  end
+
+  defp save_boundary(socket, a, notes) do
+    if a.boundary != a.saved_boundary do
+      case Boundary.save(a.world.dir, a.boundary, a.boundary_hash, a.world.config) do
+        {:ok, hash} ->
+          # Reloading the world recomputes staleness: the geography no longer matches the boundary.
+          {:ok, world} = World.load(a.world.name)
+
+          {socket
+           |> assign(:world, world)
+           |> assign(:saved_boundary, a.boundary)
+           |> assign(:boundary_hash, hash),
+           [{:ok, "Boundary saved. Regenerate the geography with `make build-world`."} | notes]}
+
+        {:error, :conflict} ->
+          {socket, [{:error, conflict_message("boundary.geojson")} | notes]}
+
+        {:error, message} when is_binary(message) ->
+          {socket, [{:error, message} | notes]}
+
+        {:error, other} ->
+          {socket, [{:error, "Could not save boundary.geojson: #{inspect(other)}"} | notes]}
+      end
+    else
+      {socket, notes}
+    end
+  end
+
+  defp conflict_message(file),
+    do:
+      "#{file} changed on disk since you opened it, so nothing was overwritten. Discard your changes to reload it."
+
+  # --- State sent to the map ----------------------------------------------------------
 
   defp components(%{provenance: %{"summary" => %{"components" => list}}}), do: list
   defp components(_), do: []
+
+  defp ref_status(refs) do
+    rank = %{missing: 2, moved: 1, ok: 0}
+
+    refs
+    |> Enum.group_by(& &1.object, & &1.status)
+    |> Map.new(fn {object, statuses} ->
+      {object, statuses |> Enum.max_by(&rank[&1]) |> Atom.to_string()}
+    end)
+  end
 
   defp map_state(assigns) do
     Jason.encode!(%{
@@ -161,6 +434,12 @@ defmodule ThresholdWeb.EditorLive do
       focus: assigns.focus,
       authored: assigns.authored,
       refStatus: ref_status(assigns.refs),
+      boundary: assigns.boundary,
+      mode: assigns.mode,
+      selected: assigns.selected && assigns.selected.id,
+      pendingFrom: assigns.pending_from,
+      dirty: dirty?(assigns),
+      rev: assigns.rev,
       palette: Map.new(assigns.palette, fn {key, entries} -> {key, Map.new(entries)} end)
     })
   end
@@ -173,27 +452,6 @@ defmodule ThresholdWeb.EditorLive do
   defp legend_count(world, color_by, value),
     do: summary(world, "edges_by_#{color_by}")[value] || 0
 
-  defp hidden_property?(key), do: key in ["id", "edges", "osm_ids", "geometry_hash"]
-
-  defp format_value(value) when is_list(value), do: Enum.join(value, ", ")
-
-  defp format_value(value) when is_binary(value) or is_number(value) or is_boolean(value),
-    do: to_string(value)
-
-  defp format_value(nil), do: "–"
-  defp format_value(value), do: inspect(value)
-
-  defp osm_links(%{"osm_ids" => ids}) when is_list(ids),
-    do: for(id <- ids, do: {"way #{id}", "https://www.openstreetmap.org/way/#{id}"})
-
-  defp osm_links(%{"osm_type" => type, "osm_id" => id}) when is_binary(type),
-    do: [{"#{type} #{id}", "https://www.openstreetmap.org/#{type}/#{id}"}]
-
-  defp osm_links(%{"osm_id" => id}),
-    do: [{"node #{id}", "https://www.openstreetmap.org/node/#{id}"}]
-
-  defp osm_links(_), do: []
-
   @impl true
   def render(%{world: nil} = assigns) do
     ~H"""
@@ -204,6 +462,8 @@ defmodule ThresholdWeb.EditorLive do
   end
 
   def render(assigns) do
+    assigns = assign(assigns, dirty: dirty?(assigns), editable: editable?(assigns))
+
     ~H"""
     <Layouts.app flash={@flash}>
       <div class="editor">
@@ -227,7 +487,7 @@ defmodule ThresholdWeb.EditorLive do
           </div>
 
           <div :if={@authored_errors != []} id="authored-errors" class="banner banner-error">
-            <strong>authored.json is invalid and was not loaded.</strong>
+            <strong>authored.json is invalid and was not loaded. Editing is disabled.</strong>
             <ul>
               <li :for={error <- Enum.take(@authored_errors, 8)}>{error}</li>
             </ul>
@@ -325,6 +585,8 @@ defmodule ThresholdWeb.EditorLive do
           class="map-wrap"
         >
           <div id="map-canvas" phx-update="ignore"></div>
+          <.toolbar mode={@mode} editable={@editable} pending_from={@pending_from} />
+          <.save_bar dirty={@dirty} />
           <div :if={@loading} id="map-loading" class="map-status">Loading geography…</div>
           <div :if={@load_error} id="map-error" class="map-status map-status-error">
             {@load_error}
@@ -333,27 +595,7 @@ defmodule ThresholdWeb.EditorLive do
 
         <aside id="inspector" class="panel">
           <h2 class="panel-title">Inspector</h2>
-          <%= if @selected do %>
-            <h3 class="mono">{@selected.id}</h3>
-            <p class="hint">{@selected.layer} · {@selected.properties["classification"]}</p>
-            <ul class="osm-links">
-              <li :for={{label, url} <- osm_links(@selected.properties)}>
-                <a href={url} target="_blank" rel="noreferrer">{label} on OpenStreetMap</a>
-              </li>
-            </ul>
-            <dl class="props">
-              <%= for {key, value} <- Enum.sort(@selected.properties), not hidden_property?(key) do %>
-                <dt>{key}</dt>
-                <dd>{format_value(value)}</dd>
-              <% end %>
-            </dl>
-            <p :if={is_list(@selected.properties["edges"])} class="hint">
-              {length(@selected.properties["edges"])} incident edges
-            </p>
-            <button type="button" phx-click="clear_selection" class="link-button">Clear selection</button>
-          <% else %>
-            <p class="hint">Click a street, intersection or building on the map.</p>
-          <% end %>
+          <.inspector selected={@selected} authored={@authored} refs={@refs} editable={@editable} />
         </aside>
       </div>
     </Layouts.app>

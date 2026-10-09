@@ -57,7 +57,7 @@ defmodule ThresholdWeb.EditorLiveTest do
       "osm_ids" => [102]
     }
 
-    render_hook(view, "select", %{
+    render_hook(view, "pick", %{
       "layer" => "edges",
       "id" => "edge:3-4-102",
       "properties" => props

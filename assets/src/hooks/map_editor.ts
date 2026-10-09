@@ -1,14 +1,22 @@
 import maplibregl from "maplibre-gl";
-import type { Feature, FeatureCollection, Geometry, Polygon } from "geojson";
+import type { Feature, FeatureCollection, Geometry, Point, Polygon, Position } from "geojson";
+import {
+  TerraDraw,
+  TerraDrawPointMode,
+  TerraDrawPolygonMode,
+  TerraDrawSelectMode,
+} from "terra-draw";
+import { TerraDrawMapLibreGLAdapter } from "terra-draw-maplibre-gl-adapter";
 import { BACKGROUND, CLICK_PRIORITY, LAYER_GROUPS, layerSpecs, edgeColor } from "../map/style";
 import type { ColorBy, Palette } from "../map/style";
 import { boundsOf, indexFeatures, outsideMask } from "../map/geo";
+import type { Bounds, Feat, Props } from "../map/geo";
 import { EMPTY_AUTHORED, buildAuthored } from "../map/authored";
 import type { Authored, RefStatus } from "../map/authored";
-import type { Bounds, Feat, Props } from "../map/geo";
+import { snapAnchor } from "../map/snap";
+import type { LngLat } from "../map/snap";
 
-// Terra Draw (editing) is installed but intentionally not started in the read-only viewer: it
-// captures clicks and would interfere with selection. It is wired in when editing begins.
+type Mode = "inspect" | "place" | "move" | "connect" | "close" | "boundary";
 
 type ViewState = {
   layers: Record<string, boolean>;
@@ -17,24 +25,43 @@ type ViewState = {
   focus: { n: number; bounds: Bounds | null; object: string | null };
   authored: Authored;
   refStatus: RefStatus;
+  boundary: Polygon;
+  mode: Mode;
+  selected: string | null;
+  pendingFrom: string | null;
+  dirty: boolean;
+  rev: number;
 };
 
 type Hook = {
   el: HTMLElement;
   map?: maplibregl.Map;
+  draw?: TerraDraw;
   ready: boolean;
   lastFocus: number;
+  syncSignature: string;
+  dirty: boolean;
+  mode: Mode;
   features: Map<string, Feat>;
+  boundaryFeatureId?: string | number;
+  onBeforeUnload?: (event: BeforeUnloadEvent) => void;
+  onKeyDown?: (event: KeyboardEvent) => void;
   pushEvent(event: string, payload: object): void;
   readState(): ViewState;
   apply(): void;
   showAuthored(map: maplibregl.Map, state: ViewState): void;
+  syncDraw(state: ViewState): void;
+  setupDraw(map: maplibregl.Map): void;
+  onDrawFinish(id: string | number, action: string): void;
+  onMapClick(event: maplibregl.MapMouseEvent): void;
   objectBounds(id: string | null): Bounds | null;
   load(map: maplibregl.Map): Promise<void>;
 };
 
 const EMPTY: FeatureCollection = { type: "FeatureCollection", features: [] };
 const CLICK_PAD_PX = 5;
+const CLICK_MODES: Mode[] = ["inspect", "connect", "close"];
+const BOUNDARY_EDIT_ACTIONS = ["dragCoordinate", "dragFeature", "dragCoordinateResize", "insertMidpoint", "deleteCoordinate", "edit"];
 
 async function getJson<T>(world: string, layer: string): Promise<T> {
   const response = await fetch(`/worlds/${encodeURIComponent(world)}/${layer}`);
@@ -42,10 +69,20 @@ async function getJson<T>(world: string, layer: string): Promise<T> {
   return (await response.json()) as T;
 }
 
+/** Terra Draw rejects features silently; make that visible. */
+function reportInvalid(results: { valid: boolean; reason?: string }[]): void {
+  for (const result of results) if (!result.valid) console.error("Terra Draw rejected a feature:", result.reason);
+}
+
+const lngLat = (position: Position): LngLat => [position[0] ?? 0, position[1] ?? 0];
+
 export const MapEditor = {
   mounted(this: Hook) {
     this.ready = false;
     this.lastFocus = 0;
+    this.syncSignature = "";
+    this.dirty = false;
+    this.mode = "inspect";
     this.features = new Map();
 
     const canvas = this.el.querySelector<HTMLElement>("#map-canvas");
@@ -59,10 +96,13 @@ export const MapEditor = {
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }));
     this.map = map;
+    // Handle for browser-driven tests and debugging.
+    (window as unknown as { thresholdMap?: maplibregl.Map }).thresholdMap = map;
 
     map.on("load", () => {
       this.load(map)
         .then(() => {
+          this.setupDraw(map);
           this.ready = true;
           this.apply();
           this.pushEvent("map_loaded", {});
@@ -72,32 +112,29 @@ export const MapEditor = {
         });
     });
 
-    map.on("click", (event) => {
-      const { x, y } = event.point;
-      const hits = map.queryRenderedFeatures(
-        [[x - CLICK_PAD_PX, y - CLICK_PAD_PX], [x + CLICK_PAD_PX, y + CLICK_PAD_PX]],
-        { layers: CLICK_PRIORITY.filter((id) => map.getLayer(id)) },
-      );
-      const best = [...hits].sort((a, b) => CLICK_PRIORITY.indexOf(a.layer.id) - CLICK_PRIORITY.indexOf(b.layer.id))[0];
-      const id = best?.properties?.id;
-      const feature = typeof id === "string" ? this.features.get(id) : undefined;
-      const source = map.getSource("selection") as maplibregl.GeoJSONSource;
-      if (!best || !feature) {
-        source.setData(EMPTY);
-        this.pushEvent("clear_selection", {});
-        return;
-      }
-      source.setData(feature as Feature);
-      this.pushEvent("select", { layer: best.layer.id, id: feature.properties.id, properties: feature.properties });
-    });
+    map.on("click", (event) => this.onMapClick(event));
 
     map.on("mousemove", (event) => {
+      if (!CLICK_MODES.includes(this.mode)) return;
       const { x, y } = event.point;
       const hits = map.queryRenderedFeatures([[x - CLICK_PAD_PX, y - CLICK_PAD_PX], [x + CLICK_PAD_PX, y + CLICK_PAD_PX]], {
         layers: CLICK_PRIORITY.filter((id) => map.getLayer(id)),
       });
       map.getCanvas().style.cursor = hits.length > 0 ? "pointer" : "";
     });
+
+    // Leaving the page (or reloading) with unsaved edits should ask first.
+    this.onBeforeUnload = (event) => {
+      if (this.dirty) {
+        event.preventDefault();
+        event.returnValue = "";
+      }
+    };
+    this.onKeyDown = (event) => {
+      if (event.key === "Escape" && this.mode !== "inspect") this.pushEvent("set_mode", { mode: "inspect" });
+    };
+    window.addEventListener("beforeunload", this.onBeforeUnload);
+    window.addEventListener("keydown", this.onKeyDown);
   },
 
   updated(this: Hook) {
@@ -105,6 +142,9 @@ export const MapEditor = {
   },
 
   destroyed(this: Hook) {
+    if (this.onBeforeUnload) window.removeEventListener("beforeunload", this.onBeforeUnload);
+    if (this.onKeyDown) window.removeEventListener("keydown", this.onKeyDown);
+    this.draw?.stop();
     this.map?.remove();
   },
 
@@ -112,19 +152,56 @@ export const MapEditor = {
     return JSON.parse(this.el.dataset.state ?? "{}") as ViewState;
   },
 
-  /** Push the server-side view state (visibility, color mode, focus) onto the map. */
+  /** Click in an inspecting tool: report what was hit; the server decides what that means. */
+  onMapClick(this: Hook, event: maplibregl.MapMouseEvent) {
+    const map = this.map;
+    if (!map || !this.ready || !CLICK_MODES.includes(this.mode)) return;
+    const { x, y } = event.point;
+    const hits = map.queryRenderedFeatures(
+      [[x - CLICK_PAD_PX, y - CLICK_PAD_PX], [x + CLICK_PAD_PX, y + CLICK_PAD_PX]],
+      { layers: CLICK_PRIORITY.filter((id) => map.getLayer(id)) },
+    );
+    const best = [...hits].sort((a, b) => CLICK_PRIORITY.indexOf(a.layer.id) - CLICK_PRIORITY.indexOf(b.layer.id))[0];
+    const id = best?.properties?.id;
+    const feature = typeof id === "string" ? this.features.get(id) : undefined;
+    if (!best || !feature) {
+      this.pushEvent("clear_selection", {});
+      return;
+    }
+    this.pushEvent("pick", { layer: best.layer.id, id: feature.properties.id, properties: feature.properties });
+  },
+
+  /** Push the server-side view state (visibility, color, selection, boundary, tool) onto the map. */
   apply(this: Hook) {
     const map = this.map;
     if (!map || !this.ready) return;
     const state = this.readState();
+    this.dirty = state.dirty;
+    this.mode = state.mode;
+
     for (const [group, ids] of Object.entries(LAYER_GROUPS)) {
       const visible = state.layers[group] ?? true;
       for (const id of ids) {
         if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
       }
     }
+    // While editing, Terra Draw draws the boundary / dragged points itself.
+    if (state.mode === "boundary") map.setLayoutProperty("boundary-line", "visibility", "none");
+    if (state.mode === "move") map.setLayoutProperty("authored-location", "visibility", "none");
+
     map.setPaintProperty("edges", "line-color", edgeColor(state.colorBy, state.palette));
+    (map.getSource("boundary") as maplibregl.GeoJSONSource).setData({ type: "Feature", properties: {}, geometry: state.boundary });
+    (map.getSource("mask") as maplibregl.GeoJSONSource).setData(outsideMask(state.boundary));
     this.showAuthored(map, state);
+
+    // Highlight the pending location while connecting, else the selection (a closure highlights its street).
+    const highlightId = state.pendingFrom ?? state.selected;
+    const closure = highlightId ? state.authored.closures.find((c) => c.id === highlightId) : undefined;
+    const highlighted = highlightId ? this.features.get(closure ? closure.edge : highlightId) : undefined;
+    (map.getSource("selection") as maplibregl.GeoJSONSource).setData((highlighted as Feature | undefined) ?? EMPTY);
+
+    this.syncDraw(state);
+
     if (state.focus.n !== this.lastFocus) {
       this.lastFocus = state.focus.n;
       const bounds = state.focus.bounds ?? this.objectBounds(state.focus.object);
@@ -159,6 +236,95 @@ export const MapEditor = {
     const closure = state.authored.closures.find((c) => c.id === id);
     const edge = closure && this.features.get(closure.edge);
     return edge ? boundsOf(edge.geometry) : null;
+  },
+
+  /** Terra Draw places points, drags locations and reshapes the boundary; the server stays authoritative. */
+  setupDraw(this: Hook, map: maplibregl.Map) {
+    const draw = new TerraDraw({
+      adapter: new TerraDrawMapLibreGLAdapter({ map }),
+      modes: [
+        new TerraDrawPointMode({ styles: { pointColor: "#0f9d8f", pointWidth: 8, pointOutlineColor: "#ffffff", pointOutlineWidth: 2 } }),
+        // Registered so polygon features (the boundary) are accepted into the store; drawing new polygons is not offered.
+        new TerraDrawPolygonMode(),
+        new TerraDrawSelectMode({
+          flags: {
+            point: { feature: { draggable: true } },
+            polygon: { feature: { draggable: false, coordinates: { midpoints: true, draggable: true, deletable: true } } },
+          },
+        }),
+      ],
+    });
+    draw.on("finish", (id, context) => this.onDrawFinish(id, context.action));
+    (window as unknown as { thresholdDraw?: TerraDraw }).thresholdDraw = draw;
+    draw.start();
+    this.draw = draw;
+  },
+
+  /** Match Terra Draw's mode and contents to the server's tool and working copy. */
+  syncDraw(this: Hook, state: ViewState) {
+    const draw = this.draw;
+    if (!draw) return;
+    // Resync only when the tool or the server-side data changed, so drags are not interrupted.
+    const signature = JSON.stringify([state.mode, state.rev, state.mode === "move" ? state.authored.locations : null, state.mode === "boundary" ? state.boundary : null]);
+    if (signature === this.syncSignature) return;
+    this.syncSignature = signature;
+
+    draw.clear();
+    this.boundaryFeatureId = undefined;
+    switch (state.mode) {
+      case "place":
+        draw.setMode("point");
+        break;
+      case "move": {
+        reportInvalid(
+          draw.addFeatures(
+          state.authored.locations.map((l) => ({
+            type: "Feature" as const,
+            geometry: { type: "Point" as const, coordinates: l.anchor.point },
+            properties: { mode: "point", locationId: l.id },
+          })),
+          ),
+        );
+        draw.setMode("select");
+        break;
+      }
+      case "boundary": {
+        reportInvalid(draw.addFeatures([{ type: "Feature", geometry: state.boundary, properties: { mode: "polygon" } }]));
+        const added = draw.getSnapshot()[0];
+        if (added && added.id !== undefined) {
+          this.boundaryFeatureId = added.id;
+          draw.setMode("select");
+          draw.selectFeature(added.id);
+        }
+        break;
+      }
+      default:
+        draw.setMode("static");
+    }
+  },
+
+  onDrawFinish(this: Hook, id: string | number, action: string) {
+    const draw = this.draw;
+    const map = this.map;
+    if (!draw || !map) return;
+    const feature = draw.getSnapshotFeature(id);
+    if (!feature) return;
+    const state = this.readState();
+    const visible = { nodes: state.layers["nodes"] ?? false, edges: state.layers["edges"] ?? true };
+
+    if (state.mode === "place" && action === "draw" && feature.geometry.type === "Point") {
+      draw.removeFeatures([id]);
+      const anchor = snapAnchor(map, lngLat((feature.geometry as Point).coordinates), this.features, visible);
+      this.pushEvent("add_location", { anchor });
+    } else if (state.mode === "move" && action === "dragFeature" && feature.geometry.type === "Point") {
+      const locationId = feature.properties?.locationId;
+      if (typeof locationId === "string") {
+        const anchor = snapAnchor(map, lngLat((feature.geometry as Point).coordinates), this.features, visible);
+        this.pushEvent("move_location", { id: locationId, anchor });
+      }
+    } else if (state.mode === "boundary" && id === this.boundaryFeatureId && BOUNDARY_EDIT_ACTIONS.includes(action) && feature.geometry.type === "Polygon") {
+      this.pushEvent("update_boundary", { coordinates: (feature.geometry as Polygon).coordinates[0] });
+    }
   },
 
   async load(this: Hook, map: maplibregl.Map) {

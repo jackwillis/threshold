@@ -44,3 +44,21 @@ body { display: flex; flex-direction: column; font-family: system-ui, sans-serif
 .badge { font-size: .7rem; padding: 0 .4rem; border-radius: .6rem; text-transform: uppercase; letter-spacing: .03em; background: #e0a020; color: #000; }
 .review-missing .badge { background: #d64545; color: #fff; }
 .review .hint { word-break: break-all; }
+.toolbar { position: absolute; top: .6rem; left: .6rem; right: 3.6rem; z-index: 2; display: flex; flex-direction: column; gap: .35rem; pointer-events: none; }
+.toolbar > * { pointer-events: auto; }
+.tools { display: flex; flex-wrap: wrap; gap: .25rem; }
+.tool { padding: .3rem .7rem; border-radius: .4rem; border: 1px solid var(--ed-border); background: var(--color-base-100, #fff); color: inherit; cursor: pointer; font: inherit; }
+.tool:hover:not(:disabled) { background: color-mix(in srgb, currentColor 8%, var(--color-base-100, #fff)); }
+.tool:disabled { opacity: .45; cursor: not-allowed; }
+.tool-active { background: #1f6feb; color: #fff; border-color: #1f6feb; }
+.tool-primary { background: #1f6feb; color: #fff; border-color: #1f6feb; }
+.tool-danger { color: #b3261e; border-color: #b3261e; }
+.tool-hint { margin: 0; align-self: flex-start; padding: .25rem .6rem; border-radius: .4rem; background: rgba(0,0,0,.72); color: #fff; font-size: .85rem; }
+.save-bar { position: absolute; bottom: 1.6rem; left: .6rem; z-index: 2; display: flex; align-items: center; gap: .5rem; padding: .35rem .6rem; border-radius: .4rem; background: var(--color-base-100, #fff); border: 1px solid var(--ed-border); }
+.save-bar-dirty { border-color: #e0a020; box-shadow: 0 0 0 2px color-mix(in srgb, #e0a020 35%, transparent); }
+.save-bar .saved { color: var(--ed-muted); }
+.field { display: block; margin: .5rem 0; font-size: .8rem; color: var(--ed-muted); }
+.field input, .field textarea { display: block; width: 100%; margin-top: .15rem; padding: .35rem .5rem; font: inherit; color: inherit; background: var(--color-base-100, #fff); border: 1px solid var(--ed-border); border-radius: .35rem; box-sizing: border-box; }
+.actions { display: flex; flex-wrap: wrap; gap: .4rem; margin: .75rem 0; }
+.badge-moved { background: #e0a020; color: #000; }
+.badge-missing { background: #d64545; color: #fff; }
