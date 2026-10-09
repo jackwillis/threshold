@@ -14,7 +14,7 @@ Verified means exercised by an automated test and/or by driving the app in headl
 ## Known limitations and untested areas
 
 - The in-UI regeneration action and reference "reconnect" workflow are not built; regeneration is `make build-world`.
-- Importer review items still open: directional/access normalization (edges are collapsed to undirected), the `unknown` access majority (96%), and sidewalk handling (kept as imported by decision).
+- Network review done (see [network-review.md](network-review.md)): undirected edges are correct for walking; open items are retaining sidewalk/crossing tags, an optional derived access basis, and plaza/entrance handling in the playable-node layer.
 - The full designer workflow was driven in headless Firefox against a scratch copy of the world, not against a long editing session on the committed Madison files; no browser tests are automated (the LiveView tests do not exercise Terra Draw).
 - Map labels are not drawn (they would need a font source); names appear in the inspector.
 - Shapely emits a deprecation warning from the importer.
@@ -26,7 +26,7 @@ Finishing and reviewing the editor milestone (plan Phases 5-6): the Phase 5 tool
 
 ## Planned
 
-1. Review the real Madison network (sidewalks, crossings, alleys, access, directionality, components) and fix demonstrated importer issues.
+1. Apply the agreed fixes from the network review (retain sidewalk/crossing tags; decide on a derived access basis).
 2. Playable-node experiment: generate two or three candidate location networks from the same data and compare density and connectivity (hypothesis: roughly 40-100 m between ordinary locations) before choosing an approach. Imported routing topology and playable locations stay distinct.
 3. PostgreSQL/PostGIS and Ecto, introduced with the first persistent gameplay increment. World files remain the reproducible source artifacts.
 4. Smallest playable movement system in Elixir (destination, route, confirm, stop on interruption).
