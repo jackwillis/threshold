@@ -1,5 +1,7 @@
 # Frontend V2: architecture and design proposal (Milestone 1)
 
+Updated 2026-10-09 with the visual direction (Classic Atlas primary, seasonal variations, radio/sonar as a secondary instrument) in section 6.
+
 Date: 2026-10-09. A review for the project owner to approve; no V2 code exists. It answers the ten questions in section 17 of [frontend-v2-memo-2026-10-09.md](frontend-v2-memo-2026-10-09.md) with one recommendation, using what the current code taught us.
 
 ## What V1 actually looks like (facts that drive the recommendation)
@@ -51,9 +53,30 @@ Atlas needs no new API: movement stays a LiveView event validated by `Sessions.m
 
 Already implemented in V1 and carried over unchanged: server-computed adjacent moves with radial numbers, markers and panel numbered identically, keyboard and click through one request path, camera tether and zoom limits, animation along the validated route. V2 work is the visual treatment and the mobile bottom sheet.
 
-## 6. Shared visual system
+## 6. Shared visual system: Classic Atlas
 
-One token file (colour, type, spacing) used by both apps through CSS variables, and one MapLibre style module producing the cartographic style: warm ivory ground, sage parks, slate paths, restrained buildings, teal movement, amber for authored/anomaly. Studio adds diagnostic colours; Atlas adds none. Typography is a functional sans for UI with small, restrained monospace for metadata; labels need a glyph source (see Risks). Topography stays a research track; no elevation pipeline without a separate decision.
+**Direction (the designer's clarification, 2026-10-09):** the primary identity of both Studio and Field Atlas is **Classic Atlas**: a warm, stylized municipal map with warm ivory ground, detailed building footprints, sage-green parks, pale blue water, elegant curved street labels, subtle topographic influence and carefully restrained movement markers. It is inviting first, instrumented second. The dark radio/sonar concepts are **not** the default map or the dominant HUD; radio/sonar survives as a **secondary investigation overlay or instrument** the player opens, never as the base aesthetic. This supersedes the memo's emphasis on a sonar identity and its dark field-survey mode as a design pillar (that mode becomes an optional, later presentation of the same overlay).
+
+Mechanics of the system:
+
+- **Tokens, not literals.** One token file (colour, type, spacing, stroke weights) used by both apps through CSS variables, and one MapLibre **style module** that turns a palette into the full set of layer paint properties. Nothing in the map draws a colour that is not a token.
+- **Layer roles stay constant.** Ground, water, parks, buildings, pedestrian areas, street casings and fills, paths, labels, movement markers, player, visited trail, authored places, boundary and extent, diagnostics. Studio adds the diagnostic roles; Atlas adds none.
+- **Movement markers are the one restrained accent** (teal glow, white numerals); amber marks authored places and discoveries. Navigation nodes, authored places and signals stay visually distinct.
+- **Typography.** A refined serif for place and street labels and the title, a plain sans for interface text, a restrained monospace for metadata. Curved street labels follow the street geometry, are designer-placed (the cartographic labels memo), and are legible at the camera limits (zoom 17 to 19.5).
+- **Topography** is a quiet influence (fine contour lines, gentle relief) and stays below streets and markers; no elevation pipeline without a separate decision.
+
+### Seasons
+
+Spring, summer, autumn and winter are supported by the same system. A **season is a palette plus an environmental treatment, expressed only as paint**:
+
+- The style module takes `{ season }` and returns the same layers, sources and filters every time; only paint values (colours, opacities, line widths of decorative layers) change. Spring is fresher greens and pale water; summer fuller greens and brighter water; autumn warm ochres and rust tints on parks and trees; winter desaturated ground, snow-white roofs and park tint, grey-blue water, optionally an ice treatment. Decorative treatments (a snow wash, leaf tint, frost on water) are separate overlay layers whose visibility and opacity vary by season.
+- **Geometry and gameplay never depend on season.** Sources, layer ids, filters, one-hop adjacency, numbering, camera limits and server validation are identical in every season. Season is a client display preference (and later possibly an authored default or a time-of-year setting); it is not authored world data, not game state, and not persisted with progress.
+- **Legibility is a constraint, not a taste.** Each season's palette is validated: movement markers and numerals, the player marker and labels must meet contrast thresholds against that season's ground, parks and water. A unit test asserts both that contrast and that the season outputs differ only in paint (identical layer ids, sources and filters).
+- Studio can preview any season; a season never changes what Studio edits.
+
+### Radio/sonar as an instrument
+
+A secondary layer the player opens (and Studio can preview): signal bearings, ranges, anomaly readings, drawn in the same teal and amber on top of the atlas, dismissible, never required to read the map. The mechanics are kept; the HUD is not the default.
 
 ## 7. Smallest convincing vertical slice
 
@@ -80,7 +103,7 @@ V2 runs beside V1 at `/studio-v2`; V1 routes and `authored.json` are untouched. 
 ## Sequence
 
 1. Settle the open designer decisions above (no code).
-2. Shared tokens and map style module, adopted by V1 Atlas first (low risk, visible).
+2. Shared tokens and a season-aware Classic Atlas style module, adopted by V1 Atlas first (low risk, visible), including the glyph decision below.
 3. Studio API endpoints over existing domain functions, with tests.
 4. Studio vertical slice at `/studio-v2` (Preact + controller + store).
 5. Migrate remaining Studio tools one workflow at a time; retire V1 Studio only after each is equivalent.
@@ -88,6 +111,6 @@ V2 runs beside V1 at `/studio-v2`; V1 routes and `authored.json` are untouched. 
 
 ## Risks and open questions
 
-- **Glyphs:** MapLibre symbol text needs glyph PBFs, and the style is intentionally offline. Options: bundle a few font glyph sets locally, or render curved labels outside MapLibre's text pipeline. Decide before label work.
+- **Glyphs (now on the critical path):** Classic Atlas depends on elegant curved labels. MapLibre symbol text needs glyph PBFs, and the style is intentionally offline. Options: generate and bundle glyph sets for one or two open-licensed serif and sans fonts, or render curved labels outside MapLibre's text pipeline. Decide before the style module, because label typography drives the whole look.
 - **Two UI technologies:** LiveView and Preact coexist. Keep Preact confined to `/studio-v2` and the shared map code framework-free, so Atlas never depends on it.
 - **Duplicated rules:** the client must not re-implement validation; every edit result comes from the server. Any rule found on the client during review is a bug to move.

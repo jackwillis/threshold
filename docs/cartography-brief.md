@@ -1,5 +1,7 @@
 # Threshold — Cartography and Player UI Brief
 
+> **Update 2026-10-09 (designer's direction):** the primary visual identity is **Classic Atlas**: warm ivory, detailed building footprints, sage parks, pale blue water, elegant curved street labels, subtle topographic influence, restrained movement markers. The design must support **spring, summer, autumn and winter** palettes and environmental treatments through one shared style system (paint only; geometry and gameplay never change with the season). Radio/sonar is a **secondary investigation overlay or instrument**, not the default map or HUD. See [frontend-v2-proposal.md](frontend-v2-proposal.md), section 6.
+
 **Role:** Visual design and frontend implementation (handled by the main Claude Code session)  
 **Scope:** Player-facing map appearance, interaction styling, and cartographic presentation
 
