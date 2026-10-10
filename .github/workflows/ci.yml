@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      MIX_ENV: test
+      # Database tests must run in CI; test/test_helper.exs fails if this is missing.
+      THRESHOLD_TEST_DATABASE_URL: postgres://threshold:threshold_ci@localhost:5432/threshold_test
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: threshold
+          POSTGRES_PASSWORD: threshold_ci
+          POSTGRES_DB: threshold_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U threshold -d threshold_test"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .tool-versions
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .tool-versions
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: mix-${{ runner.os }}-${{ hashFiles('.tool-versions', 'mix.lock') }}
+
+      - name: Install dependencies
+        run: make setup
+
+      - name: Check
+        run: make check
