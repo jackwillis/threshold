@@ -1,5 +1,5 @@
 defmodule Threshold.Game.Sessions do
-  @moduledoc "Durable, atomic walks of up to two stops for the single local player."
+  @moduledoc "Durable, atomic single-step walks for the single local player."
   import Ecto.Query
   alias Threshold.{Game, Repo}
   alias Threshold.Game.{Player, Progress, World}

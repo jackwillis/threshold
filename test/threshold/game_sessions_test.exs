@@ -42,7 +42,7 @@ defmodule Threshold.GameSessionsTest do
     assert back.turn == 2 and MapSet.size(back.visited) == 2
   end
 
-  test "a two-stop walk is saved atomically with its intermediate visit", %{world: world} do
+  test "a destination more than one hop away is refused and spends no turn", %{world: world} do
     connection =
       Map.merge(world.connections["pc:1-2"], %{
         "id" => "pc:2-3",
@@ -56,11 +56,12 @@ defmodule Threshold.GameSessionsTest do
 
     world = %{world | connections: Map.put(world.connections, "pc:2-3", connection)}
     assert {:ok, _} = Sessions.load_or_start(world)
-    assert {:ok, {moved, %{stops: 2}}} = Sessions.move(world, 0, "pn:3")
-    assert moved.turn == 2 and moved.visited == MapSet.new(["pn:1", "pn:2", "pn:3"])
-    assert {:ok, ^moved} = Sessions.load_or_start(world)
-    assert {:error, :stale_turn} = Sessions.move(world, 0, "pn:1")
-    assert Repo.get_by!(Progress, world: "tiny").turn == 2
+    assert {:error, :unavailable} = Sessions.move(world, 0, "pn:3")
+    assert %{turn: 0, location: "pn:1"} = Repo.get_by!(Progress, world: "tiny")
+    assert {:ok, {moved, _}} = Sessions.move(world, 0, "pn:2")
+    assert {:ok, {onward, _}} = Sessions.move(world, 1, "pn:3")
+    assert onward.turn == 2 and onward.visited == MapSet.new(["pn:1", "pn:2", "pn:3"])
+    assert moved.turn == 1
   end
 
   test "changed worlds require an explicit reset", %{world: world} do

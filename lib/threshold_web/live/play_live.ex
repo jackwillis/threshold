@@ -53,7 +53,7 @@ defmodule ThresholdWeb.PlayLive do
            player: player,
            error: nil,
            inspected: nil,
-           movement: %{turn: player.turn, geometry: route.geometry, stops: route.stops}
+           movement: %{turn: player.turn, geometry: route.geometry}
          )
        )}
     else
@@ -122,15 +122,13 @@ defmodule ThresholdWeb.PlayLive do
   defp present(socket) do
     %{world: world, player: player} = socket.assigns
     point = world.locations[player.location]["point"]
-    options = Game.walk_options(world, player)
-    moves = options.moves
+    moves = Game.available_moves(world, player)
     spawn = Enum.find(world.spawns, & &1["default"])
 
     state = %{
       point: point,
       turn: player.turn,
       moves: moves,
-      preview: options.preview,
       visited:
         for(
           id <- player.visited,
@@ -189,7 +187,7 @@ defmodule ThresholdWeb.PlayLive do
             </div>
             <h2>Your next step</h2>
             <p class="play-hint">
-              Choose a glowing marker or a direction below. Choose up to two stops. Faint rings show places three stops away.
+              Choose a glowing marker or a direction below. Each step takes you to the next place along the way.
             </p>
             <div id="available-moves" class="play-moves">
               <button
@@ -200,9 +198,7 @@ defmodule ThresholdWeb.PlayLive do
                 phx-value-turn={@player.turn}
               >
                 <span>Walk {direction(@world.locations[@player.location]["point"], move.point)}</span>
-                <small>{move.stops} {if move.stops == 1, do: "stop", else: "stops"} · {round(
-                  move.length_m
-                )} m <.icon name="hero-arrow-right" class="w-4 h-4" /></small>
+                <small>{round(move.length_m)} m <.icon name="hero-arrow-right" class="w-4 h-4" /></small>
               </button>
             </div>
             <p :if={@moves == []} class="play-hint">No walkable routes from here.</p>

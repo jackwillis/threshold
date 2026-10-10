@@ -40,6 +40,9 @@ defmodule ThresholdWeb.PlayLiveTest do
     assert has_element?(view, "#player-turn", "0")
     assert has_element?(view, "#walk-0")
     refute has_element?(view, "#inspect-0")
+    state = view |> element("#player-map") |> render() |> state_json()
+    refute Map.has_key?(state, "preview")
+    assert Enum.map(state["moves"], & &1["destination"]) == ["pn:2"]
     render_hook(view, "move", %{"destination" => "pn:3", "turn" => 0})
     assert Repo.get_by!(Progress, world: "tiny").turn == 0
     view |> element("#walk-0") |> render_click()
@@ -76,4 +79,17 @@ defmodule ThresholdWeb.PlayLiveTest do
     render_hook(view, "new_walk", %{})
     assert has_element?(view, "#play-error", "no usable movement")
   end
+
+  defp state_json(html) do
+    [_, encoded] = Regex.run(~r/data-state="([^"]*)"/, html)
+    encoded |> unescape() |> Jason.decode!()
+  end
+
+  defp unescape(text),
+    do:
+      text
+      |> String.replace("&quot;", "\"")
+      |> String.replace("&amp;", "&")
+      |> String.replace("&lt;", "<")
+      |> String.replace("&gt;", ">")
 end

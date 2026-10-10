@@ -37,7 +37,7 @@ defmodule Threshold.GameTest do
     assert player.location == "pn:1" and player.turn == 0 and MapSet.size(player.visited) == 1
   end
 
-  test "two-stop walks choose a stable route, count both stops, and visit the intermediate location" do
+  test "only immediately adjacent destinations are offered or reachable, and each move is one turn" do
     world = world()
     connection = world.connections["pc:1-2"]
 
@@ -53,7 +53,7 @@ defmodule Threshold.GameTest do
       })
     end
 
-    # Two legal paths to pn:4, plus a cycle between immediate neighbors.
+    # A chain 1-2-3-4 plus a spur 1-3: pn:4 is two hops away by every route.
     world = %{
       world
       | connections:
@@ -62,7 +62,6 @@ defmodule Threshold.GameTest do
               connection,
               link.("pc:1-3", "pn:1", "pn:3"),
               link.("pc:2-3", "pn:2", "pn:3"),
-              link.("pc:2-4", "pn:2", "pn:4"),
               link.("pc:3-4", "pn:3", "pn:4")
             ],
             &{&1["id"], &1}
@@ -70,36 +69,28 @@ defmodule Threshold.GameTest do
     }
 
     player = %Player{location: "pn:1", visited: MapSet.new(["pn:1"])}
-    options = Game.walk_options(world, player)
-    assert length(options.moves) == 3
-    assert options.preview == []
-    assert {:ok, moved, route} = Game.move(world, player, "pn:4")
-    assert moved.turn == 2
-    assert moved.visited == MapSet.new(["pn:1", "pn:2", "pn:4"])
-    assert route.path == ["pn:2", "pn:4"] and route.stops == 2
+    assert ["pn:2", "pn:3"] == Enum.map(Game.available_moves(world, player), & &1.destination)
+
+    assert {:error, :unavailable} = Game.move(world, player, "pn:4")
+    assert player.turn == 0 and player.location == "pn:1"
+
+    assert {:ok, moved, route} = Game.move(world, player, "pn:3")
+    assert moved.turn == 1 and moved.location == "pn:3"
+    assert moved.visited == MapSet.new(["pn:1", "pn:3"])
 
     assert route.geometry["coordinates"] ==
-             Enum.map(["pn:1", "pn:2", "pn:4"], &world.locations[&1]["point"])
+             Enum.map(["pn:1", "pn:3"], &world.locations[&1]["point"])
 
-    shorter = put_in(world, [Access.key(:connections), "pc:3-4", "length_m"], 50)
-    assert {:ok, _, %{path: ["pn:3", "pn:4"]}} = Game.move(shorter, player, "pn:4")
-    direct = Map.put(link.("pc:1-4", "pn:1", "pn:4"), "length_m", 500)
-    closer = %{shorter | connections: Map.put(shorter.connections, "pc:1-4", direct)}
-    assert {:ok, %{turn: 1}, %{stops: 1}} = Game.move(closer, player, "pn:4")
-    # A chain exposes its third stop only as a preview.
-    chain = %{world | connections: Map.take(world.connections, ["pc:1-2", "pc:2-3", "pc:3-4"])}
-    assert [%{destination: "pn:4"}] = Game.walk_options(chain, player).preview
-    assert {:error, :unavailable} = Game.move(chain, player, "pn:4")
-    assert player.turn == 0
+    assert "pn:4" in Enum.map(Game.available_moves(world, moved), & &1.destination)
+    assert {:ok, %{turn: 2, location: "pn:4"}, _} = Game.move(world, moved, "pn:4")
   end
 
-  test "walks and third-stop previews do not cross restricted connections" do
+  test "restricted connections are not offered or reachable" do
     world = world()
     # The imported pn:3-pn:4 route was filtered out by the access policy.
     connection = Map.merge(world.connections["pc:1-2"], %{"id" => "pc:1-3", "to" => "pn:3"})
     world = %{world | connections: Map.put(world.connections, "pc:1-3", connection)}
-    assert Game.walk_options(world, %Player{location: "pn:1"}).preview == []
-    assert {:error, :unavailable} = Game.move(world, %Player{location: "pn:1"}, "pn:4")
+    assert {:error, :unavailable} = Game.move(world, %Player{location: "pn:3"}, "pn:4")
   end
 
   test "missing/defaultless/isolated spawns are rejected" do
