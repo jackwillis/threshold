@@ -26,6 +26,25 @@ defmodule Threshold.JsonCache do
     end
   end
 
+  @doc """
+  Returns the cached result for `key`, computing it with `fun` on first use. Shares the same
+  small recency window as `decode/1`, so derived results (such as a clipped layer) expire with it.
+  """
+  @spec memo(term, (-> term)) :: term
+  def memo(key, fun) do
+    full = {__MODULE__, :memo, key}
+
+    case :persistent_term.get(full, nil) do
+      nil ->
+        value = fun.()
+        remember(full, value)
+        value
+
+      value ->
+        value
+    end
+  end
+
   defp remember(key, document) do
     recent = [key | List.delete(:persistent_term.get(@index, []), key)]
     {keep, drop} = Enum.split(recent, @keep)

@@ -45,9 +45,12 @@ export const PlayerMap = {
       try {
         const world = encodeURIComponent(this.el.dataset.world ?? "madison");
         const snapshot = this.el.dataset.snapshot;
-        const query = snapshot ? `?generation=${encodeURIComponent(snapshot)}` : "";
+        // Only the area the camera can reach: the playable boundary plus a margin for the tether and viewport.
+        const reach = this.state().bounds;
+        const box = reach ? `${reach[0] - 0.0098},${reach[1] - 0.0072},${reach[2] + 0.0098},${reach[3] + 0.0072}` : "";
+        const query = [snapshot ? `generation=${encodeURIComponent(snapshot)}` : "", box ? `bbox=${box}` : ""].filter(Boolean).join("&");
         const data = await Promise.all(["edges", "context"].map(async layer => {
-          const response = await fetch(`/worlds/${world}/${layer}${query}`, { cache: "no-store" });
+          const response = await fetch(`/worlds/${world}/${layer}${query ? `?${query}` : ""}`, { cache: "no-store" });
           if (!response.ok) throw new Error(`Unable to load ${layer}.`);
           return await response.json() as FeatureCollection;
         }));
