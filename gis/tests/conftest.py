@@ -1,6 +1,5 @@
 import hashlib
 import json
-import shutil
 from pathlib import Path
 
 import pytest
@@ -8,6 +7,8 @@ import pytest
 from threshold_gis import world as w
 
 REPO = Path(__file__).resolve().parents[2]
+
+TEST_BOUNDARY = [[-89.391777, 43.06993], [-89.369448, 43.06993], [-89.369448, 43.080139], [-89.391777, 43.080139], [-89.391777, 43.06993]]
 
 # (id, lon, lat)
 NODES = [
@@ -65,7 +66,10 @@ def worlds_dir(tmp_path):
     """A complete synthetic world with a pinned source, laid out like priv/worlds/<name>."""
     world = tmp_path / "worlds" / "test"
     (world / "source").mkdir(parents=True)
-    shutil.copy(REPO / "priv/worlds/madison/boundary.geojson", world / "boundary.geojson")
+    # A fixed boundary (not the live Madison file, which the designer edits) keeps these tests deterministic.
+    (world / "boundary.geojson").write_text(
+        json.dumps({"type": "Feature", "properties": {}, "geometry": {"type": "Polygon", "coordinates": [TEST_BOUNDARY]}})
+    )
     (world / "config.json").write_text(
         json.dumps(
             {
