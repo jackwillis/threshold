@@ -196,6 +196,9 @@ defmodule ThresholdWeb.PlayLive do
     end
   end
 
+  defp outcome_class({:recorded, _}), do: "play-outcome"
+  defp outcome_class(_), do: nil
+
   defp outcome_text({:recorded, []}), do: "Recorded."
   defp outcome_text({:recorded, labels}), do: "Recorded: #{Enum.join(labels, "; ")}."
   defp outcome_text({:refused, _}), do: "That is no longer available here."
@@ -438,8 +441,22 @@ defmodule ThresholdWeb.PlayLive do
                 <%= cond do %>
                   <% @outcome != nil -> %>
                     <%!-- A new id per outcome makes this a new element, so phx-mounted moves focus to it each time. --%>
-                    <span id={"outcome-#{@outcome_seq}"} tabindex="-1" phx-mounted={JS.focus()}>
-                      {outcome_text(@outcome)}
+                    <span class={outcome_class(@outcome)}>
+                      <span
+                        :if={match?({:recorded, _}, @outcome)}
+                        class="play-stamp"
+                        aria-hidden="true"
+                      >
+                        Noted
+                      </span>
+                      <span
+                        id={"outcome-#{@outcome_seq}"}
+                        class={if(match?({:refused, _}, @outcome), do: "play-refused")}
+                        tabindex="-1"
+                        phx-mounted={JS.focus()}
+                      >
+                        {outcome_text(@outcome)}
+                      </span>
                     </span>
                   <% Enum.any?(@interactions, &(&1.status == :available)) and @open_interaction == nil -> %>
                     Something here can be investigated.
@@ -464,7 +481,11 @@ defmodule ThresholdWeb.PlayLive do
                     do: "Close",
                     else: "Investigate"}</small>
                 </button>
-                <p :if={entry.status == :completed} id={"investigated-#{index}"} class="play-hint">
+                <p
+                  :if={entry.status == :completed}
+                  id={"investigated-#{index}"}
+                  class="play-hint play-done"
+                >
                   Investigated: {entry.interaction["title"]}
                 </p>
                 <section
@@ -477,6 +498,7 @@ defmodule ThresholdWeb.PlayLive do
                   }
                   phx-key="Escape"
                 >
+                  <p class="play-scene-eyebrow">Field note</p>
                   <h3 id="scene-title" tabindex="-1" phx-mounted={JS.focus()}>
                     {entry.interaction["scene"]["title"]}
                   </h3>

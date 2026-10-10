@@ -25,17 +25,44 @@
   #play-chrome .play-map-label { font-size: 20px; padding: 6px 10px 8px; }
 }
 
-/* /play: the investigate panel (LiveView). Static panel colours match the rest of the side panel. */
-.play-scene { margin-top: 14px; }
-.play-scene h3 { font-family: "Atlas Serif", Georgia, serif; }
-.play-scene p { font-family: "Atlas Serif", Georgia, serif; font-size: 16px; }
-.play-choices { display: grid; gap: 8px; margin-top: 14px; }
-.play-choices .play-place { margin-top: 0; }
-.play-scene .play-choices button { margin-top: 0; font-size: 14px; text-decoration: none; }
-.play-scene .play-choices button:hover { text-decoration: underline; }
+/* /play: the investigate panel (LiveView): a field-notebook page in the side panel.
+   Static paper colours match the rest of the panel; type is the bundled Atlas Serif. */
+.play-scene {
+  --paper: #faf5e6; --rule: rgba(110, 92, 60, .13); --margin: #c9a88e; --ink: #3a3024; --ink-soft: #6b5d48; --accent: #0e6f61;
+  margin-top: 14px; padding: 18px 18px 12px 30px; border: 1px solid #e2d9bf; border-left: 0; border-radius: 2px 6px 6px 2px;
+  background-color: var(--paper); color: var(--ink);
+  /* A margin rule like a field notebook page. */
+  background-image: linear-gradient(to right, transparent 22px, var(--margin) 22px, var(--margin) 23px, transparent 23px);
+  box-shadow: 0 1px 0 #fff inset, 0 2px 6px rgba(70, 55, 30, .08);
+  animation: scene-in .22s ease-out both;
+}
+.play-scene .play-scene-eyebrow { margin: 0; font: 500 11px/1 var(--atlas-sans, system-ui, sans-serif); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-soft); }
+.play-scene h3 { margin: 6px 0 10px; font: 500 25px/1.2 "Atlas Serif", Georgia, serif; color: var(--ink); }
+.play-scene p { margin: 0 0 14px; font: 17px/28px "Atlas Serif", Georgia, serif; white-space: normal; }
+.play-choices { display: grid; gap: 4px; margin: 16px 0 6px; }
+.play-scene .play-choices button {
+  display: block; width: 100%; margin: 0; padding: 10px 12px 10px 28px; position: relative; text-align: left; min-height: 44px;
+  border: 0; border-radius: 3px; background: transparent; color: var(--ink); font: italic 17px/24px "Atlas Serif", Georgia, serif; text-decoration: none; cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+}
+.play-scene .play-choices button::before { content: "\2014" / ""; position: absolute; left: 6px; color: var(--margin); font-style: normal; }
+.play-scene .play-choices button:hover { background: rgba(14, 111, 97, .09); color: var(--accent); }
+.play-scene #close-scene { min-height: 44px; padding: 0 10px; margin-top: 4px; font: 14px/1 var(--atlas-sans, system-ui, sans-serif); color: var(--ink-soft); }
+
+/* A discovery or recorded outcome: a short note stamped into the notebook. */
+.play-outcome { display: flex; gap: 10px; align-items: baseline; margin: 10px 0; padding: 10px 12px; border-left: 3px solid #0e6f61; background: #f1f6ee; border-radius: 0 4px 4px 0; font: 17px/24px "Atlas Serif", Georgia, serif; color: #2b3a33; animation: scene-in .22s ease-out both; }
+.play-outcome .play-stamp { flex: none; font: 600 10px/1 var(--atlas-sans, system-ui, sans-serif); letter-spacing: .16em; text-transform: uppercase; color: #0e6f61; border: 1px solid currentColor; border-radius: 2px; padding: 3px 5px; }
+.play-outcome em { font-style: italic; }
+.play-outcome [tabindex] { padding: 2px 6px; border-radius: 3px; }
+#interaction-outcome .play-refused { font: italic 15px/22px "Atlas Serif", Georgia, serif; color: #7a5a2b; }
+.play-done::before { content: "\2713" / ""; margin-right: 6px; color: #0e6f61; }
+
+@keyframes scene-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .play-scene, .play-outcome { animation: none; }
+  .play-scene .play-choices button { transition: none; }
+}
 
 /* Visually hidden, still read by assistive technology. */
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .play-panel [tabindex="-1"]:focus-visible { outline: 3px solid #139884; outline-offset: 3px; border-radius: 2px; }
-/* Touch target for the scene's text Close button. */
-.play-scene #close-scene { min-height: 44px; padding: 0 10px; }
