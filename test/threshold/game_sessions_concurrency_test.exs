@@ -3,7 +3,8 @@ defmodule Threshold.GameSessionsConcurrencyTest do
   # every task through one connection and would hide races. The test database is disposable.
   use ExUnit.Case, async: false
   alias Threshold.{Authored, Repo}
-  alias Threshold.Game.{Progress, Sessions, World}
+  alias Threshold.Game
+  alias Threshold.Game.{Player, Progress, Sessions, World}
   @moduletag :database
 
   setup do
@@ -28,11 +29,46 @@ defmodule Threshold.GameSessionsConcurrencyTest do
         %{"id" => "spawn:default", "location" => "pn:1", "default" => true}
       ])
 
+    # A second real spoke from pn:1 so competing moves can choose different destinations.
+    edges = load.("generated/edges.geojson")["features"]
+
+    spoke_edge =
+      edges
+      |> hd()
+      |> put_in(["properties", "id"], "edge:1-5-103")
+      |> Map.put("id", "edge:1-5-103")
+
+    spoke_edge = put_in(spoke_edge["properties"]["to"], "node:5")
+
+    spoke_edge =
+      put_in(spoke_edge["geometry"]["coordinates"], [[-89.385, 43.074], [-89.39, 43.073]])
+
+    playable = load.("generated/playable.json")
+
+    playable =
+      playable
+      |> update_in(
+        ["locations"],
+        &(&1 ++ [%{"id" => "pn:5", "node" => "node:5", "point" => [-89.39, 43.073]}])
+      )
+      |> update_in(["connections"], fn connections ->
+        connections ++
+          [
+            %{
+              "id" => "pc:1-5",
+              "from" => "pn:1",
+              "to" => "pn:5",
+              "edge_ids" => ["edge:1-5-103"],
+              "length_m" => 120
+            }
+          ]
+      end)
+
     {:ok, world} =
       World.new(
         "tiny",
-        load.("generated/playable.json"),
-        load.("generated/edges.geojson")["features"],
+        playable,
+        edges ++ [spoke_edge],
         load.("boundary.geojson")["geometry"],
         authored
       )
@@ -57,6 +93,24 @@ defmodule Threshold.GameSessionsConcurrencyTest do
 
     assert %{ok: 1, stale_turn: 15} = results |> Task.await_many() |> tally()
     assert %{turn: 1, location: "pn:2"} = progress()
+  end
+
+  test "competing moves to different destinations still advance the turn exactly once", %{
+    world: world
+  } do
+    assert ["pn:2", "pn:5"] ==
+             Game.available_moves(world, %Player{location: "pn:1"}) |> Enum.map(& &1.destination)
+
+    {:ok, _} = Sessions.load_or_start(world)
+
+    results =
+      for destination <- Enum.flat_map(1..8, fn _ -> ["pn:2", "pn:5"] end),
+          do: Task.async(fn -> {destination, Sessions.move(world, 0, destination)} end)
+
+    results = Task.await_many(results)
+    assert [{winner, {:ok, _}}] = Enum.filter(results, &match?({_, {:ok, _}}, &1))
+    assert Enum.count(results, &match?({_, {:error, :stale_turn}}, &1)) == 15
+    assert %{turn: 1, location: ^winner} = progress()
   end
 
   test "a replayed request and a failed move leave the save unchanged", %{world: world} do
