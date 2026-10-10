@@ -100,6 +100,69 @@ defmodule Threshold.BoundaryTest do
     end
   end
 
+  describe "bounds/1, default/1 and import_area/2" do
+    test "bounds reads the extent of a polygon" do
+      {:ok, geometry} = Boundary.polygon(@square)
+      assert Boundary.bounds(geometry) == [-89.39, 43.07, -89.37, 43.08]
+    end
+
+    test "import_area is import_bounds when set, with no buffer", %{} do
+      assert {:ok, %{"coordinates" => [ring]}} =
+               Boundary.import_area(%{"import_bounds" => [-89.40, 43.06, -89.35, 43.09]}, nil)
+
+      assert Enum.at(ring, 0) == [-89.4, 43.06] and Enum.at(ring, 2) == [-89.35, 43.09]
+    end
+
+    test "without import_bounds it is the snapshot pulled in by the buffer, and always saveable" do
+      manifest = %{"bounds" => [-89.3935, 43.0677, -89.3665, 43.0823]}
+      assert {:ok, geometry} = Boundary.import_area(@config, manifest)
+      assert Boundary.coverage_error(geometry, @config, manifest) == nil
+      [w, s, e, n] = Boundary.bounds(geometry)
+      assert w > -89.3935 and s > 43.0677 and e < -89.3665 and n < 43.0823
+    end
+
+    test "import_area needs a snapshot" do
+      assert {:error, "This world has no pinned source snapshot."} =
+               Boundary.import_area(@config, nil)
+    end
+
+    test "default reads a polygon or feature, and reports a missing or broken file", %{
+      tmp_dir: dir
+    } do
+      assert {:error, :none} = Boundary.default(dir)
+
+      File.write!(
+        Path.join(dir, "default_boundary.geojson"),
+        Boundary.encode(elem(Boundary.polygon(@square), 1))
+      )
+
+      assert {:ok, %{"coordinates" => [@square]}} = Boundary.default(dir)
+
+      File.write!(
+        Path.join(dir, "default_boundary.geojson"),
+        Jason.encode!(%{"type" => "Polygon", "coordinates" => [@square]})
+      )
+
+      assert {:ok, _} = Boundary.default(dir)
+
+      File.write!(
+        Path.join(dir, "default_boundary.geojson"),
+        ~s({"type":"Point","coordinates":[0,0]})
+      )
+
+      assert {:error, "default_boundary.geojson is not a valid polygon."} = Boundary.default(dir)
+
+      bowtie = [[0, 0], [2, 2], [2, 0], [0, 2], [0, 0]]
+
+      File.write!(
+        Path.join(dir, "default_boundary.geojson"),
+        Jason.encode!(%{"type" => "Polygon", "coordinates" => [bowtie]})
+      )
+
+      assert {:error, "The boundary edges cross each other."} = Boundary.default(dir)
+    end
+  end
+
   describe "save/4" do
     setup %{tmp_dir: dir} do
       File.mkdir_p!(Path.join(dir, "source"))

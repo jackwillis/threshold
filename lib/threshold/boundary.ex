@@ -38,6 +38,60 @@ defmodule Threshold.Boundary do
 
   def polygon(_), do: {:error, "Boundary must be a list of positions."}
 
+  @doc "`[west, south, east, north]` of a polygon geometry."
+  @spec bounds(map) :: [number]
+  def bounds(%{"coordinates" => [ring | _]}) do
+    lons = Enum.map(ring, &Enum.at(&1, 0))
+    lats = Enum.map(ring, &Enum.at(&1, 1))
+    [Enum.min(lons), Enum.min(lats), Enum.max(lons), Enum.max(lats)]
+  end
+
+  @doc """
+  The world's defined default boundary, read from `default_boundary.geojson` (a GeoJSON polygon
+  or a Feature holding one). A world without that file has no default.
+  """
+  @spec default(Path.t()) :: {:ok, map} | {:error, :none | String.t()}
+  def default(dir) do
+    case File.read(Path.join(dir, "default_boundary.geojson")) do
+      {:error, :enoent} ->
+        {:error, :none}
+
+      {:ok, text} ->
+        with {:ok, json} <- Jason.decode(text),
+             %{"type" => "Polygon", "coordinates" => [ring | _]} <- geometry_of(json),
+             {:ok, geometry} <- polygon(ring) do
+          {:ok, geometry}
+        else
+          {:error, message} when is_binary(message) -> {:error, message}
+          _ -> {:error, "default_boundary.geojson is not a valid polygon."}
+        end
+
+      {:error, reason} ->
+        {:error, "Cannot read default_boundary.geojson (#{reason})."}
+    end
+  end
+
+  defp geometry_of(%{"type" => "Feature", "geometry" => geometry}), do: geometry
+  defp geometry_of(geometry), do: geometry
+
+  @doc """
+  The largest rectangle the world's source data supports: its `import_bounds`, or else the
+  snapshot bounds pulled in by the buffer the importer will add. Saving it is always allowed.
+  """
+  @spec import_area(map, map | nil) :: {:ok, map} | {:error, String.t()}
+  def import_area(%{"import_bounds" => [w, s, e, n]}, _manifest), do: rectangle(w, s, e, n)
+
+  def import_area(config, %{"bounds" => [w, s, e, n]}) do
+    reach = (config["buffer_m"] || 0) - @tolerance_m
+    dlat = max(reach, 0) / @m_per_deg + 1.0e-7
+    dlon = max(reach, 0) / (@m_per_deg * :math.cos((s + n) / 2 * :math.pi() / 180)) + 1.0e-7
+    rectangle(w + dlon, s + dlat, e - dlon, n - dlat)
+  end
+
+  def import_area(_config, _manifest), do: {:error, "This world has no pinned source snapshot."}
+
+  defp rectangle(w, s, e, n), do: polygon([[w, s], [e, s], [e, n], [w, n], [w, s]])
+
   @doc "Deterministic file contents for a boundary geometry."
   def encode(%{"type" => "Polygon"} = geometry, properties \\ %{}) do
     feature = [

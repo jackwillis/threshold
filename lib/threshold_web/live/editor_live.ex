@@ -52,7 +52,7 @@ defmodule ThresholdWeb.EditorLive do
   ]
 
   @modes ~w(inspect place move connect close boundary)
-  @mutations ~w(add_spawn remove_spawn choose_spawn set_default_spawn start_reconnect reconnect_location review_reference set_mode pick add_location move_location update_location update_connection update_closure set_playable_override detach_location close_edge delete_selected update_boundary discard save regenerate)
+  @mutations ~w(add_spawn remove_spawn choose_spawn set_default_spawn start_reconnect reconnect_location review_reference set_mode pick add_location move_location update_location update_connection update_closure set_playable_override detach_location close_edge delete_selected update_boundary reset_boundary discard save regenerate)
 
   @impl true
   def mount(params, _session, socket) do
@@ -417,6 +417,33 @@ defmodule ThresholdWeb.EditorLive do
     end
   end
 
+  # Resets only change the working boundary; nothing is written until Save.
+  def handle_event("reset_boundary", %{"to" => to}, socket) when to in ~w(saved default import) do
+    a = socket.assigns
+
+    result =
+      case to do
+        "saved" -> {:ok, a.saved_boundary}
+        "default" -> Boundary.default(a.world.dir)
+        "import" -> Boundary.import_area(a.world.config, source_manifest(a.world.dir))
+      end
+
+    with :ok <- allow_edit(socket), {:ok, geometry} <- result do
+      {:noreply, socket |> assign(:boundary, geometry) |> bump_rev()}
+    else
+      {:error, :none} ->
+        {:noreply, put_flash(socket, :error, "This world has no default boundary defined.")}
+
+      {:error, message} when is_binary(message) ->
+        {:noreply, put_flash(socket, :error, message)}
+    end
+  end
+
+  def handle_event("fit_boundary", _params, socket),
+    do:
+      {:noreply,
+       focus(socket, %{"bounds" => Boundary.bounds(socket.assigns.boundary), "object" => nil})}
+
   def handle_event("discard", _params, socket) do
     {:noreply,
      socket
@@ -516,6 +543,15 @@ defmodule ThresholdWeb.EditorLive do
     do:
       "route exists but is blocked by " <>
         Enum.map_join(blockers, ", ", &"#{&1.reason} (#{&1.edge})")
+
+  defp source_manifest(dir) do
+    with {:ok, text} <- File.read(Path.join(dir, "source/manifest.json")),
+         {:ok, manifest} <- Jason.decode(text) do
+      manifest
+    else
+      _ -> nil
+    end
+  end
 
   defp geography(%{generated: nil}), do: nil
 
@@ -812,6 +848,47 @@ defmodule ThresholdWeb.EditorLive do
                 >Remove mark</button>
               </li>
             </ul>
+          </section>
+
+          <section id="boundary-controls">
+            <h3>Playable boundary</h3>
+            <p class="hint">
+              Reshape it with the Boundary tool. Resets only change the working boundary: nothing is saved until you press Save.
+            </p>
+            <button id="fit-boundary" type="button" phx-click="fit_boundary" class="tool">
+              Fit to boundary
+            </button>
+            <div class="button-row">
+              <button
+                id="reset-boundary-saved"
+                type="button"
+                phx-click="reset_boundary"
+                phx-value-to="saved"
+                class="tool"
+                disabled={@boundary == @saved_boundary}
+              >
+                Reset to saved
+              </button>
+              <button
+                id="reset-boundary-default"
+                type="button"
+                phx-click="reset_boundary"
+                phx-value-to="default"
+                class="tool"
+                disabled={not File.exists?(Path.join(@world.dir, "default_boundary.geojson"))}
+              >
+                Reset to default
+              </button>
+              <button
+                id="expand-boundary"
+                type="button"
+                phx-click="reset_boundary"
+                phx-value-to="import"
+                class="tool"
+              >
+                Expand to import area
+              </button>
+            </div>
           </section>
 
           <section id="regeneration">
