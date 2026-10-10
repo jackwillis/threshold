@@ -1,6 +1,6 @@
 # Implementation status
 
-Last updated: October 9, 2026. This file separates what exists and has been verified from what is active, planned or deferred. The operational task list is [implementation-plan.md](implementation-plan.md).
+Last updated: October 10, 2026. This file separates what exists and has been verified from what is active, planned or deferred. The operational task list is [implementation-plan.md](implementation-plan.md).
 
 ## Completed and verified
 
@@ -12,6 +12,19 @@ Verified means exercised by an automated test and/or by driving the app in headl
 - **Editing tools:** inspect, place (snaps to node, edge with offset, or free point), move, connect, close street, boundary editing (Terra Draw), Save and Discard with an unsaved-changes indicator and leave-page guard. Saving a boundary makes the geography stale and is refused if boundary plus buffer exceeds the pinned snapshot.
 
 - **Playable-location layer (candidate):** `threshold-gis playable` builds a derived network (graph-radius clustering, 25 m) beside the imported files with connectivity-integrity diagnostics and designer retain/suppress overrides; the editor displays it, flags staleness, and saves overrides with the authored layer. Verified by Python and Elixir tests and in headless Firefox. Playable connections now contain continuous source-network routes, ordered edge/node lists and actual route geometry; route integrity was audited on Madison and tested on synthetic data. See [playable-route-review.md](playable-route-review.md) for results and gameplay limits. Playability remains untested.
+
+- **Walking access** (`0547583`): optional `access` on authored places, independent of the display marker; routing, validation, reference status, inspector and Route-check actions. LiveView-tested; the map does not yet draw the access point or a connector (Studio V2 backlog) and it was not browser-verified.
+- **Runtime-world cache** (`e68269c`): `Threshold.WorldCache` keeps the four most recent compiled movement worlds keyed by generation, authored hash, boundary hash and graph mode; warm loads 148-210 ms to 0.3 ms. Tested including with PostgreSQL.
+- **Classic Atlas** (`6e5f75e`, `d04e223`): season tokens, a shared MapLibre layer stack, bundled EB Garamond drawn locally by MapLibre 5.24 (no glyph PBFs), `/atlas` prototype and the `/play` map; season is display-only. Browser-verified in headless Firefox; see [classic-atlas-typography.md](classic-atlas-typography.md) for rendering limitations. The editor keeps its diagnostic style.
+- **Interactions, first slice** (`5eafbca` to `6f9304a`): `interactions.json` with strict validation and lint (`mix threshold.interactions`), discoveries and completed interactions in two PostgreSQL tables, transactional `Sessions.complete_interaction/5`, and an accessible, field-notebook investigate panel on `/play` (live region, focus management, reduced motion). Verified by tests (including concurrency on independent connections) and in headless Firefox at desktop and 420-500 px on scratch worlds. See [gameplay-interactions.md](gameplay-interactions.md).
+
+## Verification status (October 10, 2026)
+
+`make check` passes with 303 Elixir tests when `THRESHOLD_TEST_DATABASE_URL` points at the disposable test database (13 database tests are excluded without it), 35 Bun tests and 38 Python tests. Not verified: real screen readers, touch devices, browsers other than Firefox, the CI workflow on GitHub, Compose container startup, and the interactions migration against the designer's development database (not applied by agents). The designer's real `authored.json`, playable boundary, active generated snapshot and snapshots have never been modified by agent work.
+
+## Proposals awaiting approval
+
+- [Session compatibility instead of whole-file revisions](world-revisions-proposal.md): an explicit position check (exists, traversable, inside the boundary), a diagnostic revision stamp, and non-destructive recovery. Not implemented.
 
 ## Known limitations and untested areas
 
@@ -37,18 +50,18 @@ Not verified or not done: the CI workflow has never run on GitHub; the editor's 
 
 ## Active
 
-Reviewing the editor milestone (plan Phases 5-6): both editing and regeneration/reference-repair workflows are implemented. The next evaluation concerns playable graph route integrity and suitability for gameplay.
+Gameplay content: a short multi-location Madison mystery using the interaction system, proposed in [madison-mystery-proposal.md](madison-mystery-proposal.md) for the designer's review before any authored file is touched. Studio V2 interaction editing, portraits and simple dialogue follow.
 
 ## Planned
 
 1. Apply the agreed fixes from the network review (retain sidewalk/crossing tags; decide on a derived access basis).
 2. Playable-node approach: an experiment compared candidate networks ([playable-node-experiment.md](playable-node-experiment.md)); graph-radius clustering preserved connectivity, proximity merging did not. Productized as a derived layer; alleys are protected and plaza gaps are not bridged as provisional choices (undecided by the designer). Imported routing topology and playable locations stay distinct.
-3. PostgreSQL/PostGIS and Ecto, introduced with the first persistent gameplay increment. World files remain the reproducible source artifacts.
-4. Smallest playable movement system in Elixir (destination, route, confirm, stop on interruption).
+3. PostGIS: not used yet; PostgreSQL and Ecto now hold player progress and interactions. World files remain the reproducible source artifacts.
+4. Done: strict one-hop movement on the authored graph (see Completed).
 
 ## Deferred
 
-Radio, encounters, null zones, Backrooms, achievements, cartography/knowledge UI, a dark "field-map" style, multiplayer, hosted deployment, CI provider selection.
+Radio, encounters beyond the first interaction slice, null zones, Backrooms, achievements, cartography/knowledge UI, journal, chained scenes, portraits and dialogue, Studio V2 interaction editing, a dark "field-map" style, multiplayer, hosted deployment, CI provider selection.
 
 ## Environment
 

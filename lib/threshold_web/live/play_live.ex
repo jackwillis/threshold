@@ -59,6 +59,13 @@ defmodule ThresholdWeb.PlayLive do
     with true <- socket.assigns.player != nil,
          {:ok, world} <- World.load(socket.assigns.world_name, graph: socket.assigns.graph),
          {:ok, {player, route}} <- Sessions.move(world, expected, params["destination"]) do
+      # Walking away removes an open scene. If keyboard focus was inside it (a number key was
+      # pressed there), it would fall to the page body; the client moves it to a stable heading.
+      socket =
+        if socket.assigns.open_interaction,
+          do: push_event(socket, "restore-focus", %{to: "#next-step-heading"}),
+          else: socket
+
       {:noreply,
        present(
          assign(socket,
@@ -188,6 +195,9 @@ defmodule ThresholdWeb.PlayLive do
       {:error, message} -> assign(socket, error: message)
     end
   end
+
+  defp outcome_class({:recorded, _}), do: "play-outcome"
+  defp outcome_class(_), do: nil
 
   defp outcome_text({:recorded, []}), do: "Recorded."
   defp outcome_text({:recorded, labels}), do: "Recorded: #{Enum.join(labels, "; ")}."
@@ -385,7 +395,7 @@ defmodule ThresholdWeb.PlayLive do
               <summary>Map notes ({length(@world.warnings)})</summary>
               <p :for={warning <- @world.warnings}>{warning}</p>
             </details>
-            <h2>Your next step</h2>
+            <h2 id="next-step-heading" tabindex="-1">Your next step</h2>
             <p class="play-hint">
               Choose a glowing marker or a direction below, or press its number key. Numbers run clockwise from north.
             </p>
@@ -431,8 +441,22 @@ defmodule ThresholdWeb.PlayLive do
                 <%= cond do %>
                   <% @outcome != nil -> %>
                     <%!-- A new id per outcome makes this a new element, so phx-mounted moves focus to it each time. --%>
-                    <span id={"outcome-#{@outcome_seq}"} tabindex="-1" phx-mounted={JS.focus()}>
-                      {outcome_text(@outcome)}
+                    <span class={outcome_class(@outcome)}>
+                      <span
+                        :if={match?({:recorded, _}, @outcome)}
+                        class="play-stamp"
+                        aria-hidden="true"
+                      >
+                        Noted
+                      </span>
+                      <span
+                        id={"outcome-#{@outcome_seq}"}
+                        class={if(match?({:refused, _}, @outcome), do: "play-refused")}
+                        tabindex="-1"
+                        phx-mounted={JS.focus()}
+                      >
+                        {outcome_text(@outcome)}
+                      </span>
                     </span>
                   <% Enum.any?(@interactions, &(&1.status == :available)) and @open_interaction == nil -> %>
                     Something here can be investigated.
@@ -457,7 +481,11 @@ defmodule ThresholdWeb.PlayLive do
                     do: "Close",
                     else: "Investigate"}</small>
                 </button>
-                <p :if={entry.status == :completed} id={"investigated-#{index}"} class="play-hint">
+                <p
+                  :if={entry.status == :completed}
+                  id={"investigated-#{index}"}
+                  class="play-hint play-done"
+                >
                   Investigated: {entry.interaction["title"]}
                 </p>
                 <section
@@ -470,6 +498,7 @@ defmodule ThresholdWeb.PlayLive do
                   }
                   phx-key="Escape"
                 >
+                  <p class="play-scene-eyebrow">Field note</p>
                   <h3 id="scene-title" tabindex="-1" phx-mounted={JS.focus()}>
                     {entry.interaction["scene"]["title"]}
                   </h3>

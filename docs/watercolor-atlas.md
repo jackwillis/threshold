@@ -2,7 +2,8 @@
 
 October 9, 2026. Independent visual experiment based on `867f01e`, on branch
 `feature/watercolor-atlas`. Final worktree: `/home/jack/code/threshold-watercolor`.
-No gameplay, GIS, schema, persistence or world-data changes. Integration awaits designer review.
+No gameplay, GIS, schema, persistence or world-data changes. The designer approved the subtle
+treatment; it is the default for both `/atlas` and `/play`.
 
 ## Recommendation and comparisons
 
@@ -122,14 +123,26 @@ hooks, `atlas/season.ts`, `atlas/style.ts`, `atlas/tokens.ts`. Added: the two ge
 `atlas/materials.ts`, `atlas/materials.test.ts`, twelve PNGs, this memo and browser evidence.
 No new geographic files, migrations or Elixir modules.
 
-After designer approval, inspect changes to the two hooks and the shared atlas files against
+For future integration, inspect changes to the two hooks and the shared atlas files against
 Claude's current work. Preserve both implementations if they diverged. On an integration branch
-in a clean checkout, use `git cherry-pick feature/watercolor-atlas`, then `make assets` and the full
-PostgreSQL-enabled `make check`. Do not run a merge or cherry-pick over the designer's current
-uncommitted world work. No merge, push or deployment has been performed.
+in a clean checkout, use `git cherry-pick e2a7ee1`, then `make assets` and the full
+PostgreSQL-enabled `make check`. Check for overlapping edits before integrating and preserve
+the designer's uncommitted world files. No push or deployment has been performed.
 
-At final review, primary `main` had advanced to `0770c6b`. Its new commits modify `assets/src/app.ts`,
+At the original experiment handoff, primary `main` had advanced to `0770c6b`. Its new commits modify `assets/src/app.ts`,
 `PlayLive`, interaction tests and the revisions proposal; none overlap this experiment's changed
 files. The primary checkout also has in-progress `PlayLive` and `atlas.css` edits. Those are
 untouched; screenshots show the committed `867f01e` presentation plus this branch, so compare
 the result with the designer's latest CSS before integration.
+
+## Accepted treatment
+
+The designer selected **subtle** after reviewing the comparisons. The isolated feature was
+combined with `main` at `e7be40d` before running the full gate again. Integration preserves the
+new field-notebook presentation and does not touch the primary checkout's pending README,
+implementation-status or Madison geography work. Baseline and painterly URL options remain
+available as visual comparison tools; ordinary page loads use subtle.
+
+The integration gate passed with **303 Elixir, 42 Bun and 38 Python tests**, plus all
+formatting, type, validation and deterministic rebuild checks. A fresh browser check without
+a `materials` parameter confirmed the default subtle treatment.
