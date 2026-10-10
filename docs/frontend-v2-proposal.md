@@ -5,7 +5,7 @@ Date: 2026-10-09. A review for the project owner to approve; no V2 code exists. 
 ## What V1 actually looks like (facts that drive the recommendation)
 
 - Two LiveViews and two TypeScript hooks. **Atlas** (`play_live.ex` 288 lines, `player_map.ts` 177) is a thin client: the server computes everything the player may do and sends it as `data-state`; the browser renders markers and animates. **Studio** (`editor_live.ex` 1,045 lines with 34 event handlers, `editor_components.ex` 512, `map_editor.ts` 463) is the heavy one: the server owns the working copy and validates every edit, while the hook holds tool modes, Terra Draw, snapping and drag state.
-- The bundle is already ~2 MB, almost all MapLibre and Terra Draw. A UI framework would add a few kilobytes; bundle size is not a deciding factor.
+- The development bundle is already about 2 MB unminified, dominated by the bundled map libraries (MapLibre, Terra Draw). A UI framework would add a few kilobytes; bundle size is not a deciding factor.
 - Domain rules already live on the server and are tested there: save conflicts and locking, edge-anchor derivation, route resolution, movement validation. The reliability work made these dependable.
 - What hurts today is concentrated in Studio: the inspector, spawn section, route check and regeneration panel are large server-rendered templates driven by many round trips, and the hook and LiveView must agree on modes and selection. Atlas has no comparable pain.
 
