@@ -180,3 +180,15 @@ The implementation is complete when:
 The map should provide enough freedom to inspect the immediate environment without allowing players to survey the entire game world from one location.
 
 The player-centered camera, strict one-hop movement, and radial keyboard navigation should reinforce one coherent exploration experience.
+
+## Implementation notes (V1 player map, 2026-10-09)
+
+Implemented in the current Field Atlas (`/play`), not only in V2. Rules live in `assets/src/map/camera.ts` (pure, 11 tests in `camera.test.ts`, run by `make check`) and are applied by `hooks/player_map.ts`. The Studio editor keeps its own camera.
+
+- **Limits** default to zoom 17 to 19.5 and a 200 m tether, with the authored spawn zoom clamped into range. They are overridable in one place: `config :threshold, :atlas_camera, min_zoom: ..., max_zoom: ..., max_displacement_m: ...` (0 locks the centre to the player). Zoom uses MapLibre's `minZoom`/`maxZoom`, so wheel, pinch, controls and `fitBounds` all respect it.
+- **Tether** is geographic distance from the player's current location. User gestures (drag, inertia, wheel, pinch) are clamped as they move; programmatic moves are allowed to run and are corrected with a short ease when they settle, so a camera animating towards the destination is never snapped mid-flight.
+- **World bounds** are the playable boundary's bounding box (a coarse limit; no polygon clipping), intersected with the tether by alternating projections. The box is grown to include the player so the region is never empty, and the clamp is idempotent so it cannot oscillate between the two constraints.
+- **Following:** after each move the camera frames the player and the new one-hop destinations (existing behaviour), then the tether re-anchors to the new location. Recenter does the same. Reduced motion skips the easing.
+- **Offscreen destinations:** if the neighbours cannot all fit at zoom 17 the zoom is not violated; they stay reachable from the numbered list and keyboard shortcuts. The optional directional indicator for an offscreen node is not built.
+
+Browser verification (headless Firefox, scratch Madison, test database): three large drags each stopped with the centre exactly 200 m (and once 188 m, at the bounds) from the player; wheel and API zoom-out stopped at 17 and zoom-in at 19.5; Recenter returned the camera to the player's framing; a programmatic jump 4 km away settled back at 200 m; after a keypress move the camera followed and the tether re-anchored. Not verified: touch gestures and inertia on a real touch device, reduced motion, the polygon-accurate boundary (only its bounding box is enforced).

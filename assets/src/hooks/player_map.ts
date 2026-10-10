@@ -2,10 +2,11 @@ import maplibregl from "maplibre-gl";
 import type { FeatureCollection, LineString } from "geojson";
 import { BACKGROUND, layerSpecs } from "../map/style";
 import { destinationForKey } from "../map/shortcuts";
+import { allowedCenter, clampZoom, resolveLimits, violatesLimits, type Bounds, type CameraLimits } from "../map/camera";
 
 type Point = [number, number];
 type Move = { destination: string; key: string | null; point: Point; geometry: LineString };
-type State = { point: Point; turn: number; moves: Move[]; visited: Point[]; movement: { turn: number; geometry: LineString } | null; camera: number; zoom: number };
+type State = { point: Point; turn: number; moves: Move[]; visited: Point[]; movement: { turn: number; geometry: LineString } | null; camera: number; zoom: number; bounds: Bounds | null; limits: Partial<CameraLimits> };
 type Hook = {
   el: HTMLElement; map?: maplibregl.Map; ready: boolean; removed: boolean;
   lastTurn: number; lastCamera: number; frame?: number; animating: boolean;
@@ -14,6 +15,7 @@ type Hook = {
   set(name: string, data: FeatureCollection): void; animate(state: State): void;
   labels: maplibregl.Marker[]; pending: boolean; pendingTimer?: number; onKey?: (event: KeyboardEvent) => void;
   requestMove(destination: string): void; showLabels(moves: Move[]): void;
+  limits: CameraLimits; settling: boolean; keepCameraNearPlayer(animated: boolean): void;
 };
 const empty: FeatureCollection = { type: "FeatureCollection", features: [] };
 function points(positions: Point[], ids: string[] = []): FeatureCollection {
@@ -30,7 +32,9 @@ export const PlayerMap = {
     const canvas = this.el.querySelector<HTMLElement>("#player-map-canvas");
     if (!canvas) return;
     const state = this.state();
-    const map = new maplibregl.Map({ container: canvas, center: state.point, zoom: state.zoom,
+    this.limits = resolveLimits(state.limits); this.settling = false;
+    const map = new maplibregl.Map({ container: canvas, center: state.point, zoom: clampZoom(state.zoom, this.limits),
+      minZoom: this.limits.minZoom, maxZoom: this.limits.maxZoom,
       style: { version: 8, sources: {}, layers: [{ id: "background", type: "background", paint: { "background-color": BACKGROUND } }] },
       attributionControl: { customAttribution: "© OpenStreetMap contributors" },
     });
@@ -79,6 +83,10 @@ export const PlayerMap = {
       if (destination) { event.preventDefault(); this.requestMove(destination); }
     };
     window.addEventListener("keydown", this.onKey);
+    // Dragging, wheel and pinch cannot take the camera centre more than the tether from the player (and never
+    // outside the world's bounds); programmatic moves are checked once they settle.
+    map.on("move", event => { if (event.originalEvent) this.keepCameraNearPlayer(false); });
+    map.on("moveend", () => { if (!this.settling) this.keepCameraNearPlayer(true); });
     map.on("mousemove", event => {
       if (!this.ready) return;
       map.getCanvas().style.cursor = map.queryRenderedFeatures(event.point, { layers: ["move-glow"] }).length ? "pointer" : "";
@@ -96,6 +104,16 @@ export const PlayerMap = {
     this.pending = true;
     this.pendingTimer = window.setTimeout(() => { this.pending = false; }, 1500);
     this.pushEvent("move", { destination, turn: this.state().turn });
+  },
+  keepCameraNearPlayer(this: Hook, animated: boolean) {
+    const map = this.map; if (!map || !this.ready) return;
+    const state = this.state(); const center = map.getCenter().toArray() as [number, number];
+    if (!violatesLimits(center, state.point, this.limits, state.bounds)) return;
+    const target = allowedCenter(center, state.point, this.limits, state.bounds);
+    if (!animated || reduced()) { map.setCenter(target); return; }
+    this.settling = true;
+    map.once("moveend", () => { this.settling = false; });
+    map.easeTo({ center: target, duration: 250 });
   },
   showLabels(this: Hook, moves: Move[]) {
     for (const label of this.labels) label.remove();
@@ -127,7 +145,7 @@ export const PlayerMap = {
   frameCamera(this: Hook, state: State, duration: number) {
     const bounds = new maplibregl.LngLatBounds(state.point, state.point);
     for (const location of state.moves) bounds.extend(location.point);
-    this.map?.fitBounds(bounds, { padding: 85, maxZoom: state.zoom, duration });
+    this.map?.fitBounds(bounds, { padding: 85, maxZoom: clampZoom(state.zoom, this.limits), duration });
   },
   animate(this: Hook, state: State) {
     if (this.frame) cancelAnimationFrame(this.frame);

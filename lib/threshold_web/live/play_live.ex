@@ -144,7 +144,9 @@ defmodule ThresholdWeb.PlayLive do
         ),
       movement: socket.assigns.movement,
       camera: socket.assigns.camera,
-      zoom: spawn["zoom"] || 18.5
+      zoom: spawn["zoom"] || 18.5,
+      bounds: bounds(world.boundary),
+      limits: camera_limits()
     }
 
     assign(socket,
@@ -152,6 +154,30 @@ defmodule ThresholdWeb.PlayLive do
       nearby: Game.nearby(world, player),
       map_state: Jason.encode!(state)
     )
+  end
+
+  # West, south, east, north of the playable boundary, for the camera's coarse world limit.
+  defp bounds(%{"coordinates" => rings}) do
+    points = List.flatten(rings) |> Enum.chunk_every(2)
+    {lons, lats} = {Enum.map(points, &Enum.at(&1, 0)), Enum.map(points, &Enum.at(&1, 1))}
+    [Enum.min(lons), Enum.min(lats), Enum.max(lons), Enum.max(lats)]
+  end
+
+  defp bounds(_), do: nil
+
+  # Optional overrides of the Field Atlas camera limits, e.g.
+  # `config :threshold, :atlas_camera, min_zoom: 17, max_zoom: 19.5, max_displacement_m: 200`.
+  defp camera_limits do
+    config = Application.get_env(:threshold, :atlas_camera, [])
+
+    for {key, name} <- [
+          min_zoom: "minZoom",
+          max_zoom: "maxZoom",
+          max_displacement_m: "maxDisplacementM"
+        ],
+        value = config[key],
+        into: %{},
+        do: {name, value}
   end
 
   defp direction(from, to) do
