@@ -1045,11 +1045,14 @@
     },
     {
       "anchor": {
-        "kind": "point",
+        "kind": "edge",
+        "offset": 0.7428895346450279,
         "point": [
-          -89.387582215,
-          43.07465104
-        ]
+          -89.3875816,
+          43.0746812
+        ],
+        "ref": "edge:2726175794-4958781132-487772769",
+        "ref_geometry_hash": "bd1458aa3bbbbecc"
       },
       "id": "loc:6216b9ecc50a",
       "name": "The High Crowd",
@@ -1267,11 +1270,14 @@
     },
     {
       "anchor": {
-        "kind": "point",
+        "kind": "edge",
+        "offset": 0.38745405040145153,
         "point": [
-          -89.384207711,
-          43.074710745
-        ]
+          -89.3843831,
+          43.0747133
+        ],
+        "ref": "edge:5449533723-5449533723-566001292",
+        "ref_geometry_hash": "4a82f704318df3f7"
       },
       "id": "loc:9821f05090ce",
       "name": "New location",
