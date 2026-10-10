@@ -8,7 +8,7 @@ defmodule ThresholdWeb.PlayLive do
     name = params["world"] || Application.get_env(:threshold, :default_world, "madison")
 
     graph =
-      case params["graph"] || Application.get_env(:threshold, :play_graph, "generated") do
+      case params["graph"] || Application.get_env(:threshold, :play_graph, "authored") do
         value when value in [:authored, "authored"] -> :authored
         _ -> :generated
       end

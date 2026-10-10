@@ -36,7 +36,7 @@ defmodule ThresholdWeb.PlayLiveTest do
   test "one-hop moves persist, invalid clicks do not spend turns, nearby inspection is free", %{
     conn: conn
   } do
-    {:ok, view, _} = live(conn, ~p"/play")
+    {:ok, view, _} = live(conn, ~p"/play?graph=generated")
     assert has_element?(view, "#player-turn", "0")
     assert has_element?(view, "#walk-0")
     refute has_element?(view, "#inspect-0")
@@ -62,13 +62,13 @@ defmodule ThresholdWeb.PlayLiveTest do
     refute has_element?(view, "#place-inspection")
     render_hook(view, "move", %{"destination" => "pn:1", "turn" => 0})
     assert has_element?(view, "#player-turn", "1")
-    {:ok, restored, _} = live(build_conn(), ~p"/play")
+    {:ok, restored, _} = live(build_conn(), ~p"/play?graph=generated")
     assert has_element?(restored, "#player-turn", "1")
     assert has_element?(restored, "#inspect-0")
   end
 
   test "world changes reject movement and require an explicit new walk", %{conn: conn, dir: dir} do
-    {:ok, view, _} = live(conn, ~p"/play")
+    {:ok, view, _} = live(conn, ~p"/play?graph=generated")
     path = Path.join(dir, "authored.json")
     doc = Jason.decode!(File.read!(path))
 

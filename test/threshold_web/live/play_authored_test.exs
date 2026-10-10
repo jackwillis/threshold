@@ -64,7 +64,7 @@ defmodule ThresholdWeb.PlayAuthoredTest do
   end
 
   test "the authored map is played one hop at a time with its own save", %{conn: conn} do
-    {:ok, view, html} = live(conn, ~p"/play?graph=authored")
+    {:ok, view, html} = live(conn, ~p"/play")
     assert html =~ "Authored map"
     assert has_element?(view, "#player-turn", "0")
     assert has_element?(view, "#inspect-0", "The corner")
@@ -86,13 +86,18 @@ defmodule ThresholdWeb.PlayAuthoredTest do
     assert has_element?(view, "#switch-graph", "Play the generated map")
   end
 
-  test "the generated map is the default and keeps its own save", %{conn: conn} do
-    {:ok, view, html} = live(conn, ~p"/play")
+  test "the authored map is the default; the generated map is one link away with its own save", %{
+    conn: conn
+  } do
+    {:ok, explicit, _} = live(conn, ~p"/play?graph=authored")
+    assert has_element?(explicit, "#graph-note")
+
+    {:ok, view, html} = live(conn, ~p"/play?graph=generated")
     refute html =~ "Authored map:"
     assert has_element?(view, "#switch-graph", "Play the authored map")
     view |> element("#walk-0") |> render_click()
     assert Repo.get_by!(Progress, world: "tiny").turn == 1
-    assert Repo.get_by(Progress, world: "tiny:authored") == nil
+    assert Repo.get_by!(Progress, world: "tiny:authored").turn == 0
   end
 
   defp state_json(html) do
