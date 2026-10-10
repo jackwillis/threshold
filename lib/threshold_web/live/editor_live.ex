@@ -68,6 +68,7 @@ defmodule ThresholdWeb.EditorLive do
          |> assign(:rev, 0)
          |> assign(:generation, 0)
          |> assign(:regenerating, false)
+         |> assign(:route_check, nil)
          |> assign(:build_output, nil)
          |> assign(:focus, %{"n" => 0, "bounds" => nil, "object" => nil})
          |> assign(:layer_options, @layer_options)
@@ -193,6 +194,24 @@ defmodule ThresholdWeb.EditorLive do
     component = Enum.find(components(socket.assigns.world), &(&1["component"] == index))
     {:noreply, focus(socket, %{"bounds" => component && component["bounds"], "object" => nil})}
   end
+
+  # Read-only: resolves the working copy's connections to real walks and lists what fails.
+  def handle_event("check_routes", _params, %{assigns: %{world: %{generated: dir}}} = socket)
+      when is_binary(dir) do
+    result =
+      with {:ok, text} <- File.read(Path.join(dir, "edges.geojson")),
+           {:ok, %{"features" => edges}} <- Jason.decode(text) do
+        {:ok, Threshold.RouteResolver.resolve(socket.assigns.authored, edges)}
+      end
+
+    case result do
+      {:ok, report} -> {:noreply, assign(socket, :route_check, route_problems(report))}
+      _ -> {:noreply, put_flash(socket, :error, "Could not read the street network.")}
+    end
+  end
+
+  def handle_event("check_routes", _params, socket),
+    do: {:noreply, put_flash(socket, :error, "Build the geography first.")}
 
   def handle_event("focus_object", %{"id" => id}, socket),
     do: {:noreply, focus(socket, %{"bounds" => nil, "object" => id})}
@@ -458,6 +477,46 @@ defmodule ThresholdWeb.EditorLive do
     handle_async(:regenerate, {:ok, {:error, "Importer stopped: #{inspect(reason)}"}}, socket)
   end
 
+  defp route_problems(%{places: places, connections: connections, summary: summary}) do
+    place_problems =
+      for p <- places, p.class in [:free_point, :missing_edge] do
+        detail =
+          case p do
+            %{class: :free_point, nearest_edge: %{distance_m: m}} ->
+              "free point, #{m} m from the nearest street: snap it to a street or intersection"
+
+            %{class: :free_point} ->
+              "free point with no street within 60 m"
+
+            %{class: :missing_edge, edge: edge} ->
+              "its street #{edge} is no longer in the geography"
+          end
+
+        %{id: p.id, label: "place", detail: detail}
+      end
+
+    connection_problems =
+      for c <- connections, c.status not in [:ok, :same_position] do
+        %{id: c.id, label: "connection", detail: connection_detail(c)}
+      end
+
+    %{
+      summary: summary,
+      problems: place_problems ++ connection_problems,
+      same_position: for(c <- connections, c.status == :same_position, do: c.id)
+    }
+  end
+
+  defp connection_detail(%{status: :unanchored, note: note}),
+    do: "not on the street network: #{note}"
+
+  defp connection_detail(%{status: :no_path}), do: "no walking route exists between its ends"
+
+  defp connection_detail(%{status: :blocked, blockers: blockers}),
+    do:
+      "route exists but is blocked by " <>
+        Enum.map_join(blockers, ", ", &"#{&1.reason} (#{&1.edge})")
+
   defp geography(%{generated: nil}), do: nil
 
   defp geography(%{generated: dir}) do
@@ -555,7 +614,8 @@ defmodule ThresholdWeb.EditorLive do
     end
   end
 
-  defp apply_edit(socket, doc), do: socket |> assign(:authored, doc) |> refresh_refs()
+  defp apply_edit(socket, doc),
+    do: socket |> assign(:authored, doc) |> assign(:route_check, nil) |> refresh_refs()
 
   # --- Saving ------------------------------------------------------------------------
 
@@ -841,6 +901,46 @@ defmodule ThresholdWeb.EditorLive do
                 <span class="hint">→ {ref.ref}</span>
               </li>
             </ul>
+          </section>
+
+          <section id="route-check">
+            <h3>Route check</h3>
+            <p class="hint">
+              Checks that each authored connection is a real walk along the street network. Read-only.
+            </p>
+            <button id="check-routes" type="button" phx-click="check_routes" class="tool">
+              Check routes
+            </button>
+            <div :if={@route_check} id="route-check-result">
+              <p class="hint">
+                {@route_check.summary.connections} connections: {Map.get(
+                  @route_check.summary.connections_by_status,
+                  :ok,
+                  0
+                )} walkable ·
+                places: {map_size(@route_check.summary.places_by_class)} kinds
+                ({Enum.map_join(@route_check.summary.places_by_class, ", ", fn {k, n} ->
+                  "#{n} #{String.replace("#{k}", "_", " ")}"
+                end)})
+              </p>
+              <p :if={@route_check.problems == []} class="hint">
+                Every connection resolves to a walk.
+              </p>
+              <ul :if={@route_check.problems != []} class="review">
+                <li :for={item <- @route_check.problems} class="review-missing">
+                  <span class="badge">{item.label}</span>
+                  <button
+                    type="button"
+                    phx-click="focus_object"
+                    phx-value-id={item.id}
+                    class="link-button"
+                  >
+                    {item.id}
+                  </button>
+                  <span class="hint">{item.detail}</span>
+                </li>
+              </ul>
+            </div>
           </section>
 
           <section id="playable">

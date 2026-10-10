@@ -61,3 +61,7 @@ All new fields are optional, so every existing `authored.json` stays valid and u
 ## Proposed Increment E (UI, after approval)
 
 A read-only attachment panel in the editor (the audit above, per place), then explicit controls: pick a candidate (showing distance, whether it is source-edge or proximity based, and whether the spawn can reach it), attach/detach, with the marker position untouched. Moving a marker stays a separate operation.
+
+## Editor: Route check (2026-10-09)
+
+The editor's "Route check" section runs the resolver on the working copy (read-only, nothing is saved) and lists every free-point or missing-street place and every connection that does not resolve, each with a button that focuses the object on the map; the result clears whenever the authored layer is edited. On the real data it reports the two free points (with their distance to the nearest street) and the 10 connections that depend on them. Browser-verified on a scratch Madison copy.
