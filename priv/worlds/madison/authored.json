@@ -74,14 +74,6 @@
       "to": "loc:4795e6f024e6"
     },
     {
-      "from": "loc:2b29e1f7aa45",
-      "geometry": null,
-      "id": "conn:211d5ff345c7",
-      "kind": "fictional",
-      "notes": "",
-      "to": "loc:d9bff30b26bf"
-    },
-    {
       "from": "loc:0fb2afc8ffc7",
       "geometry": null,
       "id": "conn:21a09e2f1759",
@@ -632,6 +624,14 @@
       "kind": "fictional",
       "notes": "",
       "to": "loc:7c9fa6e04bd4"
+    },
+    {
+      "from": "loc:d9bff30b26bf",
+      "geometry": null,
+      "id": "conn:cfdb23dd24d6",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:377bd2f999a8"
     },
     {
       "from": "loc:77a3476ebbe3",
@@ -1270,14 +1270,11 @@
     },
     {
       "anchor": {
-        "kind": "edge",
-        "offset": 0.0,
+        "kind": "point",
         "point": [
-          -89.3844708,
-          43.0749329
-        ],
-        "ref": "edge:1160713899-1160713946-100404531",
-        "ref_geometry_hash": "9fcceb2dc8114633"
+          -89.384166357,
+          43.074700748
+        ]
       },
       "id": "loc:9821f05090ce",
       "name": "New location",
