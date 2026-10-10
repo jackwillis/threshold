@@ -18,8 +18,8 @@ defmodule Threshold.GameSessionsTest do
     {:ok, world} =
       World.new(
         "tiny",
-        load.("playable.json"),
-        load.("edges.geojson")["features"],
+        load.("generated/playable.json"),
+        load.("generated/edges.geojson")["features"],
         load.("boundary.geojson")["geometry"],
         authored
       )

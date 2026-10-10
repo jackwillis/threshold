@@ -12,7 +12,7 @@ defmodule Threshold.GameTest do
         %{"id" => "spawn:default", "location" => "pn:1", "default" => true}
       ])
 
-    {load.("playable.json"), load.("edges.geojson")["features"],
+    {load.("generated/playable.json"), load.("generated/edges.geojson")["features"],
      load.("boundary.geojson")["geometry"], authored}
   end
 

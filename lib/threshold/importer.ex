@@ -39,9 +39,11 @@ defmodule Threshold.Importer do
     end
   end
 
-  @generated ~w(nodes.geojson edges.geojson context.geojson provenance.json playable.json)
+  # Everything the pipeline reads. Generated files are rebuilt in the scratch copy and published
+  # as one snapshot; nothing else is ever copied back.
+  @pipeline_inputs ~w(config.json boundary.geojson authored.json source)
 
-  @doc "Builds and validates a scratch copy offline before publishing generated files only."
+  @doc "Builds and validates a scratch copy offline, then publishes the generated files as one atomic snapshot."
   def regenerate(world) do
     if Threshold.World.valid_name?(world) do
       root = Path.expand(Threshold.World.root())
@@ -59,8 +61,11 @@ defmodule Threshold.Importer do
 
     try do
       before = inputs(dir)
-      File.mkdir_p!(scratch)
-      File.cp_r!(dir, Path.join(scratch, world))
+      File.mkdir_p!(Path.join(scratch, world))
+
+      for entry <- @pipeline_inputs,
+          File.exists?(Path.join(dir, entry)),
+          do: File.cp_r!(Path.join(dir, entry), Path.join([scratch, world, entry]))
 
       with {:ok, log} <- build_copy(world, scratch) do
         # Saves are held off while the inputs are re-checked and the files published, so an
@@ -71,23 +76,15 @@ defmodule Threshold.Importer do
       error -> {:error, Exception.message(error)}
     after
       File.rm_rf(scratch)
-      for file <- @generated, do: File.rm(Path.join(dir, file) <> ".regenerating")
     end
   end
 
   defp publish(dir, scratch, world, before, log) do
     if before == inputs(dir) do
-      # Never copy authored.json, the boundary, configuration or source back.
-      for file <- @generated do
-        File.cp!(Path.join([scratch, world, file]), Path.join(dir, file) <> ".regenerating")
+      case Threshold.Generated.publish(dir, Path.join([scratch, world, "generated"])) do
+        {:ok, _generation} -> {:ok, log}
+        {:error, message} -> {:error, message}
       end
-
-      for file <- @generated do
-        destination = Path.join(dir, file)
-        File.rename!(destination <> ".regenerating", destination)
-      end
-
-      {:ok, log}
     else
       {:error,
        "World inputs changed during regeneration. No generated files were published; retry with current saved inputs."}

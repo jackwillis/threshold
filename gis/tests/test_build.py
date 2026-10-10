@@ -10,7 +10,7 @@ def run(worlds_dir, command):
 
 
 def load(worlds_dir, name):
-    return json.loads((worlds_dir / "test" / name).read_text())
+    return json.loads((worlds_dir / "test" / "generated" / name).read_text())
 
 
 @pytest.fixture
@@ -27,9 +27,9 @@ def test_build_and_validate(built):
 def test_build_is_deterministic(worlds_dir):
     names = ["nodes.geojson", "edges.geojson", "context.geojson"]
     run(worlds_dir, "build")
-    first = {n: (worlds_dir / "test" / n).read_bytes() for n in names}
+    first = {n: (worlds_dir / "test" / "generated" / n).read_bytes() for n in names}
     run(worlds_dir, "build")
-    assert first == {n: (worlds_dir / "test" / n).read_bytes() for n in names}
+    assert first == {n: (worlds_dir / "test" / "generated" / n).read_bytes() for n in names}
 
 
 def test_disconnected_component_retained(built):

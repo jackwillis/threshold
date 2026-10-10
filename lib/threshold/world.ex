@@ -25,10 +25,15 @@ defmodule Threshold.World do
     if valid_name?(name), do: {:ok, Path.join(root(), name)}, else: :error
   end
 
-  @doc "Path of a servable layer file, or `:error` for unknown worlds, layers or missing files."
-  def layer_path(name, layer) when layer in @layers do
+  @doc """
+  Path of a servable layer file, or `:error` for unknown worlds, layers or missing files.
+  Generated layers come from one snapshot: the named `generation`, or the active one.
+  """
+  def layer_path(name, layer, generation \\ nil)
+
+  def layer_path(name, layer, generation) when layer in @layers do
     with {:ok, dir} <- dir(name),
-         path = Path.join(dir, filename(layer)),
+         {:ok, path} <- layer_file(dir, layer, generation),
          true <- File.regular?(path) do
       {:ok, path}
     else
@@ -36,7 +41,18 @@ defmodule Threshold.World do
     end
   end
 
-  def layer_path(_name, _layer), do: :error
+  def layer_path(_name, _layer, _generation), do: :error
+
+  defp layer_file(dir, layer, generation) do
+    file = filename(layer)
+
+    if file in Threshold.Generated.files() do
+      with {:ok, snapshot} <- Threshold.Generated.snapshot(dir, generation),
+           do: {:ok, Path.join(snapshot.dir, file)}
+    else
+      {:ok, Path.join(dir, file)}
+    end
+  end
 
   defp filename("boundary"), do: "boundary.geojson"
   defp filename("provenance"), do: "provenance.json"
@@ -53,9 +69,17 @@ defmodule Threshold.World do
          {:ok, config} <- read_json(Path.join(dir, "config.json")),
          {:ok, boundary_text} <- File.read(Path.join(dir, "boundary.geojson")),
          {:ok, boundary} <- Jason.decode(boundary_text) do
+      generated =
+        case Threshold.Generated.active(dir) do
+          {:ok, snapshot} -> snapshot
+          :error -> nil
+        end
+
       provenance =
-        case read_json(Path.join(dir, "provenance.json")) do
-          {:ok, data} -> data
+        with %{dir: gdir} <- generated,
+             {:ok, data} <- read_json(Path.join(gdir, "provenance.json")) do
+          data
+        else
           _ -> nil
         end
 
@@ -66,6 +90,9 @@ defmodule Threshold.World do
          config: config,
          boundary: boundary,
          boundary_hash: Threshold.Boundary.hash(boundary_text),
+         boundary_text: boundary_text,
+         generated: generated && generated.dir,
+         generation: generated && generated.generation,
          provenance: provenance,
          staleness: staleness(dir, config, boundary, provenance)
        }}

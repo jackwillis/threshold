@@ -15,7 +15,7 @@ Single-player Madison-based mystery game. Current milestone: a local geographic 
 - `lib/threshold/`: domain (world loading, `authored.ex` validation/save, `authored/edit.ex` pure edits, `references.ex`, `boundary.ex`, `playable.ex`, `importer.ex`). `lib/threshold_web/live/`: the editor.
 - `assets/src/`: TypeScript (`hooks/map_editor.ts`, `map/*.ts`); `bun build.ts` bundles to `priv/static/assets/js/app.js` (gitignored).
 - `gis/src/threshold_gis/`: `world.py` (acquire/build/validate), `playable.py`; `gis/analysis/` is exploratory.
-- `priv/worlds/madison/`: pinned source, generated files, `authored.json`. **Generated files are never edited by hand.** **`authored.json` holds the designer's real work: never overwrite or run tests against it**; tests use `test/fixtures/worlds/tiny`; set `THRESHOLD_WORLDS_DIR` to experiment on a scratch copy.
+- `priv/worlds/madison/`: pinned source, generated files (`generations/<id>/`, active one linked as `generated`), `authored.json`. **Generated files are never edited by hand.** **`authored.json` holds the designer's real work: never overwrite or run tests against it**; tests use `test/fixtures/worlds/tiny`; set `THRESHOLD_WORLDS_DIR` to experiment on a scratch copy.
 
 ## Conventions specific to this project
 

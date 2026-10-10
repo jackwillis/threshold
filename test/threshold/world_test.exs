@@ -29,7 +29,7 @@ defmodule Threshold.WorldTest do
   end
 
   test "missing provenance means geography has not been built", %{dir: dir} do
-    File.rm!(Path.join(dir, "provenance.json"))
+    File.rm!(Path.join([dir, "generated", "provenance.json"]))
     assert :missing = World.staleness(dir, %{}, %{}, nil)
   end
 

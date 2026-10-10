@@ -7,6 +7,7 @@ defmodule Threshold.Game.World do
     :name,
     :revision,
     :boundary,
+    :generation,
     locations: %{},
     connections: %{},
     unavailable: %{},
@@ -20,19 +21,29 @@ defmodule Threshold.Game.World do
   def load(name) do
     with {:ok, world} <- Threshold.World.load(name),
          :fresh <- world.staleness,
-         %{state: :fresh} <- Playable.status(world.dir),
-         {:ok, authored, _} <- Authored.load(world.dir),
-         {:ok, playable} <- read(world.dir, "playable.json"),
-         {:ok, edges} <- read(world.dir, "edges.geojson") do
+         %{state: :fresh} <- Playable.status(world.generated),
+         {:ok, authored_text} <- File.read(Path.join(world.dir, "authored.json")),
+         {:ok, authored, _} <- Authored.parse(authored_text),
+         {:ok, playable_text} <- File.read(Path.join(world.generated, "playable.json")),
+         {:ok, playable} <- Jason.decode(playable_text),
+         {:ok, edges_text} <- File.read(Path.join(world.generated, "edges.geojson")),
+         {:ok, edges} <- Jason.decode(edges_text) do
+      # The revision identifies exactly the bytes parsed above, all from one generated snapshot.
       revision =
-        Enum.map(
-          ~w(authored.json boundary.geojson playable.json edges.geojson),
-          &File.read!(Path.join(world.dir, &1))
+        Authored.hash(
+          IO.iodata_to_binary([authored_text, world.boundary_text, playable_text, edges_text])
         )
-        |> IO.iodata_to_binary()
-        |> Authored.hash()
 
-      new(name, playable, edges["features"], world.boundary["geometry"], authored, revision)
+      with {:ok, loaded} <-
+             new(
+               name,
+               playable,
+               edges["features"],
+               world.boundary["geometry"],
+               authored,
+               revision
+             ),
+           do: {:ok, %{loaded | generation: world.generation}}
     else
       {:error, :not_found} ->
         {:error, "World not found."}
@@ -142,9 +153,5 @@ defmodule Threshold.Game.World do
           {:halt, {:error, :invalid_route}}
       end
     end)
-  end
-
-  defp read(dir, name) do
-    with {:ok, text} <- File.read(Path.join(dir, name)), do: Jason.decode(text)
   end
 end

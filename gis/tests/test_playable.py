@@ -10,7 +10,7 @@ def run(worlds_dir, command, *extra):
 
 
 def load(worlds_dir, name="playable.json"):
-    return json.loads((worlds_dir / "test" / name).read_text())
+    return json.loads((worlds_dir / "test" / "generated" / name).read_text())
 
 
 @pytest.fixture
@@ -27,9 +27,9 @@ def locations(worlds_dir):
 def test_playable_layer_is_written_and_deterministic(worlds_dir):
     run(worlds_dir, "build")
     run(worlds_dir, "playable")
-    first = (worlds_dir / "test/playable.json").read_bytes()
+    first = (worlds_dir / "test/generated/playable.json").read_bytes()
     run(worlds_dir, "playable")
-    assert first == (worlds_dir / "test/playable.json").read_bytes()
+    assert first == (worlds_dir / "test/generated/playable.json").read_bytes()
 
 
 def test_connectivity_is_preserved(playable):
@@ -160,6 +160,6 @@ def test_retained_location_survives_absorption_by_a_neighbor(worlds_dir, retaine
     assert load(worlds_dir)["diagnostics"]["overrides_unmatched"] == []
     assert load(worlds_dir)["diagnostics"]["components_wrongly_merged"] == 0
     assert load(worlds_dir)["diagnostics"]["source_components_lost"] == 0
-    first = (worlds_dir / "test/playable.json").read_bytes()
+    first = (worlds_dir / "test/generated/playable.json").read_bytes()
     run(worlds_dir, "playable", "--radius", "100")
-    assert (worlds_dir / "test/playable.json").read_bytes() == first
+    assert (worlds_dir / "test/generated/playable.json").read_bytes() == first

@@ -91,6 +91,11 @@ def load(path):
     return json.loads(path.read_text())
 
 
+def generated(world):
+    """Directory holding the generated files. The app publishes it as a symlink to an immutable snapshot."""
+    return world / "generated"
+
+
 def write(path, data):
     text = json.dumps(data, indent=2, sort_keys=True, allow_nan=False) + "\n"
     temp = path.with_suffix(path.suffix + ".tmp")
@@ -405,13 +410,14 @@ def build(world):
         "summary": summarize(nodes, edges, context_collection),
     }
     validate_graph(nodes, edges)
+    generated(world).mkdir(exist_ok=True)
     for filename, data in [
         ("nodes.geojson", nodes),
         ("edges.geojson", edges),
         ("context.geojson", context_collection),
         ("provenance.json", provenance),
     ]:
-        write(world / filename, data)
+        write(generated(world) / filename, data)
     log.info("Built %d nodes, %d edges, %d components", len(nodes["features"]), len(edges["features"]), count)
     return {"command": "build", "nodes": len(nodes["features"]), "edges": len(edges["features"]), "components": count}
 
@@ -450,7 +456,7 @@ def validate_graph(nodes, edges):
 
 def validate(world):
     settings(world)
-    validate_graph(load(world / "nodes.geojson"), load(world / "edges.geojson"))
+    validate_graph(load(generated(world) / "nodes.geojson"), load(generated(world) / "edges.geojson"))
     cfg = load(world / "config.json")
     if digest((world / cfg["source"]).read_bytes()) != load(world / "source/manifest.json")["sha256"]:
         raise ValueError("Source checksum mismatch")
@@ -462,7 +468,7 @@ def playable(world, radius_m=None):
     from threshold_gis.playable import DEFAULT_RADIUS_M, build_playable
 
     result = build_playable(world, radius_m or DEFAULT_RADIUS_M)
-    write(world / "playable.json", result)
+    write(generated(world) / "playable.json", result)
     d = result["diagnostics"]
     if d["components_wrongly_merged"] or d["source_components_lost"]:
         raise ValueError(

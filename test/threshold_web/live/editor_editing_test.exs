@@ -401,13 +401,17 @@ defmodule ThresholdWeb.EditorEditingTest do
     end
 
     test "a stale layer is flagged", %{conn: conn, dir: dir} do
-      File.write!(Path.join(dir, "edges.geojson"), ~s({"type":"FeatureCollection","features":[]}))
+      File.write!(
+        Path.join([dir, "generated", "edges.geojson"]),
+        ~s({"type":"FeatureCollection","features":[]})
+      )
+
       {:ok, view, _} = live(conn, ~p"/")
       assert has_element?(view, "#playable-stale", "Out of date")
     end
 
     test "a missing layer says how to build it", %{conn: conn, dir: dir} do
-      File.rm!(Path.join(dir, "playable.json"))
+      File.rm!(Path.join([dir, "generated", "playable.json"]))
       {:ok, view, _} = live(conn, ~p"/")
       assert has_element?(view, "#playable", "make build-playable")
       assert state(view)["playable"] == "missing"
@@ -463,9 +467,9 @@ defmodule ThresholdWeb.EditorEditingTest do
       File.write!(Path.join(dir, "authored.json"), Authored.encode(doc))
 
       File.write!(
-        Path.join(dir, "playable.json"),
-        dir
-        |> Path.join("playable.json")
+        Path.join([dir, "generated", "playable.json"]),
+        [dir, "generated", "playable.json"]
+        |> Path.join()
         |> File.read!()
         |> String.replace(~s("overrides_unmatched": []), ~s("overrides_unmatched": ["pn:999"]))
       )

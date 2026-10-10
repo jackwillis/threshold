@@ -1,6 +1,6 @@
 defmodule Threshold.Geography do
   @moduledoc """
-  A compact index of the imported network, used to check that authored references still resolve.
+  A compact index of the imported network (read from one generated snapshot directory), used to check that authored references still resolve.
   Parsing the full GeoJSON is slow, so the index is cached per file (path, size and mtime).
   """
 
@@ -26,6 +26,7 @@ defmodule Threshold.Geography do
               edges: Map.new(edges, &{&1["id"], &1["properties"]["geometry_hash"]})
             }
 
+            drop_other_snapshots(nodes_path)
             :persistent_term.put(key, index)
             {:ok, index}
           end
@@ -36,6 +37,18 @@ defmodule Threshold.Geography do
     else
       _ -> :error
     end
+  end
+
+  # Snapshots are immutable and replaced wholesale; keep only the newest index per world.
+  defp drop_other_snapshots(nodes_path) do
+    family = nodes_path |> Path.dirname() |> Path.dirname()
+
+    for {{__MODULE__, path, _, _, _, _} = key, _} <- :persistent_term.get(),
+        path != nodes_path and path |> Path.dirname() |> Path.dirname() == family do
+      :persistent_term.erase(key)
+    end
+
+    :ok
   end
 
   @doc "Clears cached indexes after an explicit regeneration, including same-size writes."

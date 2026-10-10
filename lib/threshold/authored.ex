@@ -50,10 +50,13 @@ defmodule Threshold.Authored do
   @doc "Reads and validates `authored.json` in a world directory. Returns the document and its content hash."
   @spec load(Path.t()) :: {:ok, t, String.t()} | {:error, [String.t()]}
   def load(dir) do
-    path = Path.join(dir, "authored.json")
+    with {:ok, text} <- read(Path.join(dir, "authored.json")), do: parse(text)
+  end
 
-    with {:ok, text} <- read(path),
-         {:ok, data} <- decode(text),
+  @doc "Validates the text of an `authored.json` already read, so one read yields both document and hash."
+  @spec parse(String.t()) :: {:ok, t, String.t()} | {:error, [String.t()]}
+  def parse(text) do
+    with {:ok, data} <- decode(text),
          {:ok, doc} <- validate(data) do
       {:ok, doc, hash(text)}
     end

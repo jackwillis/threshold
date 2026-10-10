@@ -74,8 +74,10 @@ const CLICK_PAD_PX = 5;
 const CLICK_MODES: Mode[] = ["inspect", "connect", "close", "reconnect"];
 const BOUNDARY_EDIT_ACTIONS = ["dragCoordinate", "dragFeature", "dragCoordinateResize", "insertMidpoint", "deleteCoordinate", "edit"];
 
-async function getJson<T>(world: string, layer: string): Promise<T> {
-  const response = await fetch(`/worlds/${encodeURIComponent(world)}/${layer}`, { cache: "no-store" });
+// `snapshot` pins generated layers to one published geography so they cannot come from different builds.
+async function getJson<T>(world: string, layer: string, snapshot: string): Promise<T> {
+  const query = snapshot ? `?generation=${encodeURIComponent(snapshot)}` : "";
+  const response = await fetch(`/worlds/${encodeURIComponent(world)}/${layer}${query}`, { cache: "no-store" });
   if (!response.ok) throw new Error(`${layer}: HTTP ${response.status}`);
   return (await response.json()) as T;
 }
@@ -395,13 +397,14 @@ export const MapEditor = {
 
   async load(this: Hook, map: maplibregl.Map) {
     const world = this.el.dataset.world ?? "";
+    const snapshot = this.el.dataset.snapshot ?? "";
     type Fc = FeatureCollection<Geometry, Props>;
     const [boundary, provenance, edges, nodes, context] = await Promise.all([
-      getJson<Feature<Polygon>>(world, "boundary"),
-      getJson<{ import_extent: Polygon }>(world, "provenance"),
-      getJson<Fc>(world, "edges"),
-      getJson<Fc>(world, "nodes"),
-      getJson<Fc>(world, "context"),
+      getJson<Feature<Polygon>>(world, "boundary", snapshot),
+      getJson<{ import_extent: Polygon }>(world, "provenance", snapshot),
+      getJson<Fc>(world, "edges", snapshot),
+      getJson<Fc>(world, "nodes", snapshot),
+      getJson<Fc>(world, "context", snapshot),
     ]);
     const initial = !map.getSource("edges");
     this.features.clear();
@@ -429,7 +432,7 @@ export const MapEditor = {
     const state = this.readState();
     if (state.playable !== "missing") {
       try {
-        const playable = await getJson<PlayableDoc>(world, "playable");
+        const playable = await getJson<PlayableDoc>(world, "playable", snapshot);
         this.playableBase = playable.locations;
         const byId = new Map(playable.locations.map((l) => [l.id, l]));
         const lines: Feature<LineString, Props>[] = [];

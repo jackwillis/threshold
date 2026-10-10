@@ -85,14 +85,12 @@ defmodule ThresholdWeb.EditorLive do
   # (Re)reads everything from disk, discarding any working copy.
   defp load_world(socket, name) do
     {:ok, world} = World.load(name)
-    dir = world.dir
-    geography = with {:ok, g} <- Geography.index(dir), do: g
 
     socket =
       socket
       |> assign(:world, world)
-      |> assign(:geography, if(is_map(geography), do: geography))
-      |> assign(:playable, Playable.status(dir))
+      |> assign(:geography, geography(world))
+      |> assign(:playable, Playable.status(world.generated))
       |> assign(:boundary, world.boundary["geometry"])
       |> assign(:saved_boundary, world.boundary["geometry"])
       |> assign(:boundary_hash, world.boundary_hash)
@@ -102,7 +100,7 @@ defmodule ThresholdWeb.EditorLive do
       |> assign(:selected, nil)
 
     # An invalid authored file is reported and never "fixed"; editing is disabled while it is invalid.
-    case Authored.load(dir) do
+    case Authored.load(world.dir) do
       {:ok, authored, hash} ->
         socket
         |> assign(:authored, authored)
@@ -430,13 +428,6 @@ defmodule ThresholdWeb.EditorLive do
   def handle_async(:regenerate, {:ok, result}, socket) do
     # Keep authored working data and saved hashes: concurrent disk edits must still conflict.
     {:ok, world} = World.load(socket.assigns.world.name)
-    Geography.invalidate(world.dir)
-
-    geography =
-      case Geography.index(world.dir) do
-        {:ok, index} -> index
-        _ -> nil
-      end
 
     {kind, output} = result
 
@@ -446,8 +437,8 @@ defmodule ThresholdWeb.EditorLive do
        regenerating: false,
        build_output: output,
        world: world,
-       geography: geography,
-       playable: Playable.status(world.dir),
+       geography: geography(world),
+       playable: Playable.status(world.generated),
        selected: nil,
        loading: true
      )
@@ -465,6 +456,15 @@ defmodule ThresholdWeb.EditorLive do
 
   def handle_async(:regenerate, {:exit, reason}, socket) do
     handle_async(:regenerate, {:ok, {:error, "Importer stopped: #{inspect(reason)}"}}, socket)
+  end
+
+  defp geography(%{generated: nil}), do: nil
+
+  defp geography(%{generated: dir}) do
+    case Geography.index(dir) do
+      {:ok, index} -> index
+      :error -> nil
+    end
   end
 
   # --- Event helpers ------------------------------------------------------------------
@@ -908,6 +908,7 @@ defmodule ThresholdWeb.EditorLive do
           id="map-hook"
           phx-hook="MapEditor"
           data-world={@world.name}
+          data-snapshot={@world.generation}
           data-state={map_state(assigns)}
           class="map-wrap"
         >

@@ -36,8 +36,10 @@ export const PlayerMap = {
     map.on("load", async () => {
       try {
         const world = encodeURIComponent(this.el.dataset.world ?? "madison");
+        const snapshot = this.el.dataset.snapshot;
+        const query = snapshot ? `?generation=${encodeURIComponent(snapshot)}` : "";
         const data = await Promise.all(["edges", "context"].map(async layer => {
-          const response = await fetch(`/worlds/${world}/${layer}`, { cache: "no-store" });
+          const response = await fetch(`/worlds/${world}/${layer}${query}`, { cache: "no-store" });
           if (!response.ok) throw new Error(`Unable to load ${layer}.`);
           return await response.json() as FeatureCollection;
         }));

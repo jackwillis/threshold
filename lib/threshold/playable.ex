@@ -13,8 +13,10 @@ defmodule Threshold.Playable do
           ids: MapSet.t(String.t())
         }
 
-  @doc "Returns `:missing` when no playable layer was built, else its diagnostics and freshness."
-  @spec status(Path.t()) :: :missing | status
+  @doc "Reads `playable.json` from a generated snapshot directory. Returns `:missing` when no playable layer was built, else its diagnostics and freshness."
+  @spec status(Path.t() | nil) :: :missing | status
+  def status(nil), do: :missing
+
   def status(dir) do
     with {:ok, text} <- File.read(Path.join(dir, "playable.json")),
          {:ok, %{"inputs" => inputs, "diagnostics" => diagnostics} = doc} <- Jason.decode(text) do

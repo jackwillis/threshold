@@ -34,7 +34,7 @@ check:
 	$(PY)/ruff check gis
 	$(MAKE) check-assets
 	$(PY)/pytest gis -q
-	@if [ -f priv/worlds/$(W)/nodes.geojson ]; then $(MAKE) validate-world determinism; else echo "skip world checks: no generated $(W) geography yet"; fi
+	@if [ -f priv/worlds/$(W)/generated/nodes.geojson ]; then $(MAKE) validate-world determinism; else echo "skip world checks: no generated $(W) geography yet"; fi
 
 build-world:
 	$(PY)/threshold-gis build $(W)
@@ -51,10 +51,11 @@ validate-world:
 determinism:
 	rm -rf tmp/determinism && mkdir -p tmp/determinism
 	cp -r priv/worlds/$(W) tmp/determinism/$(W)
+	rm -rf tmp/determinism/$(W)/generated tmp/determinism/$(W)/generations
 	$(PY)/threshold-gis build $(W) --worlds-dir tmp/determinism
 	$(PY)/threshold-gis playable $(W) --worlds-dir tmp/determinism
-	for f in nodes edges context; do diff -q priv/worlds/$(W)/$$f.geojson tmp/determinism/$(W)/$$f.geojson; done
-	diff -q priv/worlds/$(W)/playable.json tmp/determinism/$(W)/playable.json
+	for f in nodes edges context; do diff -q priv/worlds/$(W)/generated/$$f.geojson tmp/determinism/$(W)/generated/$$f.geojson; done
+	diff -q priv/worlds/$(W)/generated/playable.json tmp/determinism/$(W)/generated/playable.json
 
 # The only target that touches the network.
 acquire-world:

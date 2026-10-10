@@ -9,7 +9,7 @@ defmodule ThresholdWeb.EditorRegenerationTest do
     previous_importer = Application.get_env(:threshold, Threshold.Importer)
     File.cp_r!(Path.join(Threshold.World.root(), "tiny"), Path.join(tmp, "tiny"))
     Application.put_env(:threshold, :worlds_dir, tmp)
-    Application.put_env(:threshold, Threshold.Importer, command: {"echo", ["offline"]})
+    Application.put_env(:threshold, Threshold.Importer, command: Threshold.ImporterStub.command())
 
     on_exit(fn ->
       Application.put_env(:threshold, :worlds_dir, previous_root)
@@ -52,7 +52,7 @@ defmodule ThresholdWeb.EditorRegenerationTest do
     conn: conn,
     dir: dir
   } do
-    before = File.read!(Path.join(dir, "edges.geojson"))
+    before = File.read!(Path.join([dir, "generated", "edges.geojson"]))
 
     Application.put_env(:threshold, Threshold.Importer,
       command: {"sh", ["-c", "echo broken; exit 3"]}
@@ -62,7 +62,7 @@ defmodule ThresholdWeb.EditorRegenerationTest do
     view |> element("#regenerate-button") |> render_click()
     assert render_async(view) =~ "Regeneration failed"
     assert has_element?(view, "#regeneration-output", "broken")
-    assert File.read!(Path.join(dir, "edges.geojson")) == before
+    assert File.read!(Path.join([dir, "generated", "edges.geojson"])) == before
     refute has_element?(view, "#regenerate-button[disabled]")
   end
 end

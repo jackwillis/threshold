@@ -49,9 +49,10 @@ def load_overrides(world):
 
 
 def build_playable(world, radius_m=DEFAULT_RADIUS_M):
-    edges = _load(world / "edges.geojson")["features"]
-    nodes = {f["id"]: f for f in _load(world / "nodes.geojson")["features"]}
-    context = _load(world / "context.geojson")["features"]
+    gen = world / "generated"
+    edges = _load(gen / "edges.geojson")["features"]
+    nodes = {f["id"]: f for f in _load(gen / "nodes.geojson")["features"]}
+    context = _load(gen / "context.geojson")["features"]
     overrides = load_overrides(world)
 
     mx = 111_320 * math.cos(math.radians(LAT0))
@@ -307,7 +308,7 @@ def build_playable(world, radius_m=DEFAULT_RADIUS_M):
             "bridge_plazas": False,
             "core": "excludes restricted access and driveway/parking_aisle/drive-through/emergency_access service ways",
         },
-        "inputs": {name: _sha(world / name) for name in ("edges.geojson", "nodes.geojson", "context.geojson")},
+        "inputs": {name: _sha(gen / name) for name in ("edges.geojson", "nodes.geojson", "context.geojson")},
         "diagnostics": diagnostics,
         "locations": locations,
         "connections": connections,

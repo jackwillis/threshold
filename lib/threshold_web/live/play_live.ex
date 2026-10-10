@@ -168,6 +168,7 @@ defmodule ThresholdWeb.PlayLive do
           id="player-map"
           phx-hook="PlayerMap"
           data-world={@world_name}
+          data-snapshot={@world.generation}
           data-state={@map_state}
         >
           <div id="player-map-canvas" phx-update="ignore"></div>

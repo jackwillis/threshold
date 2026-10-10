@@ -29,26 +29,30 @@ defmodule Threshold.ImporterTest do
   end
 
   test "regenerates offline in order" do
-    Application.put_env(:threshold, Importer, command: {"echo", []})
+    Application.put_env(:threshold, Importer, command: Threshold.ImporterStub.command())
     assert {:ok, output} = Importer.regenerate("tiny")
     assert output =~ "build:\nbuild tiny --worlds-dir"
     assert output =~ "playable:\nplayable tiny --worlds-dir"
     assert output =~ "validate:\nvalidate tiny --worlds-dir"
+
+    assert {:ok, _target} =
+             File.read_link(Path.join([Threshold.World.root(), "tiny", "generated"]))
+
     refute output =~ "acquire"
   end
 
   test "a playable failure does not publish the successful geography build", %{dir: dir} do
-    before = File.read!(Path.join(dir, "edges.geojson"))
+    before = File.read!(Path.join([dir, "generated", "edges.geojson"]))
 
     script =
-      ~s(if [ "$1" = build ]; then printf changed > "$4/$2/edges.geojson"; else echo failed; exit 3; fi)
+      ~s(if [ "$1" = build ]; then mkdir -p "$4/$2/generated" && printf changed > "$4/$2/generated/edges.geojson"; else echo failed; exit 3; fi)
 
     Application.put_env(:threshold, Importer, command: {"sh", ["-c", script, "--"]})
     assert {:error, output} = Importer.regenerate("tiny")
     assert output =~ "playable:"
     refute output =~ "validate:"
-    assert File.read!(Path.join(dir, "edges.geojson")) == before
-    refute File.exists?(Path.join(dir, "edges.geojson.regenerating"))
+    assert File.read!(Path.join([dir, "generated", "edges.geojson"])) == before
+    refute File.exists?(Path.join(dir, "generations"))
   end
 
   test "returns the error with output on a nonzero exit" do

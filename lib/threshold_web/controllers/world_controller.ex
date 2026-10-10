@@ -4,8 +4,8 @@ defmodule ThresholdWeb.WorldController do
 
   alias Threshold.World
 
-  def show(conn, %{"world" => world, "layer" => layer}) do
-    case World.layer_path(world, layer) do
+  def show(conn, %{"world" => world, "layer" => layer} = params) do
+    case World.layer_path(world, layer, params["generation"]) do
       {:ok, path} ->
         conn
         |> put_resp_content_type("application/json")

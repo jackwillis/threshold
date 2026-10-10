@@ -72,7 +72,7 @@ defmodule Threshold.ReferencesTest do
 
   describe "Geography.index/1" do
     test "indexes the fixture network" do
-      dir = Path.join(Threshold.World.root(), "tiny")
+      dir = Path.join([Threshold.World.root(), "tiny", "generated"])
       assert {:ok, %{nodes: nodes, edges: edges}} = Geography.index(dir)
       assert nodes["node:1"] == [-89.385, 43.074]
       assert edges["edge:1-2-101"] == "deadbeef"
