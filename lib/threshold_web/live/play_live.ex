@@ -201,7 +201,25 @@ defmodule ThresholdWeb.PlayLive do
           data-state={@map_state}
         >
           <div id="player-map-canvas" phx-update="ignore"></div>
-          <div class="play-map-label">Madison <span>One step at a time</span></div>
+          <%!-- Ignored by LiveView patches so the season variables and button state set by the hook persist. --%>
+          <div id="play-chrome" phx-update="ignore">
+            <div class="play-map-label">Madison <span>One step at a time</span></div>
+            <div
+              id="play-seasons"
+              class="atlas-seasons play-seasons"
+              role="group"
+              aria-label="Map season (appearance only)"
+            >
+              <button
+                :for={season <- ~w(spring summer autumn winter)}
+                type="button"
+                data-season={season}
+                aria-pressed="false"
+              >
+                {season}
+              </button>
+            </div>
+          </div>
           <button id="recenter-player" class="play-recenter" phx-click="recenter">Recenter</button>
           <p :if={@map_error} id="player-map-error" class="map-status map-status-error">
             {@map_error}

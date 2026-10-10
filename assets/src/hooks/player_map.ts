@@ -1,6 +1,10 @@
 import maplibregl from "maplibre-gl";
 import type { FeatureCollection, LineString } from "geojson";
-import { BACKGROUND, layerSpecs } from "../map/style";
+import { loadAtlasFonts } from "../map/atlas/fonts";
+import { MOVEMENT_SOURCES, atlasLayers, movementLayers } from "../map/atlas/style";
+import { contextLabelPoints, streetLabelLines } from "../map/atlas/labels";
+import { bindSeasonButtons, initialSeason, paintPage } from "../map/atlas/season";
+import { SEASON_TOKENS, type Season } from "../map/atlas/tokens";
 import { destinationForKey } from "../map/shortcuts";
 import { allowedCenter, clampZoom, reachBounds, resolveLimits, violatesLimits, type Bounds, type CameraLimits } from "../map/camera";
 
@@ -13,14 +17,14 @@ type Hook = {
   pushEvent(name: string, payload: object): void;
   state(): State; apply(): void; frameCamera(state: State, duration: number): void;
   set(name: string, data: FeatureCollection): void; animate(state: State): void;
-  labels: maplibregl.Marker[]; pending: boolean; pendingTimer?: number; onKey?: (event: KeyboardEvent) => void;
-  requestMove(destination: string): void; showLabels(moves: Move[]): void;
+  unbindSeason?: () => void; season: Season; chrome?: HTMLElement | null; pending: boolean; pendingTimer?: number; onKey?: (event: KeyboardEvent) => void;
+  requestMove(destination: string): void;
   limits: CameraLimits; settling: boolean; keepCameraNearPlayer(animated: boolean): void;
 };
 const empty: FeatureCollection = { type: "FeatureCollection", features: [] };
-function points(positions: Point[], ids: string[] = []): FeatureCollection {
+function points(positions: Point[], ids: string[] = [], keys: (string | null)[] = []): FeatureCollection {
   return { type: "FeatureCollection", features: positions.map((coordinates, i) => ({
-    type: "Feature", properties: { destination: ids[i] }, geometry: { type: "Point", coordinates },
+    type: "Feature", properties: { destination: ids[i], key: keys[i] ?? "" }, geometry: { type: "Point", coordinates },
   })) };
 }
 const pick = (e: KeyboardEvent) => ({ code: e.code, key: e.key, repeat: e.repeat, ctrlKey: e.ctrlKey, altKey: e.altKey, metaKey: e.metaKey, shiftKey: e.shiftKey, defaultPrevented: e.defaultPrevented, isComposing: e.isComposing });
@@ -28,17 +32,24 @@ const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matc
 
 export const PlayerMap = {
   mounted(this: Hook) {
-    this.ready = false; this.removed = false; this.lastTurn = -1; this.lastCamera = -1; this.animating = false; this.labels = []; this.pending = false;
+    this.ready = false; this.removed = false; this.lastTurn = -1; this.lastCamera = -1; this.animating = false; this.pending = false;
     const canvas = this.el.querySelector<HTMLElement>("#player-map-canvas");
     if (!canvas) return;
     const state = this.state();
     this.limits = resolveLimits(state.limits); this.settling = false;
     const map = new maplibregl.Map({ container: canvas, center: state.point, zoom: clampZoom(state.zoom, this.limits),
       minZoom: this.limits.minZoom, maxZoom: this.limits.maxZoom,
-      style: { version: 8, sources: {}, layers: [{ id: "background", type: "background", paint: { "background-color": BACKGROUND } }] },
+      // No `glyphs` URL on purpose: MapLibre draws all map text itself from the bundled Classic Atlas faces.
+      style: { version: 8, sources: {}, layers: [] },
       attributionControl: { customAttribution: "© OpenStreetMap contributors" },
     });
     this.map = map;
+    // Season is a display preference only (CSS variables and map paint); the server never sees it.
+    this.season = initialSeason();
+    const season = this.season;
+    this.chrome = this.el.querySelector<HTMLElement>("#play-chrome");
+    if (this.chrome) { paintPage(this.chrome, season); this.unbindSeason = bindSeasonButtons(this.chrome, map, s => { this.season = s; }); }
+    const fonts = loadAtlasFonts();
     // Read-only map inspection and projection for browser verification.
     (window as unknown as { thresholdPlayerMap?: maplibregl.Map }).thresholdPlayerMap = map;
     map.on("load", async () => {
@@ -56,21 +67,18 @@ export const PlayerMap = {
           return await response.json() as FeatureCollection;
         }));
         if (this.removed) return;
-        map.addSource("edges", { type: "geojson", data: data[0] ?? empty });
-        map.addSource("context", { type: "geojson", data: data[1] ?? empty });
-        for (const layer of layerSpecs("access_status", {})) {
-          if (layer.id.startsWith("ctx-") || layer.id === "edges") {
-            if (layer.id === "edges") layer.paint = { "line-color": "#96988e", "line-width": ["interpolate", ["linear"], ["zoom"], 15, 1, 19, 4], "line-opacity": 0.65 };
-            map.addLayer(layer);
-          }
-        }
-        for (const name of ["visited", "moves", "player", "route"]) map.addSource(name, { type: "geojson", data: empty });
-        map.addLayer({ id: "walk-route", type: "line", source: "route", paint: { "line-color": "#128d7a", "line-width": 4, "line-opacity": 0.4 } });
-        map.addLayer({ id: "visited-points", type: "circle", source: "visited", paint: { "circle-color": "#537468", "circle-radius": 3, "circle-opacity": 0.65 } });
-        map.addLayer({ id: "move-glow", type: "circle", source: "moves", paint: { "circle-color": "#16b69e", "circle-radius": 26, "circle-opacity": 0.3, "circle-blur": 0.6 } });
-        map.addLayer({ id: "move-marker", type: "circle", source: "moves", paint: { "circle-color": "#0e7d6c", "circle-radius": 11, "circle-stroke-color": "#fffdf4", "circle-stroke-width": 2 } });
-        map.addLayer({ id: "player-halo", type: "circle", source: "player", paint: { "circle-color": "#253d36", "circle-radius": 17, "circle-opacity": 0.12 } });
-        map.addLayer({ id: "player-marker", type: "circle", source: "player", paint: { "circle-color": "#263e37", "circle-radius": 8, "circle-stroke-color": "#fffdf4", "circle-stroke-width": 3 } });
+        // The faces must be loaded before the first label is drawn: MapLibre caches every glyph it draws.
+        await fonts;
+        if (this.removed) return;
+        const edges = data[0] ?? empty; const context = data[1] ?? empty;
+        map.addSource("edges", { type: "geojson", data: edges });
+        map.addSource("context", { type: "geojson", data: context });
+        map.addSource("street-labels", { type: "geojson", data: streetLabelLines(edges) });
+        map.addSource("context-labels", { type: "geojson", data: contextLabelPoints(context) });
+        for (const name of MOVEMENT_SOURCES) map.addSource(name, { type: "geojson", data: empty });
+        // The layer stack is shared with the /atlas prototype; this page paints the player's season.
+        const tokens = SEASON_TOKENS[season];
+        for (const layer of [...atlasLayers(tokens), ...movementLayers(tokens)]) map.addLayer(layer);
         this.ready = true; this.apply();
       } catch (error) { if (!this.removed) this.pushEvent("map_failed", { message: String(error) }); }
     });
@@ -96,11 +104,12 @@ export const PlayerMap = {
       map.getCanvas().style.cursor = map.queryRenderedFeatures(event.point, { layers: ["move-glow"] }).length ? "pointer" : "";
     });
   },
-  updated(this: Hook) { this.apply(); },
+  // A LiveView patch can drop attributes the hook set on #play-chrome; restore them from the remembered season.
+  updated(this: Hook) { if (this.chrome) paintPage(this.chrome, this.season); this.apply(); },
   destroyed(this: Hook) {
     this.removed = true; if (this.frame) cancelAnimationFrame(this.frame);
     if (this.onKey) window.removeEventListener("keydown", this.onKey);
-    window.clearTimeout(this.pendingTimer); this.showLabels([]); this.map?.remove();
+    window.clearTimeout(this.pendingTimer); this.unbindSeason?.(); this.map?.remove();
   },
   // Clicks, panel buttons' siblings and number keys all end up here: one request at a time, always by destination id.
   requestMove(this: Hook, destination: string) {
@@ -119,18 +128,6 @@ export const PlayerMap = {
     map.once("moveend", () => { this.settling = false; });
     map.easeTo({ center: target, duration: 250 });
   },
-  showLabels(this: Hook, moves: Move[]) {
-    for (const label of this.labels) label.remove();
-    this.labels = [];
-    const map = this.map;
-    if (!map) return;
-    for (const move of moves) {
-      if (!move.key) continue;
-      const element = document.createElement("div");
-      element.className = "play-marker-label"; element.textContent = move.key; element.setAttribute("aria-hidden", "true");
-      this.labels.push(new maplibregl.Marker({ element, anchor: "center" }).setLngLat(move.point).addTo(map));
-    }
-  },
   state(this: Hook): State { return JSON.parse(this.el.dataset.state ?? "{}") as State; },
   set(this: Hook, name: string, data: FeatureCollection) { (this.map?.getSource(name) as maplibregl.GeoJSONSource | undefined)?.setData(data); },
   apply(this: Hook) {
@@ -138,8 +135,7 @@ export const PlayerMap = {
     const state = this.state();
     this.pending = false; window.clearTimeout(this.pendingTimer);
     this.set("visited", points(state.visited));
-    this.showLabels(state.moves);
-    this.set("moves", points(state.moves.map(m => m.point), state.moves.map(m => m.destination)));
+    this.set("moves", points(state.moves.map(m => m.point), state.moves.map(m => m.destination), state.moves.map(m => m.key)));
     if (this.lastTurn >= 0 && state.turn !== this.lastTurn && state.movement?.turn === state.turn) {
       this.animate(state);
     } else if (!this.animating) { this.set("player", points([state.point])); }

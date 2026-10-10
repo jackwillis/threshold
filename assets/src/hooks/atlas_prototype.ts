@@ -3,7 +3,8 @@ import type { FeatureCollection, Point as GeoPoint } from "geojson";
 import { loadAtlasFonts } from "../map/atlas/fonts";
 import { MOVEMENT_SOURCES, applySeason, atlasLayers, movementLayers } from "../map/atlas/style";
 import { contextLabelPoints, streetLabelLines } from "../map/atlas/labels";
-import { SEASONS, SEASON_TOKENS, cssVariables, type Season } from "../map/atlas/tokens";
+import { SEASON_TOKENS, type Season } from "../map/atlas/tokens";
+import { bindSeasonButtons, initialSeason, paintPage } from "../map/atlas/season";
 
 // Classic Atlas prototype (route /atlas): the real Madison geography in the atlas style, with one-hop
 // movement markers computed from the authored connections. A visual study only: nothing here is saved
@@ -23,19 +24,12 @@ const bearing = (a: Point, b: Point) => {
   return (Math.atan2(dx, b[1] - a[1]) * 180) / Math.PI + (dx < 0 ? 360 : 0);
 };
 
-type Hook = { el: HTMLElement; map?: maplibregl.Map; removed?: boolean; season: Season };
-
-function paintPage(el: HTMLElement, season: Season) {
-  for (const [name, value] of Object.entries(cssVariables(SEASON_TOKENS[season]))) el.style.setProperty(name, value);
-  el.dataset.activeSeason = season;
-  el.querySelectorAll<HTMLButtonElement>("[data-season]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.season === season)));
-}
+type Hook = { el: HTMLElement; map?: maplibregl.Map; removed?: boolean; season: Season; unbind?: () => void };
 
 export const AtlasPrototype = {
   async mounted(this: Hook) {
     const params = new URLSearchParams(location.search);
-    const asked = params.get("season") as Season | null;
-    this.season = asked && SEASONS.includes(asked) ? asked : "summer";
+    this.season = initialSeason();
     paintPage(this.el, this.season);
     const world = encodeURIComponent(this.el.dataset.world ?? "madison");
     const snapshot = this.el.dataset.snapshot;
@@ -102,17 +96,10 @@ export const AtlasPrototype = {
       });
       map.on("mousemove", (event) => { map.getCanvas().style.cursor = map.queryRenderedFeatures(event.point, { layers: ["move-marker"] }).length ? "pointer" : ""; });
 
-      this.el.querySelectorAll<HTMLButtonElement>("[data-season]").forEach((button) =>
-        button.addEventListener("click", () => {
-          this.season = button.dataset.season as Season;
-          applySeason(map, SEASON_TOKENS[this.season]);
-          paintPage(this.el, this.season);
-          const url = new URL(location.href); url.searchParams.set("season", this.season); history.replaceState(null, "", url);
-        }),
-      );
+      this.unbind = bindSeasonButtons(this.el, map, (season) => { this.season = season; });
     } catch (error) {
       this.el.querySelector("#atlas-error")!.textContent = `The atlas could not load: ${String(error)}`;
     }
   },
-  destroyed(this: Hook) { this.removed = true; this.map?.remove(); },
+  destroyed(this: Hook) { this.removed = true; this.unbind?.(); this.map?.remove(); },
 };

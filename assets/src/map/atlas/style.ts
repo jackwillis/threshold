@@ -115,7 +115,7 @@ export function movementLayers(t: AtlasTokens): LayerSpecification[] {
       paint: { "text-color": t.authored, "text-halo-color": t.halo, "text-halo-width": 1.8 },
     },
     { id: "visited-ring", type: "circle", source: "visited", paint: { "circle-color": t.visited, "circle-radius": 3, "circle-opacity": 0.7 } },
-    { id: "move-glow", type: "circle", source: "moves", paint: { "circle-color": t.route, "circle-radius": 22, "circle-opacity": 0.22, "circle-blur": 0.7 } },
+    { id: "move-glow", type: "circle", source: "moves", paint: { "circle-color": t.route, "circle-radius": 25, "circle-opacity": 0.38, "circle-blur": 0.6 } },
     { id: "move-marker", type: "circle", source: "moves", paint: { "circle-color": t.destination, "circle-radius": 11.5, "circle-stroke-color": t.numeral, "circle-stroke-width": 2 } },
     {
       id: "move-key", type: "symbol", source: "moves",

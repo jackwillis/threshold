@@ -1,6 +1,6 @@
 # Classic Atlas: typography decision and first baseline
 
-Date: October 9, 2026. Status: decided and prototyped at `/atlas`; not yet applied to `/play` or the editor.
+Date: October 9, 2026. Status: decided, prototyped at `/atlas` and applied to `/play` (October 9, 2026). The editor still uses its diagnostic style.
 
 ## Decision
 
@@ -40,6 +40,10 @@ A cubic Bezier sampled to 61 points as a GeoJSON LineString, labelled with `symb
 
 `/atlas` (LiveView `AtlasLive` plus the `AtlasPrototype` hook): real Madison geography from the world endpoints (clipped by bbox), warm ivory ground, sage parks, pale blue lakes, building footprints with named buildings in italic, restrained pale roads with fine casings, dashed paths, arterial labels in spaced capitals, minor streets in roman, one-hop numbered markers (numbers run clockwise from north) computed from the authored connections, a season switcher, and `?season=`, `?lng=&lat=&zoom=`, `?at=<loc id>` parameters. Clicking a numbered marker moves the player to that place. It is a visual study: no rules run, nothing is saved, and `/play` is unchanged. Screenshots: `docs/atlas-prototype/`.
 
+## Applied to `/play`
+
+`player_map.ts` now builds its layers from the same `atlasLayers`/`movementLayers`, `street-labels` and `context-labels` sources and `season.ts` as the prototype; the old inline layer set and the DOM numeral markers are gone (numerals are a native `move-key` text layer, so they scale and stay in the map's own collision-free path). Movement, numbering, camera limits, the keyboard handler, the panel and server validation are untouched. A season switcher sits in an `#play-chrome` block that LiveView does not patch; its buttons have no `phx-click`, season is remembered in `localStorage` (and `?season=`) and never reaches the server, progress or saves. `updated()` repaints the chrome after a patch. Verified in headless Firefox against a scratch world and a scratch PostgreSQL database: start, season switch (turn, visited, moves, centre and zoom unchanged), key `1` move, reload restoring the saved turn, a panel-button move after switching season, and a 420 px wide layout. Reduced motion, touch and screen readers were not separately tested; the panel and its buttons are unchanged, markers remain `aria-hidden` map content as before.
+
 ## Not done (for later increments)
 
-Applying the style to `/play` and the editor; contours and relief; seasonal overlay layers (snow wash, leaf tint); radio overlay; Studio labels layer; building shadows; label priority against markers; the glyph question for non-Latin names.
+Applying the style to the editor; contours and relief; seasonal overlay layers (snow wash, leaf tint); radio overlay; Studio labels layer; building shadows; label priority against markers; the glyph question for non-Latin names.

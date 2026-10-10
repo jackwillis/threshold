@@ -85,7 +85,6 @@ body { display: flex; flex-direction: column; font-family: system-ui, sans-serif
 .play-moves button, .play-place { display: flex; justify-content: space-between; align-items: center; padding: 13px 12px; border: 1px solid #d7e7de; border-radius: 7px; background: #f0f6f0; cursor: pointer; width: 100%; text-align: left; }
 .play-moves button:hover, .play-place:hover { background: #e1efe6; border-color: #83b7a0; }
 .play-key { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-right: 8px; border-radius: 50%; background: #0e7d6c; color: #fffdf4; font: 600 12px/1 system-ui, sans-serif; }
-.play-marker-label { pointer-events: none; color: #fffdf4; font: 700 12px/1 system-ui, sans-serif; text-shadow: 0 0 1px rgba(0, 0, 0, 0.4); }
 .play-moves small { display: flex; align-items: center; gap: 8px; color: #678274; }
 .play-place { margin-top: 12px; background: #f4f0e4; border-color: #e5dfcf; }
 .play-inspection { margin-top: 16px; padding: 16px; border-left: 2px solid #639781; background: #f4f6ef; }

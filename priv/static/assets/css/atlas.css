@@ -12,3 +12,15 @@
 .atlas-seasons button:focus-visible { outline: 2px solid var(--atlas-destination, #0e6f61); outline-offset: -2px; }
 .atlas-error:empty { display: none; }
 .atlas-error { position: absolute; left: 24px; bottom: 24px; margin: 0; padding: 8px 12px; background: #fff; color: #8a1c1c; }
+
+/* /play: the season switcher and title over the map. Variables are set on #play-chrome by the hook. */
+#play-chrome { color: var(--atlas-ink, #43382b); }
+#play-chrome .play-map-label { font: 500 26px var(--atlas-serif, Georgia, serif); letter-spacing: .12em; text-transform: uppercase; padding: 8px 14px 10px; background: color-mix(in srgb, var(--atlas-halo, #f6f0e0) 88%, transparent); border: 1px solid var(--atlas-road-casing, #cbbd9c); border-radius: 2px; }
+#play-chrome .play-map-label span { font: italic 400 14px var(--atlas-serif, Georgia, serif); letter-spacing: 0; text-transform: none; color: var(--atlas-ink-muted, #6d5f4b); }
+.play-seasons { top: 24px; right: 24px; z-index: 2; }
+@media (max-width: 700px) {
+  /* Narrow screens: the switcher moves to the bottom-right corner so it never covers the title or markers' area. */
+  .play-seasons { top: auto; bottom: 36px; right: 12px; }
+  .play-seasons button { padding: 6px 9px; font-size: 13px; }
+  #play-chrome .play-map-label { font-size: 20px; padding: 6px 10px 8px; }
+}

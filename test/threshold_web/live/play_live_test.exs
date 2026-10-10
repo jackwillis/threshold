@@ -33,6 +33,21 @@ defmodule ThresholdWeb.PlayLiveTest do
     %{dir: dir}
   end
 
+  test "the season switcher is display-only: client buttons, not server events", %{conn: conn} do
+    {:ok, view, _} = live(conn, ~p"/play?graph=generated")
+
+    assert has_element?(view, "#play-chrome[phx-update=ignore] #play-seasons")
+
+    for season <- ~w(spring summer autumn winter),
+        do: assert(has_element?(view, "#play-seasons button[data-season=#{season}]"))
+
+    # The buttons carry no phx-click: season never reaches the server, progress or movement.
+    refute view |> element("#play-seasons") |> render() =~ "phx-click"
+    before = Repo.all(Progress)
+    assert {:ok, _view, _} = live(conn, ~p"/play?graph=generated&season=winter")
+    assert Repo.all(Progress) == before
+  end
+
   test "one-hop moves persist, invalid clicks do not spend turns, nearby inspection is free", %{
     conn: conn
   } do
