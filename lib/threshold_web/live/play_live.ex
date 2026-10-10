@@ -123,7 +123,8 @@ defmodule ThresholdWeb.PlayLive do
          {:ok, content} <- load_interactions(socket.assigns.world_name),
          {:ok, %{discovered: discovered}} <-
            Sessions.complete_interaction(world, content, turn, id, choice) do
-      labels = for d <- content["discoveries"], d["id"] in discovered, do: d["label"]
+      # In the order the choice grants them, which is the order the author wrote them.
+      labels = for id <- discovered, d <- content["discoveries"], d["id"] == id, do: d["label"]
 
       {:noreply,
        present(
@@ -200,8 +201,15 @@ defmodule ThresholdWeb.PlayLive do
   defp outcome_class(_), do: nil
 
   defp outcome_text({:recorded, []}), do: "Recorded."
-  defp outcome_text({:recorded, labels}), do: "Recorded: #{Enum.join(labels, "; ")}."
+
+  # Discovery labels are written as clues, often full sentences; add a full stop only where one is missing.
+  defp outcome_text({:recorded, labels}),
+    do: "Recorded: " <> Enum.map_join(labels, " ", &ensure_stop/1)
+
   defp outcome_text({:refused, _}), do: "That is no longer available here."
+
+  defp ensure_stop(text),
+    do: if(String.ends_with?(text, [".", "!", "?", "\""]), do: text, else: text <> ".")
 
   # What the persistent live region says. A scene opening is announced by moving focus to its
   # title instead, so the region stays quiet then.

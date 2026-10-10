@@ -111,6 +111,38 @@ defmodule ThresholdWeb.PlayInteractionsTest do
     assert has_element?(view, "#investigate-0", "Dead streetlamp")
   end
 
+  test "labels that already end in a full stop are not given another, and several are joined by spaces",
+       %{conn: conn, dir: dir} do
+    path = Path.join(dir, "interactions.json")
+
+    doc =
+      path
+      |> File.read!()
+      |> Jason.decode!()
+      |> put_in(["discoveries", Access.at(0), "label"], "The tapping is a signal.")
+      |> update_in(
+        ["discoveries"],
+        &(&1 ++ [%{"id" => "disc:second", "label" => "A second clue"}])
+      )
+      |> update_in(
+        ["interactions", Access.at(0), "choices", Access.at(0), "discovers"],
+        &(&1 ++ ["disc:second"])
+      )
+
+    File.write!(path, Jason.encode!(doc))
+    {:ok, view, _} = live(conn, ~p"/play")
+    view |> element("#investigate-0") |> render_click()
+    view |> element("#choice-0") |> render_click()
+
+    assert has_element?(
+             view,
+             "#interaction-live",
+             "Recorded: The tapping is a signal. A second clue."
+           )
+
+    refute view |> element("#interaction-live") |> render() =~ ".."
+  end
+
   test "the other choice does not unlock the second place", %{conn: conn} do
     {:ok, view, _} = live(conn, ~p"/play")
     view |> element("#investigate-0") |> render_click()

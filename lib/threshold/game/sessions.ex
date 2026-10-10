@@ -4,6 +4,8 @@ defmodule Threshold.Game.Sessions do
   alias Threshold.{Game, Repo}
   alias Threshold.Game.{CompletedInteraction, Discovery, Player, Progress, World}
 
+  @migrate_note "the database needs the latest migration (run mix ecto.migrate)."
+
   def enabled?, do: Application.get_env(:threshold, :database_enabled, false)
 
   def load_or_start(%World{} = world) do
@@ -67,8 +69,21 @@ defmodule Threshold.Game.Sessions do
     end)
   end
 
+  # The interaction tables come from a later migration than the saves table. Until the designer
+  # applies it to a database, a world with interactions reports that instead of failing.
+  @doc false
+  def interaction_tables? do
+    match?(
+      {:ok, %{rows: [[name]]}} when not is_nil(name),
+      Repo.query("select to_regclass('player_discoveries')::text")
+    )
+  end
+
   defp clear_interaction_progress(world) do
-    case Repo.get_by(Progress, world: world.name, player_key: "local") do
+    case interaction_tables?() && Repo.get_by(Progress, world: world.name, player_key: "local") do
+      false ->
+        :ok
+
       nil ->
         :ok
 
@@ -83,8 +98,12 @@ defmodule Threshold.Game.Sessions do
 
   @doc "The player's discoveries and completed interactions, for rendering. One read each; no lock."
   @spec interaction_state(%World{}) ::
-          {:ok, %{discovered: MapSet.t(), completed: MapSet.t()}}
+          {:ok, %{discovered: MapSet.t(), completed: MapSet.t()}} | {:error, String.t()}
   def interaction_state(%World{} = world) do
+    if interaction_tables?(), do: read_interaction_state(world), else: {:error, @migrate_note}
+  end
+
+  defp read_interaction_state(world) do
     case Repo.get_by(Progress, world: world.name, player_key: "local") do
       nil ->
         {:ok, %{discovered: MapSet.new(), completed: MapSet.new()}}
