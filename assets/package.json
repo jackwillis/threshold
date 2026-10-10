@@ -6,7 +6,9 @@
     "build": "bun build.ts",
     "watch": "bun build.ts --watch",
     "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "materials": "bun scripts/build-materials.ts",
+    "materials:check": "bun scripts/build-materials.ts --check"
   },
   "dependencies": {
     "@fontsource/eb-garamond": "^5.3.0",

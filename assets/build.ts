@@ -1,4 +1,5 @@
 // Bundles src/app.ts into priv/static/assets. `bun build.ts [--watch]`; set NODE_ENV=production to minify.
+import { buildMaterials } from "./scripts/build-materials";
 import { cp, mkdir } from "node:fs/promises";
 import { watch } from "node:fs";
 
@@ -7,6 +8,7 @@ const FONTS = ["400-normal", "400-italic", "500-normal", "600-normal"].map((v) =
 const outdir = "../priv/static/assets";
 
 async function build() {
+  await buildMaterials();
   const result = await Bun.build({
     entrypoints: ["src/app.ts"],
     outdir: `${outdir}/js`,

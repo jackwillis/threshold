@@ -1,5 +1,6 @@
 import maplibregl from "maplibre-gl";
 import type { FeatureCollection, LineString } from "geojson";
+import { initialTreatment, loadAtlasMaterials } from "../map/atlas/materials";
 import { loadAtlasFonts } from "../map/atlas/fonts";
 import { MOVEMENT_SOURCES, atlasLayers, movementLayers } from "../map/atlas/style";
 import { contextLabelPoints, streetLabelLines } from "../map/atlas/labels";
@@ -47,8 +48,9 @@ export const PlayerMap = {
     // Season is a display preference only (CSS variables and map paint); the server never sees it.
     this.season = initialSeason();
     const season = this.season;
+    const treatment = initialTreatment();
     this.chrome = this.el.querySelector<HTMLElement>("#play-chrome");
-    if (this.chrome) { paintPage(this.chrome, season); this.unbindSeason = bindSeasonButtons(this.chrome, map, s => { this.season = s; }); }
+    if (this.chrome) { paintPage(this.chrome, season); this.unbindSeason = bindSeasonButtons(this.chrome, map, s => { this.season = s; }, treatment); }
     const fonts = loadAtlasFonts();
     // Read-only map inspection and projection for browser verification.
     (window as unknown as { thresholdPlayerMap?: maplibregl.Map }).thresholdPlayerMap = map;
@@ -68,7 +70,7 @@ export const PlayerMap = {
         }));
         if (this.removed) return;
         // The faces must be loaded before the first label is drawn: MapLibre caches every glyph it draws.
-        await fonts;
+        await Promise.all([fonts, loadAtlasMaterials(map)]);
         if (this.removed) return;
         const edges = data[0] ?? empty; const context = data[1] ?? empty;
         map.addSource("edges", { type: "geojson", data: edges });
@@ -77,8 +79,8 @@ export const PlayerMap = {
         map.addSource("context-labels", { type: "geojson", data: contextLabelPoints(context) });
         for (const name of MOVEMENT_SOURCES) map.addSource(name, { type: "geojson", data: empty });
         // The layer stack is shared with the /atlas prototype; this page paints the player's season.
-        const tokens = SEASON_TOKENS[season];
-        for (const layer of [...atlasLayers(tokens), ...movementLayers(tokens)]) map.addLayer(layer);
+        const tokens = SEASON_TOKENS[this.season];
+        for (const layer of [...atlasLayers(tokens, treatment), ...movementLayers(tokens)]) map.addLayer(layer);
         this.ready = true; this.apply();
       } catch (error) { if (!this.removed) this.pushEvent("map_failed", { message: String(error) }); }
     });

@@ -1,7 +1,8 @@
 import maplibregl from "maplibre-gl";
 import type { FeatureCollection, Point as GeoPoint } from "geojson";
+import { initialTreatment, loadAtlasMaterials } from "../map/atlas/materials";
 import { loadAtlasFonts } from "../map/atlas/fonts";
-import { MOVEMENT_SOURCES, applySeason, atlasLayers, movementLayers } from "../map/atlas/style";
+import { MOVEMENT_SOURCES, atlasLayers, movementLayers } from "../map/atlas/style";
 import { contextLabelPoints, streetLabelLines } from "../map/atlas/labels";
 import { SEASON_TOKENS, type Season } from "../map/atlas/tokens";
 import { bindSeasonButtons, initialSeason, paintPage } from "../map/atlas/season";
@@ -29,6 +30,7 @@ type Hook = { el: HTMLElement; map?: maplibregl.Map; removed?: boolean; season: 
 export const AtlasPrototype = {
   async mounted(this: Hook) {
     const params = new URLSearchParams(location.search);
+    const treatment = initialTreatment();
     this.season = initialSeason();
     paintPage(this.el, this.season);
     const world = encodeURIComponent(this.el.dataset.world ?? "madison");
@@ -58,7 +60,6 @@ export const AtlasPrototype = {
       const [edges, context] = await Promise.all(["edges", "context"].map((l) => fetch(`/worlds/${world}/${l}?${query}`).then((r) => r.json() as Promise<FeatureCollection>)));
       if (this.removed) return;
 
-      const tokens = SEASON_TOKENS[this.season];
       const sources: Record<string, { type: "geojson"; data: FeatureCollection }> = {
         edges: { type: "geojson", data: edges! }, context: { type: "geojson", data: context! }, "context-labels": { type: "geojson", data: contextLabelPoints(context!) }, "street-labels": { type: "geojson", data: streetLabelLines(edges!) },
       };
@@ -67,7 +68,7 @@ export const AtlasPrototype = {
         container: canvas, center: [lng0, lat0], zoom: Number(params.get("zoom") ?? 18),
         minZoom: 13, maxZoom: 20.5, attributionControl: { customAttribution: "© OpenStreetMap contributors" },
         // No `glyphs` URL on purpose: MapLibre then draws all text itself from the bundled font faces.
-        style: { version: 8, sources, layers: [...atlasLayers(tokens), ...movementLayers(tokens)] },
+        style: { version: 8, sources, layers: [] },
       });
       this.map = map;
       (window as unknown as { thresholdAtlas?: maplibregl.Map }).thresholdAtlas = map;
@@ -83,20 +84,27 @@ export const AtlasPrototype = {
         set("authored-places", pointCollection([...places.values()].filter((p) => p.id !== here.id && !next.includes(p)).map((p) => ({ point: p.point, properties: p.name === "New location" ? {} : { name: p.name } }))));
         this.el.querySelector("#atlas-here")!.textContent = here.name;
       };
-      map.on("load", () => {
-        present();
-        this.el.dataset.ready = "true";
+      map.on("load", async () => {
+        try {
+          await loadAtlasMaterials(map);
+          if (this.removed) return;
+          const current = SEASON_TOKENS[this.season];
+          for (const layer of [...atlasLayers(current, treatment), ...movementLayers(current)]) map.addLayer(layer);
+          present();
+          map.once("idle", () => { if (!this.removed) this.el.dataset.ready = "true"; });
+        } catch (error) { if (!this.removed) this.el.querySelector("#atlas-error")!.textContent = `The atlas could not load: ${String(error)}`; }
       });
       map.on("click", (event) => {
+        if (this.el.dataset.ready !== "true") return;
         const hit = map.queryRenderedFeatures([[event.point.x - 12, event.point.y - 12], [event.point.x + 12, event.point.y + 12]], { layers: ["move-marker"] })[0];
         const target = hit && places.get(String(hit.properties.id));
         if (!target) return;
         here = target; visited.add(target.id); present();
         map.easeTo({ center: target.point, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 500 });
       });
-      map.on("mousemove", (event) => { map.getCanvas().style.cursor = map.queryRenderedFeatures(event.point, { layers: ["move-marker"] }).length ? "pointer" : ""; });
+      map.on("mousemove", (event) => { if (this.el.dataset.ready !== "true") return; map.getCanvas().style.cursor = map.queryRenderedFeatures(event.point, { layers: ["move-marker"] }).length ? "pointer" : ""; });
 
-      this.unbind = bindSeasonButtons(this.el, map, (season) => { this.season = season; });
+      this.unbind = bindSeasonButtons(this.el, map, (season) => { this.season = season; }, treatment);
     } catch (error) {
       this.el.querySelector("#atlas-error")!.textContent = `The atlas could not load: ${String(error)}`;
     }

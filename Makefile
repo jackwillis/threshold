@@ -23,7 +23,7 @@ test:
 	$(PY)/pytest gis -q
 
 check-assets:
-	cd assets && bun run typecheck && bun test
+	cd assets && bun run typecheck && bun test && bun run materials:check
 
 fmt:
 	mix format
