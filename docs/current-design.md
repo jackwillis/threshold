@@ -428,6 +428,14 @@ The map remains visible when investigating.
 
 The scene system must remain accessible through keyboard navigation, focus management, and appropriate announcements.
 
+### Near-term additions (requested, not yet built)
+
+- **Introduction:** a full-screen narrative introduction on a new walk that establishes setting and premise before Field Atlas appears (not on every reload).
+- **Field Journal:** a persistent, read-only place for active investigations, recorded discoveries and completed cases, designed to help the player remember and reason without pointing the way.
+- **Map indicators:** subtle marks distinguishing locations with notes, locations with available investigations, and completed investigations, without hiding movement numbers.
+
+Requirements, constraints and the proposed smallest data model are in [near-term-features.md](near-term-features.md).
+
 ### Future presentation
 
 Possible additions include:

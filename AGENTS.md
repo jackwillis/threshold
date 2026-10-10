@@ -1,6 +1,8 @@
 # Threshold: project notes for coding agents
 
-Single-player Madison-based mystery game. Current milestone: a local geographic **world-authoring editor** (Phoenix LiveView + a TypeScript MapLibre hook + a Python/OSMnx pipeline). No gameplay yet. **Read [docs/handoff.md](docs/handoff.md) first**, then [docs/implementation-plan.md](docs/implementation-plan.md).
+Single-player Madison-based mystery game: a local world-authoring editor, a Classic Atlas player map (`/play`) with strict one-hop movement, PostgreSQL-saved progress, a declarative interaction system, and a first mystery (*The Quiet Hour*). Phoenix LiveView + TypeScript MapLibre hooks + a Python/OSMnx pipeline. **Read [docs/handoff.md](docs/handoff.md) first (its "Resume here" section)**, then [docs/implementation-status.md](docs/implementation-status.md) and [docs/current-design.md](docs/current-design.md).
+
+**Standing instructions from the designer (October 10, 2026):** no new gameplay systems without explicit approval; do not add environmental notes or change the default spawn (the designer is playing the mystery first); do not touch the development database, `authored.json`, the playable boundary, the `generated` symlink or the generation snapshots; do not push or deploy.
 
 ## Commands
 

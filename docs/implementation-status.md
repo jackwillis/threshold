@@ -24,6 +24,10 @@ Verified means exercised by an automated test and/or by driving the app in headl
 
 `make check` passes with 303 Elixir tests when `THRESHOLD_TEST_DATABASE_URL` points at the disposable test database (13 database tests are excluded without it), 35 Bun tests and 38 Python tests. Not verified: real screen readers, touch devices, browsers other than Firefox, the CI workflow on GitHub, Compose container startup, and the interactions migration against the designer's development database (not applied by agents). The designer's real `authored.json`, playable boundary, active generated snapshot and snapshots have never been modified by agent work.
 
+## Near-term features recorded (not built, not yet authorized)
+
+Full-screen introduction on a new walk, the Field Journal (cases, recorded discoveries, completed outcomes, with a proposed smallest `cases` data model), and map indicators for notes and investigations: [near-term-features.md](near-term-features.md). Also deferred: geographically anchored trees (see the handoff), Studio V2 interaction editing, portraits and dialogue. Standing decisions from the designer (play the mystery first; no Nearby notes or spawn change yet; environmental notes only for persistent features; no new gameplay systems) are in the handoff's "Resume here" section.
+
 ## Proposals awaiting approval
 
 - [Session compatibility instead of whole-file revisions](world-revisions-proposal.md): an explicit position check (exists, traversable, inside the boundary), a diagnostic revision stamp, and non-destructive recovery. Not implemented.
