@@ -1,0 +1,466 @@
+{
+  "boundary": {
+    "coordinates": [
+      [
+        [
+          -89.391777,
+          43.06993
+        ],
+        [
+          -89.369448,
+          43.06993
+        ],
+        [
+          -89.369448,
+          43.080139
+        ],
+        [
+          -89.391777,
+          43.080139
+        ],
+        [
+          -89.391777,
+          43.06993
+        ]
+      ]
+    ],
+    "type": "Polygon"
+  },
+  "components": 27,
+  "config": {
+    "access_policy": "inspect_all",
+    "buffer_m": 250,
+    "format_version": 1,
+    "import_bounds": [
+      -89.4156,
+      43.0593,
+      -89.3456,
+      43.0907
+    ],
+    "name": "Madison \u00b7 First Settlement",
+    "retain_all_components": true,
+    "source": "source/snapshot.osm"
+  },
+  "crs": "EPSG:4326",
+  "edges": 20657,
+  "format_version": 1,
+  "import_extent": {
+    "coordinates": [
+      [
+        [
+          -89.4156,
+          43.0593
+        ],
+        [
+          -89.3456,
+          43.0593
+        ],
+        [
+          -89.3456,
+          43.0907
+        ],
+        [
+          -89.4156,
+          43.0907
+        ],
+        [
+          -89.4156,
+          43.0593
+        ]
+      ]
+    ],
+    "type": "Polygon"
+  },
+  "nodes": 14731,
+  "pipeline_sha256": "c0841229c7f3ad955cc9122c8ac3f5414b001c3e57dae5ec919c6dd60be7bd67",
+  "python": "3.12.14",
+  "simplification": {
+    "bidirectional": true,
+    "edge_attrs_differ": [
+      "access",
+      "foot",
+      "highway",
+      "service",
+      "footway",
+      "crossing",
+      "bridge",
+      "tunnel",
+      "layer",
+      "level"
+    ],
+    "remove_rings": false
+  },
+  "software": {
+    "geopandas": "1.2.0",
+    "networkx": "3.7",
+    "osmnx": "2.1.1",
+    "pyproj": "3.8.0",
+    "shapely": "2.2.0"
+  },
+  "source": {
+    "attribution": "\u00a9 OpenStreetMap contributors",
+    "bounds": [
+      -89.4156,
+      43.0593,
+      -89.3456,
+      43.0907
+    ],
+    "endpoint": "https://overpass-api.de/api/interpreter",
+    "license": "ODbL-1.0",
+    "query": "[out:xml][timeout:300];(way[\"highway\"](43.0593000,-89.4156000,43.0907000,-89.3456000);node[\"highway\"=\"elevator\"](43.0593000,-89.4156000,43.0907000,-89.3456000);way[\"building\"](43.0593000,-89.4156000,43.0907000,-89.3456000);way[\"leisure\"=\"park\"](43.0593000,-89.4156000,43.0907000,-89.3456000);way[\"natural\"=\"water\"](43.0593000,-89.4156000,43.0907000,-89.3456000);relation[\"building\"](43.0593000,-89.4156000,43.0907000,-89.3456000);relation[\"leisure\"=\"park\"](43.0593000,-89.4156000,43.0907000,-89.3456000);relation[\"natural\"=\"water\"](43.0593000,-89.4156000,43.0907000,-89.3456000););(._;>>;);out meta;",
+    "retrieved_at": "2026-10-10T02:10:08.809272+00:00",
+    "sha256": "34975b8a61dd8e3760b4919d6f6e247da145f4a55cbb8ede10b51765adbee744",
+    "source": "OpenStreetMap"
+  },
+  "summary": {
+    "components": [
+      {
+        "bounds": [
+          -89.4173821,
+          43.0576312,
+          -89.3454876,
+          43.0918777
+        ],
+        "component": 0,
+        "edges": 20537,
+        "length_m": 476635.603,
+        "nodes": 14599
+      },
+      {
+        "bounds": [
+          -89.350722,
+          43.059007,
+          -89.345204,
+          43.0663262
+        ],
+        "component": 1,
+        "edges": 52,
+        "length_m": 4480.101,
+        "nodes": 47
+      },
+      {
+        "bounds": [
+          -89.415781,
+          43.0890784,
+          -89.4151905,
+          43.0898322
+        ],
+        "component": 2,
+        "edges": 16,
+        "length_m": 180.957,
+        "nodes": 15
+      },
+      {
+        "bounds": [
+          -89.4021858,
+          43.0735995,
+          -89.4013471,
+          43.0737619
+        ],
+        "component": 3,
+        "edges": 12,
+        "length_m": 107.475,
+        "nodes": 13
+      },
+      {
+        "bounds": [
+          -89.4111956,
+          43.0778994,
+          -89.4108113,
+          43.0780454
+        ],
+        "component": 4,
+        "edges": 7,
+        "length_m": 130.676,
+        "nodes": 5
+      },
+      {
+        "bounds": [
+          -89.4064899,
+          43.0592671,
+          -89.4052004,
+          43.0595537
+        ],
+        "component": 5,
+        "edges": 3,
+        "length_m": 152.028,
+        "nodes": 4
+      },
+      {
+        "bounds": [
+          -89.3868104,
+          43.0705951,
+          -89.3863567,
+          43.0709678
+        ],
+        "component": 6,
+        "edges": 3,
+        "length_m": 68.165,
+        "nodes": 4
+      },
+      {
+        "bounds": [
+          -89.3845806,
+          43.0692625,
+          -89.3845475,
+          43.0694462
+        ],
+        "component": 7,
+        "edges": 3,
+        "length_m": 22.359,
+        "nodes": 4
+      },
+      {
+        "bounds": [
+          -89.4121669,
+          43.07777,
+          -89.4119479,
+          43.078058
+        ],
+        "component": 8,
+        "edges": 4,
+        "length_m": 96.446,
+        "nodes": 3
+      },
+      {
+        "bounds": [
+          -89.3896975,
+          43.0651225,
+          -89.3895639,
+          43.0653694
+        ],
+        "component": 9,
+        "edges": 2,
+        "length_m": 30.59,
+        "nodes": 3
+      },
+      {
+        "bounds": [
+          -89.4014462,
+          43.0705527,
+          -89.4014411,
+          43.0707084
+        ],
+        "component": 10,
+        "edges": 1,
+        "length_m": 17.318,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3874921,
+          43.0752491,
+          -89.3873363,
+          43.0753709
+        ],
+        "component": 11,
+        "edges": 1,
+        "length_m": 18.536,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.411651,
+          43.0741955,
+          -89.4114187,
+          43.074413
+        ],
+        "component": 12,
+        "edges": 1,
+        "length_m": 34.827,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.4108106,
+          43.0740149,
+          -89.4108092,
+          43.074098
+        ],
+        "component": 13,
+        "edges": 1,
+        "length_m": 9.241,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3799893,
+          43.0752581,
+          -89.3798844,
+          43.0753417
+        ],
+        "component": 14,
+        "edges": 1,
+        "length_m": 12.61,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.4115083,
+          43.059221,
+          -89.4115036,
+          43.0593517
+        ],
+        "component": 15,
+        "edges": 1,
+        "length_m": 14.538,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3843864,
+          43.074531,
+          -89.3839447,
+          43.0748562
+        ],
+        "component": 16,
+        "edges": 2,
+        "length_m": 130.118,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.4032131,
+          43.0645174,
+          -89.4030787,
+          43.0648044
+        ],
+        "component": 17,
+        "edges": 1,
+        "length_m": 40.06,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3458893,
+          43.0661479,
+          -89.3455887,
+          43.0663181
+        ],
+        "component": 18,
+        "edges": 1,
+        "length_m": 30.895,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3771159,
+          43.0752476,
+          -89.377081,
+          43.0752706
+        ],
+        "component": 19,
+        "edges": 1,
+        "length_m": 3.818,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3719425,
+          43.0782802,
+          -89.371891,
+          43.0783125
+        ],
+        "component": 20,
+        "edges": 1,
+        "length_m": 5.853,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3849656,
+          43.0764279,
+          -89.3849343,
+          43.0764506
+        ],
+        "component": 21,
+        "edges": 1,
+        "length_m": 3.582,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3928191,
+          43.075048,
+          -89.3927827,
+          43.0750522
+        ],
+        "component": 22,
+        "edges": 1,
+        "length_m": 3.085,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.4035353,
+          43.0741634,
+          -89.403492,
+          43.0743171
+        ],
+        "component": 23,
+        "edges": 1,
+        "length_m": 18.04,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3774103,
+          43.0747733,
+          -89.3773847,
+          43.0747903
+        ],
+        "component": 24,
+        "edges": 1,
+        "length_m": 2.81,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3787531,
+          43.0726246,
+          -89.378367,
+          43.0730127
+        ],
+        "component": 25,
+        "edges": 1,
+        "length_m": 59.646,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3818907,
+          43.0703496,
+          -89.3814994,
+          43.0705298
+        ],
+        "component": 26,
+        "edges": 1,
+        "length_m": 38.003,
+        "nodes": 2
+      }
+    ],
+    "context_by_classification": {
+      "building": 7325,
+      "park": 57,
+      "pedestrian_area": 899,
+      "vertical": 17,
+      "water": 11
+    },
+    "edges_by_access": {
+      "conditional": 9,
+      "public": 637,
+      "restricted": 646,
+      "unknown": 19365
+    },
+    "edges_by_access_basis": {
+      "default_allowed": 16495,
+      "explicit": 1292,
+      "uncertain": 2870
+    },
+    "edges_by_classification": {
+      "alley": 221,
+      "path": 13379,
+      "street": 7057
+    }
+  }
+}

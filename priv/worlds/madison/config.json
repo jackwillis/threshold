@@ -6,9 +6,9 @@
   "retain_all_components": true,
   "source": "source/snapshot.osm",
   "import_bounds": [
-    -89.404,
-    43.0642,
-    -89.3573,
-    43.0858
+    -89.4156,
+    43.0593,
+    -89.3456,
+    43.0907
   ]
 }
