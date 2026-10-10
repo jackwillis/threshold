@@ -1,5 +1,6 @@
 defmodule ThresholdWeb.PlayLive do
   use ThresholdWeb, :live_view
+  alias Phoenix.LiveView.JS
   alias Threshold.{Game, Interactions}
   alias Threshold.Game.{Geometry, Sessions, World}
 
@@ -30,6 +31,7 @@ defmodule ThresholdWeb.PlayLive do
         interaction_note: nil,
         open_interaction: nil,
         outcome: nil,
+        outcome_seq: 0,
         camera: 0,
         map_state: "{}"
       )
@@ -117,7 +119,14 @@ defmodule ThresholdWeb.PlayLive do
       labels = for d <- content["discoveries"], d["id"] in discovered, do: d["label"]
 
       {:noreply,
-       present(assign(socket, world: world, open_interaction: nil, outcome: {:recorded, labels}))}
+       present(
+         assign(socket,
+           world: world,
+           open_interaction: nil,
+           outcome: {:recorded, labels},
+           outcome_seq: socket.assigns.outcome_seq + 1
+         )
+       )}
     else
       {:error, :stale_turn} ->
         {:noreply, load(socket) |> put_flash(:error, "Your walk was updated. Look around again.")}
@@ -125,7 +134,11 @@ defmodule ThresholdWeb.PlayLive do
       {:error, reason} when reason in [:unavailable, :already_completed, :unknown_choice] ->
         {:noreply,
          socket
-         |> assign(open_interaction: nil, outcome: {:refused, reason})
+         |> assign(
+           open_interaction: nil,
+           outcome: {:refused, reason},
+           outcome_seq: socket.assigns.outcome_seq + 1
+         )
          |> present()}
 
       {:error, message} when is_binary(message) ->
@@ -173,6 +186,22 @@ defmodule ThresholdWeb.PlayLive do
       )
     else
       {:error, message} -> assign(socket, error: message)
+    end
+  end
+
+  defp outcome_text({:recorded, []}), do: "Recorded."
+  defp outcome_text({:recorded, labels}), do: "Recorded: #{Enum.join(labels, "; ")}."
+  defp outcome_text({:refused, _}), do: "That is no longer available here."
+
+  # What the persistent live region says. A scene opening is announced by moving focus to its
+  # title instead, so the region stays quiet then.
+  defp announcement(%{outcome: outcome}) when outcome != nil, do: outcome_text(outcome)
+  defp announcement(%{open_interaction: open}) when open != nil, do: ""
+
+  defp announcement(%{interactions: interactions}) do
+    case for(%{status: :available, interaction: i} <- interactions, do: i["title"]) do
+      [] -> ""
+      titles -> "Something here can be investigated: #{Enum.join(titles, "; ")}."
     end
   end
 
@@ -335,6 +364,16 @@ defmodule ThresholdWeb.PlayLive do
           <h1>Walk the city</h1>
           <p :if={@error} id="play-error" role="alert">{@error}</p>
           <%= if @player do %>
+            <%!-- Always rendered, so assistive technology registers it before its text changes. --%>
+            <div
+              id="interaction-live"
+              class="sr-only"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {announcement(assigns)}
+            </div>
             <div id="player-progress" class="play-progress" aria-live="polite">
               <span>Turn <strong id="player-turn">{@player.turn}</strong></span>
               <span><strong id="player-visited">{MapSet.size(@player.visited)}</strong> places visited</span>
@@ -387,40 +426,51 @@ defmodule ThresholdWeb.PlayLive do
               <p :if={@interaction_note} id="interaction-note" class="play-hint play-warning">
                 Investigations are unavailable: {@interaction_note}
               </p>
-              <p id="interaction-outcome" class="play-hint" role="status">
-                <%= case @outcome do %>
-                  <% {:recorded, []} -> %>
-                    Recorded.
-                  <% {:recorded, labels} -> %>
-                    Recorded: {Enum.join(labels, "; ")}.
-                  <% {:refused, _} -> %>
-                    That is no longer available here.
-                  <% _ -> %>
-                    <%= if Enum.any?(@interactions, &(&1.status == :available)) and @open_interaction == nil do %>
-                      Something here can be investigated.
-                    <% end %>
+              <%!-- Visible text only; announcements go through the persistent #interaction-live region. --%>
+              <p id="interaction-outcome" class="play-hint">
+                <%= cond do %>
+                  <% @outcome != nil -> %>
+                    <%!-- A new id per outcome makes this a new element, so phx-mounted moves focus to it each time. --%>
+                    <span id={"outcome-#{@outcome_seq}"} tabindex="-1" phx-mounted={JS.focus()}>
+                      {outcome_text(@outcome)}
+                    </span>
+                  <% Enum.any?(@interactions, &(&1.status == :available)) and @open_interaction == nil -> %>
+                    Something here can be investigated.
+                  <% true -> %>
                 <% end %>
               </p>
               <%= for {entry, index} <- Enum.with_index(@interactions) do %>
+                <% open? = @open_interaction == entry.interaction["id"] %>
                 <button
-                  :if={entry.status == :available and @open_interaction != entry.interaction["id"]}
+                  :if={entry.status == :available}
                   id={"investigate-#{index}"}
                   class="play-place"
-                  phx-click="open_interaction"
-                  phx-value-id={entry.interaction["id"]}
+                  aria-expanded={to_string(open?)}
+                  aria-controls="scene"
+                  phx-click={
+                    if open?,
+                      do: JS.push("close_interaction"),
+                      else: JS.push("open_interaction", value: %{id: entry.interaction["id"]})
+                  }
                 >
-                  <span>{entry.interaction["title"]}</span><small>Investigate</small>
+                  <span>{entry.interaction["title"]}</span><small>{if open?,
+                    do: "Close",
+                    else: "Investigate"}</small>
                 </button>
                 <p :if={entry.status == :completed} id={"investigated-#{index}"} class="play-hint">
                   Investigated: {entry.interaction["title"]}
                 </p>
                 <section
-                  :if={@open_interaction == entry.interaction["id"]}
+                  :if={open?}
                   id="scene"
                   class="play-inspection play-scene"
                   aria-labelledby="scene-title"
+                  phx-window-keydown={JS.push("close_interaction") |> JS.focus(to: "#investigate-#{index}")}
+                  phx-key="Escape"
                 >
-                  <h3 id="scene-title">{entry.interaction["scene"]["title"]}</h3>
+                  <h3 id="scene-title" tabindex="-1" phx-mounted={JS.focus()}>
+                    {entry.interaction["scene"]["title"]}
+                  </h3>
                   <p :for={paragraph <- entry.interaction["scene"]["body"]}>{paragraph}</p>
                   <div class="play-choices">
                     <button
@@ -435,7 +485,12 @@ defmodule ThresholdWeb.PlayLive do
                       <span>{choice["label"]}</span>
                     </button>
                   </div>
-                  <button id="close-scene" phx-click="close_interaction">Close</button>
+                  <button
+                    id="close-scene"
+                    phx-click={JS.push("close_interaction") |> JS.focus(to: "#investigate-#{index}")}
+                  >
+                    Close
+                  </button>
                 </section>
               <% end %>
             </section>

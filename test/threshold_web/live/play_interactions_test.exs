@@ -190,4 +190,104 @@ defmodule ThresholdWeb.PlayInteractionsTest do
     view |> element("#walk-0") |> render_click()
     assert has_element?(view, "#player-turn", "1")
   end
+
+  describe "accessibility" do
+    test "a persistent live region exists from the first render and announces arrival", %{
+      conn: conn
+    } do
+      {:ok, view, _} = live(conn, ~p"/play")
+
+      assert has_element?(
+               view,
+               "#interaction-live[role=status][aria-live=polite]",
+               "Something here can be investigated: Unmarked door."
+             )
+    end
+
+    test "the live region exists even where there is nothing to investigate", %{
+      conn: conn,
+      dir: dir
+    } do
+      File.rm!(Path.join(dir, "interactions.json"))
+      {:ok, view, _} = live(conn, ~p"/play")
+      assert has_element?(view, "#interaction-live[role=status]")
+      assert view |> element("#interaction-live") |> render() =~ ~r/>\s*<\/div>/
+    end
+
+    test "the live region announces the recorded outcome, then the visible text carries focus", %{
+      conn: conn
+    } do
+      {:ok, view, _} = live(conn, ~p"/play")
+      view |> element("#investigate-0") |> render_click()
+      view |> element("#choice-0") |> render_click()
+
+      assert has_element?(view, "#interaction-live", "Recorded: The tapping is a signal.")
+      # A fresh element per outcome so phx-mounted moves focus to it every time.
+      assert has_element?(view, "#outcome-1[tabindex='-1'][phx-mounted]")
+      refute has_element?(view, "#interaction-outcome[role]")
+    end
+
+    test "refusals are announced too, with a new focus target", %{conn: conn} do
+      {:ok, view, _} = live(conn, ~p"/play")
+
+      render_hook(view, "complete_interaction", %{
+        "id" => "int:lamp",
+        "choice" => "note",
+        "turn" => "0"
+      })
+
+      assert has_element?(view, "#interaction-live", "That is no longer available here.")
+      assert has_element?(view, "#outcome-1[tabindex='-1']")
+
+      render_hook(view, "complete_interaction", %{
+        "id" => "int:lamp",
+        "choice" => "note",
+        "turn" => "0"
+      })
+
+      assert has_element?(view, "#outcome-2[tabindex='-1']")
+      refute has_element?(view, "#outcome-1")
+    end
+
+    test "the investigate button is a disclosure, and the scene title takes focus when it opens",
+         %{conn: conn} do
+      {:ok, view, _} = live(conn, ~p"/play")
+      assert has_element?(view, "#investigate-0[aria-expanded=false][aria-controls=scene]")
+
+      view |> element("#investigate-0") |> render_click()
+      assert has_element?(view, "#investigate-0[aria-expanded=true]", "Close")
+      assert has_element?(view, "#scene[aria-labelledby=scene-title]")
+      assert has_element?(view, "#scene-title[tabindex='-1'][phx-mounted]")
+
+      # The same button closes it again, and the live region says nothing while a scene is open.
+      assert view |> element("#interaction-live") |> render() =~ ~r/>\s*<\/div>/
+      view |> element("#investigate-0") |> render_click()
+      refute has_element?(view, "#scene")
+      assert has_element?(view, "#investigate-0[aria-expanded=false]")
+    end
+
+    test "closing returns focus to the investigate button, by button or by Escape", %{conn: conn} do
+      {:ok, view, _} = live(conn, ~p"/play")
+      view |> element("#investigate-0") |> render_click()
+
+      close = view |> element("#close-scene") |> render()
+      assert close =~ "#investigate-0" and close =~ "close_interaction"
+
+      scene = view |> element("#scene") |> render()
+      assert scene =~ ~s(phx-key="Escape")
+      assert scene =~ "#investigate-0"
+
+      view |> element("#close-scene") |> render_click()
+      refute has_element?(view, "#scene")
+    end
+
+    test "choice buttons are real buttons and the scene is a labelled region, not a dialog", %{
+      conn: conn
+    } do
+      {:ok, view, _} = live(conn, ~p"/play")
+      view |> element("#investigate-0") |> render_click()
+      assert has_element?(view, "#scene button#choice-0")
+      refute has_element?(view, "#scene[role=dialog], #scene[aria-modal]")
+    end
+  end
 end
