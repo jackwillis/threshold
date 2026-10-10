@@ -96,15 +96,16 @@ defmodule Threshold.Authored do
 
   def hash(text), do: :crypto.hash(:sha256, text) |> Base.encode16(case: :lower)
 
-  defp ordered(map) when is_map(map) do
+  @doc false
+  def ordered(map) when is_map(map) do
     map
     |> Enum.sort_by(&elem(&1, 0))
     |> Enum.map(fn {k, v} -> {k, ordered(v)} end)
     |> Jason.OrderedObject.new()
   end
 
-  defp ordered(list) when is_list(list), do: Enum.map(list, &ordered/1)
-  defp ordered(other), do: other
+  def ordered(list) when is_list(list), do: Enum.map(list, &ordered/1)
+  def ordered(other), do: other
 
   defp read(path) do
     case File.read(path) do

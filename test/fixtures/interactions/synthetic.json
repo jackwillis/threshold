@@ -1,0 +1,27 @@
+{
+  "format_version": 1,
+  "discoveries": [
+    {"id": "disc:tapping", "label": "The tapping is a signal"}
+  ],
+  "interactions": [
+    {
+      "id": "int:door",
+      "place": "loc:a",
+      "title": "Unmarked door",
+      "requires": [],
+      "scene": {"title": "A faint tapping", "body": ["Evenly spaced. It stops when you stop."]},
+      "choices": [
+        {"id": "knock", "label": "Knock back", "discovers": ["disc:tapping"]},
+        {"id": "listen", "label": "Only listen", "discovers": []}
+      ]
+    },
+    {
+      "id": "int:lamp",
+      "place": "loc:b",
+      "title": "Dead streetlamp",
+      "requires": ["disc:tapping"],
+      "scene": {"title": "It answers", "body": ["Three taps from inside the lamp post."]},
+      "choices": [{"id": "note", "label": "Note it", "discovers": []}]
+    }
+  ]
+}

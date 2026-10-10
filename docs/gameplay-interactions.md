@@ -75,7 +75,7 @@ The unique indexes make replay safe even without application checks. Ids are tex
 ## 4. Reconciling with revisions and the runtime-world cache
 
 - **Revision.** `Game.World.revision` guards saved progress and hashes `authored.json` (plus boundary and edges), not `interactions.json`. Keep it that way: editing scene text must not reset a player's walk. Completion still goes through `restore/2`, so a revision mismatch blocks it exactly like a move.
-- **Cache.** `Threshold.WorldCache` holds the compiled movement world keyed by generation, authored hash, boundary hash and graph mode. Interactions are **not** put in it for V1: they are a small JSON file, parsed and validated against the world's places per LiveView event (cost to be measured in step 1; the file is kilobytes, against 150 ms for the world build the cache removed). If it grows or gains graph effects (for example locked connections), `interactions.json`'s hash becomes one more key component; no other cache change is needed.
+- **Cache.** `Threshold.WorldCache` holds the compiled movement world keyed by generation, authored hash, boundary hash and graph mode. Interactions are **not** put in it for V1: they are a small JSON file, parsed and validated against the world's places per LiveView event (measured in step 1, parse plus validate plus lint, upper bound for the per-event cost since lint need not run per event: 0.07 ms for 2 interactions, 2.4 ms for 50 interactions (92 KB), 13.5 ms for 200 interactions (370 KB); the world build the cache removed was 150 ms). If it grows or gains graph effects (for example locked connections), `interactions.json`'s hash becomes one more key component; no other cache change is needed.
 - **Graph modes.** An interaction names an authored place. On the authored graph the player stands on that place; on the generated graph a place is reachable through `movement_location` and appears under `Game.nearby/2`. Do **not** use `Game.nearby/2` for this: on the authored graph `EffectiveGraph` only lists places that have a non-default name or notes, so an interaction on a still-unnamed place would never appear. Availability instead uses a small new `Game.at_place?(world, player, place_id)`: on the authored graph the place id equals the player's location; on the generated graph the place's `movement_location` equals it. One rule, tested on both graphs.
 - **Database disabled** (`database_enabled: false`): interactions are unavailable, like saves.
 
@@ -120,7 +120,7 @@ Sessions.complete_interaction(world, content, expected_turn, interaction_id, cho
 
 ## 8. Implementation sequence (small commits, each passing `make check` with the database URL set)
 
-1. `Threshold.Interactions`: schema, strict validation, load/encode, lint task, fixture, pure tests. (Measure per-event load cost here.)
+1. `Threshold.Interactions`: schema, strict validation, load/encode, lint task, fixture, pure tests. **Done**; per-event load cost measured above.
 2. Migration, two Ecto schemas, `Sessions.interaction_state/1`, `complete_interaction/5`, reset cleanup, database and concurrency tests.
 3. `Interactions.at/4` read model and its tests.
 4. `PlayLive` panel: indicator, open/close, choose, stale handling, LiveView tests.
