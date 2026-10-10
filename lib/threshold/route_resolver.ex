@@ -370,7 +370,8 @@ defmodule Threshold.RouteResolver do
     :math.sqrt(:math.pow(x - (x1 + t * dx), 2) + :math.pow(y - (y1 + t * dy), 2)) * @m_per_deg
   end
 
-  defp metres([x1, y1], [x2, y2]) do
+  @doc false
+  def metres([x1, y1], [x2, y2]) do
     scale = :math.cos((y1 + y2) / 2 * :math.pi() / 180)
 
     :math.sqrt(

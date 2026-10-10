@@ -8,6 +8,8 @@ defmodule Threshold.Game.World do
     :revision,
     :boundary,
     :generation,
+    graph: :generated,
+    warnings: [],
     locations: %{},
     connections: %{},
     unavailable: %{},
@@ -18,7 +20,15 @@ defmodule Threshold.Game.World do
   @access ~w(public unknown conditional mixed)
   @vehicle_service ~w(driveway parking_aisle drive-through emergency_access)
 
-  def load(name) do
+  @doc """
+  Loads a world for play. `graph: :authored` plays on the designer's authored nodes and walks
+  (see `Threshold.EffectiveGraph`); the default plays on the generated playable graph.
+  """
+  def load(name, opts \\ [])
+  def load(name, graph: :authored), do: Threshold.EffectiveGraph.load(name)
+  def load(name, _opts), do: load_generated(name)
+
+  defp load_generated(name) do
     with {:ok, world} <- Threshold.World.load(name),
          :fresh <- world.staleness,
          %{state: :fresh} <- Playable.status(world.generated),

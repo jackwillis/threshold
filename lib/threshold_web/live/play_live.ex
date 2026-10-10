@@ -7,10 +7,17 @@ defmodule ThresholdWeb.PlayLive do
   def mount(params, _session, socket) do
     name = params["world"] || Application.get_env(:threshold, :default_world, "madison")
 
+    graph =
+      case params["graph"] || Application.get_env(:threshold, :play_graph, "generated") do
+        value when value in [:authored, "authored"] -> :authored
+        _ -> :generated
+      end
+
     socket =
       assign(socket,
         page_title: "Explore",
         world_name: name,
+        graph: graph,
         world: nil,
         player: nil,
         error: nil,
@@ -44,7 +51,7 @@ defmodule ThresholdWeb.PlayLive do
       end
 
     with true <- socket.assigns.player != nil,
-         {:ok, world} <- World.load(socket.assigns.world_name),
+         {:ok, world} <- World.load(socket.assigns.world_name, graph: socket.assigns.graph),
          {:ok, {player, route}} <- Sessions.move(world, expected, params["destination"]) do
       {:noreply,
        present(
@@ -83,7 +90,7 @@ defmodule ThresholdWeb.PlayLive do
     do: {:noreply, present(update(socket, :camera, &(&1 + 1)))}
 
   def handle_event("new_walk", _, socket) do
-    with {:ok, world} <- World.load(socket.assigns.world_name),
+    with {:ok, world} <- World.load(socket.assigns.world_name, graph: socket.assigns.graph),
          true <- Sessions.enabled?(),
          {:ok, player} <- Sessions.reset(world) do
       {:noreply,
@@ -107,7 +114,7 @@ defmodule ThresholdWeb.PlayLive do
     do: {:noreply, assign(socket, map_error: message)}
 
   defp load(socket) do
-    with {:ok, world} <- World.load(socket.assigns.world_name),
+    with {:ok, world} <- World.load(socket.assigns.world_name, graph: socket.assigns.graph),
          {:ok, player} <- Sessions.load_or_start(world) do
       present(
         assign(socket, world: world, player: player, error: nil, movement: nil, inspected: nil)
@@ -183,6 +190,10 @@ defmodule ThresholdWeb.PlayLive do
               <span>Turn <strong id="player-turn">{@player.turn}</strong></span>
               <span><strong id="player-visited">{MapSet.size(@player.visited)}</strong> places visited</span>
             </div>
+            <p :if={@graph == :authored} id="graph-note" class="play-hint">
+              Authored map: every stop is a place from the world editor.
+            </p>
+            <p :for={warning <- @world.warnings} class="play-hint play-warning">{warning}</p>
             <h2>Your next step</h2>
             <p class="play-hint">
               Choose a glowing marker or a direction below, or press its number key. Numbers run clockwise from north.
@@ -229,6 +240,16 @@ defmodule ThresholdWeb.PlayLive do
               data-confirm="Start a new walk? This resets your saved turns and visited places."
             >New walk</button>
             <a href={~p"/?world=#{@world_name}"}>World editor</a>
+            <a
+              id="switch-graph"
+              href={
+                if @graph == :authored,
+                  do: ~p"/play?world=#{@world_name}&graph=generated",
+                  else: ~p"/play?world=#{@world_name}&graph=authored"
+              }
+            >
+              {if @graph == :authored, do: "Play the generated map", else: "Play the authored map"}
+            </a>
           </div>
         </aside>
       </div>
