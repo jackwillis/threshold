@@ -74,6 +74,32 @@ defmodule Threshold.BoundaryTest do
     end
   end
 
+  describe "coverage_error/3 with an explicit import area" do
+    @import_manifest %{"bounds" => [-89.40, 43.06, -89.35, 43.09]}
+    @import_config %{"buffer_m" => 250, "import_bounds" => [-89.40, 43.06, -89.35, 43.09]}
+
+    test "a boundary anywhere inside the import area is allowed, with no buffer required" do
+      edge = [
+        [-89.399, 43.061],
+        [-89.351, 43.061],
+        [-89.351, 43.089],
+        [-89.399, 43.089],
+        [-89.399, 43.061]
+      ]
+
+      {:ok, geometry} = Boundary.polygon(edge)
+      assert Boundary.coverage_error(geometry, @import_config, @import_manifest) == nil
+    end
+
+    test "a boundary beyond the import area is refused" do
+      {:ok, geometry} =
+        Boundary.polygon([[-89.41, 43.07], [-89.36, 43.07], [-89.36, 43.08], [-89.41, 43.08]])
+
+      assert Boundary.coverage_error(geometry, @import_config, @import_manifest) =~
+               "beyond the import area"
+    end
+  end
+
   describe "save/4" do
     setup %{tmp_dir: dir} do
       File.mkdir_p!(Path.join(dir, "source"))

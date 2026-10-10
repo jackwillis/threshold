@@ -103,6 +103,19 @@ defmodule Threshold.Boundary do
   @spec coverage_error(map, map, map | nil) :: String.t() | nil
   def coverage_error(_geometry, _config, nil), do: nil
 
+  # With an explicit import area the boundary only has to lie inside it; no buffer is added.
+  def coverage_error(%{"coordinates" => [ring]}, %{"import_bounds" => _}, %{
+        "bounds" => [west, south, east, north]
+      }) do
+    lons = Enum.map(ring, &Enum.at(&1, 0))
+    lats = Enum.map(ring, &Enum.at(&1, 1))
+
+    if Enum.min(lons) < west or Enum.max(lons) > east or Enum.min(lats) < south or
+         Enum.max(lats) > north do
+      "That boundary reaches beyond the import area. Keep it inside the import area, or acquire a larger one first (make acquire-world)."
+    end
+  end
+
   def coverage_error(%{"coordinates" => [ring]}, config, %{"bounds" => [west, south, east, north]}) do
     lons = Enum.map(ring, &Enum.at(&1, 0))
     lats = Enum.map(ring, &Enum.at(&1, 1))

@@ -134,13 +134,20 @@ def settings(world):
         raise ValueError("buffer_m must be between 0 and 2000")
     if cfg["access_policy"] not in {"inspect_all", "public_only"}:
         raise ValueError("Unknown access_policy")
+    if "import_bounds" in cfg:
+        # An explicit, usually larger, import area: the playable boundary can then be chosen anywhere inside it.
+        west, south, east, north = cfg["import_bounds"]
+        extent = shape({"type": "Polygon", "coordinates": [[[west, south], [east, south], [east, north], [west, north], [west, south]]]})
+        if not (west < east and south < north and extent.buffer(1e-9).covers(polygon)):
+            raise ValueError("import_bounds must be [west, south, east, north] and contain the whole boundary")
+        return cfg, polygon, extent
     forward = Transformer.from_crs(4326, 32616, always_xy=True).transform
     inverse = Transformer.from_crs(32616, 4326, always_xy=True).transform
     extent = transform(inverse, transform(forward, polygon).buffer(cfg["buffer_m"]))
     return cfg, polygon, extent
 
 
-def acquire(world):
+def acquire(world, replace=False):
     import requests
 
     cfg, _, extent = settings(world)
@@ -149,27 +156,29 @@ def acquire(world):
     # Fetch generously: the snapshot is pinned once, so keep everything later decisions may need
     # (standalone elevator nodes, building/park/water multipolygon relations).
     query = (
-        f"[out:xml][timeout:120];("
+        f"[out:xml][timeout:300];("
         f'way["highway"]({bbox});node["highway"="elevator"]({bbox});way["building"]({bbox});way["leisure"="park"]({bbox});'
         f'way["natural"="water"]({bbox});relation["building"]({bbox});relation["leisure"="park"]({bbox});'
         f'relation["natural"="water"]({bbox}););(._;>>;);out meta;'
     )
     target = world / cfg["source"]
-    if target.exists():
-        raise ValueError("Source already exists. Archive it explicitly before acquiring an update.")
+    if target.exists() and not replace:
+        raise ValueError("Source already exists. Pass --replace to pin a new snapshot over it (the old one stays in Git history).")
     endpoint = "https://overpass-api.de/api/interpreter"
     response = requests.post(
         endpoint,
         data={"data": query},
         headers={"User-Agent": f"threshold-gis/{importlib.metadata.version('threshold-gis')} (local game map editor)", "Accept": "*/*"},
-        timeout=180,
+        timeout=420,
     )
     response.raise_for_status()
     root = ET.fromstring(response.content)
     if root.tag != "osm" or root.find("remark") is not None or not root.findall("way"):
         raise ValueError("Overpass returned an error or empty source")
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_bytes(response.content)
+    pending = target.with_suffix(target.suffix + ".tmp")
+    pending.write_bytes(response.content)
+    pending.replace(target)
     write(
         world / "source/manifest.json",
         {
@@ -484,6 +493,7 @@ def main(argv=None):
     parser.add_argument("world", nargs="?", default="madison")
     parser.add_argument("--worlds-dir", type=Path, default=DEFAULT_WORLDS, help="directory containing world folders")
     parser.add_argument("--radius", type=float, default=None, help="playable: cluster radius in metres along the network (default 25)")
+    parser.add_argument("--replace", action="store_true", help="acquire: replace an existing pinned snapshot")
     parser.add_argument("--json", action="store_true", help="print a machine-readable summary to stdout")
     args = parser.parse_args(argv)
     if not args.world.replace("-", "").isalnum():
@@ -494,7 +504,9 @@ def main(argv=None):
         summary = (
             playable(world, args.radius)
             if args.command == "playable"
-            else {"acquire": acquire, "build": build, "validate": validate}[args.command](world)
+            else acquire(world, args.replace)
+            if args.command == "acquire"
+            else {"build": build, "validate": validate}[args.command](world)
         )
     except (ValueError, OSError, ET.ParseError) as exc:
         parser.exit(1, f"World {args.command} failed: {exc}\n")
