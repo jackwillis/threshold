@@ -18,6 +18,8 @@ Verified means exercised by an automated test and/or by driving the app in headl
 - **Classic Atlas** (`6e5f75e`, `d04e223`): season tokens, a shared MapLibre layer stack, bundled EB Garamond drawn locally by MapLibre 5.24 (no glyph PBFs), `/atlas` prototype and the `/play` map; season is display-only. Browser-verified in headless Firefox; see [classic-atlas-typography.md](classic-atlas-typography.md) for rendering limitations. The editor keeps its diagnostic style.
 - **Interactions, first slice** (`5eafbca` to `6f9304a`): `interactions.json` with strict validation and lint (`mix threshold.interactions`), discoveries and completed interactions in two PostgreSQL tables, transactional `Sessions.complete_interaction/5`, and an accessible, field-notebook investigate panel on `/play` (live region, focus management, reduced motion). Verified by tests (including concurrency on independent connections) and in headless Firefox at desktop and 420-500 px on scratch worlds. See [gameplay-interactions.md](gameplay-interactions.md).
 
+- **The Quiet Hour** (first Madison mystery): `priv/worlds/madison/interactions.json`, four approved places, seven interactions, two branches and two endings. Content tests over every choice order; scratch-world playtest of both branches and both endings in headless Firefox. Pacing of the last two legs is long (see [madison-mystery-proposal.md](madison-mystery-proposal.md)); not human-playtested.
+
 ## Verification status (October 10, 2026)
 
 `make check` passes with 303 Elixir tests when `THRESHOLD_TEST_DATABASE_URL` points at the disposable test database (13 database tests are excluded without it), 35 Bun tests and 38 Python tests. Not verified: real screen readers, touch devices, browsers other than Firefox, the CI workflow on GitHub, Compose container startup, and the interactions migration against the designer's development database (not applied by agents). The designer's real `authored.json`, playable boundary, active generated snapshot and snapshots have never been modified by agent work.
@@ -50,7 +52,7 @@ Not verified or not done: the CI workflow has never run on GitHub; the editor's 
 
 ## Active
 
-Gameplay content: a short multi-location Madison mystery using the interaction system, proposed in [madison-mystery-proposal.md](madison-mystery-proposal.md) for the designer's review before any authored file is touched. Studio V2 interaction editing, portraits and simple dialogue follow.
+Gameplay content: *The Quiet Hour* is implemented ([madison-mystery-proposal.md](madison-mystery-proposal.md)); next are pacing notes for its long legs (the designer's decision), then Studio V2 interaction editing, portraits and simple dialogue.
 
 ## Planned
 

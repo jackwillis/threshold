@@ -5,7 +5,7 @@ Repository: `git@github.com:jackwillis/threshold.git`. Read `AGENTS.md` (command
 
 ## Action required: migrate your development database
 
-The interactions work added migration `20261010000000_create_interaction_progress` (two tables). It has **not** been applied to the development database (agent sessions never touch it). Run `mix ecto.migrate` with `THRESHOLD_DATABASE_URL` pointing at it; until then "New walk" and any world with an `interactions.json` fail. Details: [local-gameplay.md](local-gameplay.md).
+The interactions work added migration `20261010000000_create_interaction_progress` (two tables). It has **not** been applied to the development database (agent sessions never touch it). Run `mix ecto.migrate` with `THRESHOLD_DATABASE_URL` pointing at it; until then Madison's investigations (*The Quiet Hour*, `priv/worlds/madison/interactions.json`) are unavailable and the panel says so; movement and New walk keep working. Details: [local-gameplay.md](local-gameplay.md). The story, placement, playtest and pacing report: [madison-mystery-proposal.md](madison-mystery-proposal.md).
 
 ## Update, October 9, 2026 (Claude Code): read this first
 

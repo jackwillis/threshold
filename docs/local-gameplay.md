@@ -29,7 +29,7 @@ export THRESHOLD_DATABASE_URL=postgres://threshold:threshold_local@localhost:543
 mix ecto.migrate
 ```
 
-Pending: `20261010000000_create_interaction_progress` (the `player_discoveries` and `completed_interactions` tables, from the interactions work). Until it is applied, **New walk** fails (it now clears those tables) and any world with an `interactions.json` fails; a world without one, such as Madison, otherwise keeps working because it never reads them. The migration is additive and keeps your saves.
+Pending: `20261010000000_create_interaction_progress` (the `player_discoveries` and `completed_interactions` tables, from the interactions work). Until it is applied, a world with an `interactions.json` (Madison now has one, *The Quiet Hour*) shows "Investigations are unavailable: the database needs the latest migration" in the panel, while movement and **New walk** keep working; no investigation can be played. The migration is additive and keeps your saves.
 
 ## Full checks with PostgreSQL
 

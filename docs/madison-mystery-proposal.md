@@ -1,6 +1,6 @@
 # Proposal: "The Quiet Hour", a four-place Madison mystery
 
-Date: October 10, 2026. Status: **story and placement proposal for the designer's review. Nothing has been written to any world file.** Built only from the existing interaction model ([gameplay-interactions.md](gameplay-interactions.md)): declared discoveries, `requires`, one scene per interaction, choices that grant discoveries. No new engine features.
+Date: October 10, 2026. Status: **approved and implemented** as `priv/worlds/madison/interactions.json` (see the implementation and playtest report at the end). It was a proposal until the designer's approval on October 10, 2026; the original text of that proposal follows unchanged except for the two approved corrections. Built only from the existing interaction model ([gameplay-interactions.md](gameplay-interactions.md)): declared discoveries, `requires`, one scene per interaction, choices that grant discoveries. No new engine features.
 
 ## Premise
 
@@ -153,3 +153,43 @@ The final read-only review below supersedes the hop counts from the first pass (
 4. **Go-ahead** for me to write `priv/worlds/madison/interactions.json` (a new file), lint it, and playtest both branches and both endings on a scratch copy before you play it.
 
 The scenes name no real building or organisation, and the settings are placement references only.
+
+## Implementation and playtest report (October 10, 2026)
+
+**What was added.** `priv/worlds/madison/interactions.json` (new; seven interactions, seven discoveries) with the final text above, in American spelling. `mix threshold.interactions madison` reports 0 warnings against the real `authored.json` (a read-only check). `test/threshold/madison_interactions_test.exs` reads only that content file (never `authored.json`) and checks: the file validates and lints clean against a stand-in world holding the four approved places; it uses exactly those four places with the expected interactions at each; no real institution is named and the approved corrections are present; and, over **every order of every choice**, the story always ends with exactly one closing note, exactly one caretaker scene (matching the library branch), and both branches and both endings are reachable; gating holds at B, C and D until the discoveries exist. Two small code changes came out of playtesting (below). Your `authored.json`, boundary, generated snapshots and symlink are unchanged; the existing player progress was not touched (all play was on scratch copies and scratch databases, dropped afterwards).
+
+**Playtest** (headless Firefox against a scratch copy of the world and a scratch PostgreSQL database; real route clicks through the `/play` panel, every hop, one move per turn):
+
+| Run | Branch and ending | Start | Hops | Result |
+|---|---|---|---|---|
+| 1 | read the notice yourself, then open the hatch | current default spawn | 21 | 5 discoveries, 5 completions; the copy scene (not the clerk scene) appeared at the church; the "open" closing note appeared at the Square |
+| 2 | ask the clerk, then leave the hatch shut | the closer spawn (`spawn:7058fdc6ab34`, set as default in the scratch copy only) | 19 | 5 discoveries, 5 completions; the clerk scene appeared at the church; the "shut" closing note appeared |
+
+In both runs: the Square scene was the only thing offered at the start; the library, church and hatch offered nothing until their discoveries existed (and the church door, passed on the first leg, offered nothing); the church door passed again on the way back showed "Investigated" with no duplicate; completions and discoveries persisted across a page reload (turn, both "Investigated" lines, and the database counts); movement worked on every hop; and the live region and focus behaviour from the earlier increments held. Not tested: both branches combined with the other ending (the content test covers every combination logically), a screen reader, mobile layout of this story, or the designer's real dev database.
+
+**Pacing across the route** (run 1, current default spawn; `-` means nothing to read at that stop):
+
+| Stretch | Hops | What the player meets |
+|---|---|---|
+| spawn to the Square | 4 | `-`, `-`, a named intersection (Nearby), then the pulse scene |
+| the Square to the library | 3 | two named intersections (Nearby), then the bulletin scene |
+| library to church door | 2 | `-`, then the caretaker scene |
+| church door to hatch | **5** | `-`, `-`, `-`, `-`, then the hatch scene |
+| hatch back to the Square | **7** | `-` x4, the church door ("Investigated"), a named intersection, then the closing note |
+
+With the closer spawn the opening is 2 hops instead of 4 and the whole walk 19 hops. **Assessment:** the first half works: scenes arrive every two to four hops and the named intersections give the walk texture. **The second half is long.** From the church to the hatch there are four consecutive stops with nothing to read, and the way back has six, broken only by the church door. About 12 of the 21 hops pass in silence, concentrated in the last two legs, exactly where the story should be tightening. This is a judgement from the hop-by-hop log, not from a human playtester.
+
+**Suggested small environmental observations (not implemented; please decide).** The cheapest fix needs no code at all: give two or three existing places on those legs a name and a short note in Studio, which makes them appear in the player's "Nearby" list. The two places in the middle of the long legs are `loc:00ad92846572` and `loc:61d357749e47` (3rd and 4th hops from the church; both lie on the way back too); `loc:377bd2f999a8` (the first stop after the church) is a third. Example lines in the register of the story, to adapt or discard:
+
+- "The receiver ticks a little closer together here." (on the way to the hatch)
+- "A grating in the pavement breathes warm air on a cold day."
+- "Someone has chalked a small 40 on the curb, and not recently."
+
+Notes there are the same for every player and cannot depend on discoveries, which suits ambience. Anything conditional (for example the caretaker's door "afterward", or a second signal tick on the return trip) would be a new interaction, so I have not added any and would like to discuss it first. An alternative is leaving the pacing as is and judging it by playing the story yourself.
+
+**Two changes made during playtesting.**
+
+1. **Outcome text.** The "Recorded:" line produced double full stops ("library..") and semicolons, because discovery labels are full sentences. It now adds a full stop only where one is missing, joins several labels with a space, and lists them in the order the choice grants them (tests added).
+2. **Missing migration.** Adding Madison content means `/play` now reads the new interaction tables. Until you apply the pending migration, the panel now says "Investigations are unavailable: the database needs the latest migration (run mix ecto.migrate)." and movement and New walk keep working (verified against a scratch database migrated only to the first migration), instead of failing. Apply the migration to play the story.
+
+**Documented limits.** `disc:key` is a story-state shortcut, not inventory. Each interaction completes once, so changing the hatch decision needs New walk. Choices cannot be gated individually, which is why the church has two scenes.

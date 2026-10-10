@@ -1,0 +1,221 @@
+{
+  "discoveries": [
+    {
+      "id": "disc:clerk",
+      "label": "The night clerk remembers someone asking about the same notice, long ago, and was not surprised."
+    },
+    {
+      "id": "disc:conduit",
+      "label": "The notice places the sealed conduit beneath the municipal maintenance concourse."
+    },
+    {
+      "id": "disc:copy",
+      "label": "You have a photocopy of the 1974 notice."
+    },
+    {
+      "id": "disc:key",
+      "label": "Mr. Pell gave you a brass service key stamped M.U.W. 4-40."
+    },
+    {
+      "id": "disc:marked",
+      "label": "You marked the hatch on your map and left it shut. The receiver is still counting. The Square is where it started."
+    },
+    {
+      "id": "disc:pulse",
+      "label": "The pulse repeats every forty seconds, and it is louder toward the library."
+    },
+    {
+      "id": "disc:threshold",
+      "label": "Below the hatch is a stairwell lit from somewhere that is not a lamp. It is warmer than the street. The interval has changed, and the Square is where you first heard it."
+    }
+  ],
+  "format_version": 1,
+  "interactions": [
+    {
+      "choices": [
+        {
+          "discovers": [],
+          "id": "write-it-down",
+          "label": "Write it down"
+        }
+      ],
+      "id": "int:after-open",
+      "place": "loc:b8e5c4e0738c",
+      "requires": [
+        "disc:threshold"
+      ],
+      "scene": {
+        "body": [
+          "The pulse has stopped. At 4:40 the clocks on the Square disagree with each other by exactly forty seconds, and nobody looks up."
+        ],
+        "title": "The Square, afterward"
+      },
+      "title": "The Square, afterward"
+    },
+    {
+      "choices": [
+        {
+          "discovers": [],
+          "id": "walk-on",
+          "label": "Walk on"
+        }
+      ],
+      "id": "int:after-shut",
+      "place": "loc:b8e5c4e0738c",
+      "requires": [
+        "disc:marked"
+      ],
+      "scene": {
+        "body": [
+          "You wait out the forty seconds. The tick does not come. Somewhere under the pavement, a door closes on a stair you did not take."
+        ],
+        "title": "The Square, afterward"
+      },
+      "title": "The Square, afterward"
+    },
+    {
+      "choices": [
+        {
+          "discovers": [
+            "disc:conduit",
+            "disc:copy"
+          ],
+          "id": "photocopy-notice",
+          "label": "Photocopy the notice and read it through"
+        },
+        {
+          "discovers": [
+            "disc:conduit",
+            "disc:clerk"
+          ],
+          "id": "ask-the-clerk",
+          "label": "Ask the night clerk about the penciled number"
+        }
+      ],
+      "id": "int:bulletin",
+      "place": "loc:9663ad011a8d",
+      "requires": [
+        "disc:pulse"
+      ],
+      "scene": {
+        "body": [
+          "The reader is still warm from the last person who used it. The 1974 works bulletins are in a gray box that has been opened more often than any other in the row.",
+          "Page nine carries a single notice: a conduit \"sealed pending inspection\", with a time of day and no date. 4:40. Below it, someone has penciled a number in the margin: 40."
+        ],
+        "title": "The microfilm room"
+      },
+      "title": "Municipal bulletins, 1974"
+    },
+    {
+      "choices": [
+        {
+          "discovers": [
+            "disc:key"
+          ],
+          "id": "take-key",
+          "label": "Take the key he offers"
+        }
+      ],
+      "id": "int:caretaker-clerk",
+      "place": "loc:d9bff30b26bf",
+      "requires": [
+        "disc:conduit",
+        "disc:clerk"
+      ],
+      "scene": {
+        "body": [
+          "The man in the cardigan is already at the door. \"The library telephoned,\" he says. \"Marguerite doesn't telephone about much.\"",
+          "He listens to your receiver for a full forty seconds without being asked to, and nods at the tick as if it were a late bus."
+        ],
+        "title": "The boiler-room door"
+      },
+      "title": "The boiler-room door"
+    },
+    {
+      "choices": [
+        {
+          "discovers": [
+            "disc:key"
+          ],
+          "id": "take-key",
+          "label": "Take the key he offers"
+        }
+      ],
+      "id": "int:caretaker-copy",
+      "place": "loc:d9bff30b26bf",
+      "requires": [
+        "disc:conduit",
+        "disc:copy"
+      ],
+      "scene": {
+        "body": [
+          "A man in a cardigan holds the door with his foot, the way people do when they have been interrupted. You show him the photocopy. He reads it twice, then looks at your receiver, not at you.",
+          "\"Forty seconds,\" he says. \"It was thirty when I started.\""
+        ],
+        "title": "The boiler-room door"
+      },
+      "title": "The boiler-room door"
+    },
+    {
+      "choices": [
+        {
+          "discovers": [
+            "disc:threshold"
+          ],
+          "id": "open-and-look-down",
+          "label": "Open it, and look down"
+        },
+        {
+          "discovers": [
+            "disc:marked"
+          ],
+          "id": "leave-shut-and-mark",
+          "label": "Leave it shut, and mark it for someone else"
+        }
+      ],
+      "id": "int:hatch",
+      "place": "loc:a6b00c477718",
+      "requires": [
+        "disc:key"
+      ],
+      "scene": {
+        "body": [
+          "Between two planters behind the maintenance concourse there is a steel hatch painted to match the ground. The key fits as if it were cut yesterday.",
+          "In your hand the receiver goes quiet. Not low: silent, like a held breath.",
+          "You could open it. You could also write it down and leave it for someone with more nerve. Either way, you will remember which."
+        ],
+        "title": "A hatch the color of the pavement"
+      },
+      "title": "A hatch the color of the pavement"
+    },
+    {
+      "choices": [
+        {
+          "discovers": [
+            "disc:pulse"
+          ],
+          "id": "listen-at-grate",
+          "label": "Crouch by the drain grate and listen"
+        },
+        {
+          "discovers": [
+            "disc:pulse"
+          ],
+          "id": "receiver-to-pavement",
+          "label": "Hold the receiver against the pavement"
+        }
+      ],
+      "id": "int:pulse",
+      "place": "loc:b8e5c4e0738c",
+      "requires": [],
+      "scene": {
+        "body": [
+          "The receiver in your coat has been silent since State Street. Here, at the edge of the Square, it gives one short tick, and then nothing. You wait. Forty seconds later, one tick again.",
+          "The afternoon goes on around you: a vendor folding an umbrella, a pigeon walking the curb like an inspector. Nobody else is listening."
+        ],
+        "title": "Forty seconds"
+      },
+      "title": "A pulse under the Square"
+    }
+  ]
+}
