@@ -289,5 +289,22 @@ defmodule ThresholdWeb.PlayInteractionsTest do
       assert has_element?(view, "#scene button#choice-0")
       refute has_element?(view, "#scene[role=dialog], #scene[aria-modal]")
     end
+
+    test "walking away from an open scene asks the client to restore focus to a stable heading",
+         %{conn: conn} do
+      {:ok, view, _} = live(conn, ~p"/play")
+      assert has_element?(view, "h2#next-step-heading[tabindex='-1']", "Your next step")
+
+      view |> element("#investigate-0") |> render_click()
+      view |> element("#walk-0") |> render_click()
+      assert_push_event(view, "restore-focus", %{to: "#next-step-heading"})
+      refute has_element?(view, "#scene")
+    end
+
+    test "no focus event is sent when no scene was open", %{conn: conn} do
+      {:ok, view, _} = live(conn, ~p"/play")
+      view |> element("#walk-0") |> render_click()
+      refute_push_event(view, "restore-focus", _)
+    end
   end
 end

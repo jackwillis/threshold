@@ -59,6 +59,13 @@ defmodule ThresholdWeb.PlayLive do
     with true <- socket.assigns.player != nil,
          {:ok, world} <- World.load(socket.assigns.world_name, graph: socket.assigns.graph),
          {:ok, {player, route}} <- Sessions.move(world, expected, params["destination"]) do
+      # Walking away removes an open scene. If keyboard focus was inside it (a number key was
+      # pressed there), it would fall to the page body; the client moves it to a stable heading.
+      socket =
+        if socket.assigns.open_interaction,
+          do: push_event(socket, "restore-focus", %{to: "#next-step-heading"}),
+          else: socket
+
       {:noreply,
        present(
          assign(socket,
@@ -385,7 +392,7 @@ defmodule ThresholdWeb.PlayLive do
               <summary>Map notes ({length(@world.warnings)})</summary>
               <p :for={warning <- @world.warnings}>{warning}</p>
             </details>
-            <h2>Your next step</h2>
+            <h2 id="next-step-heading" tabindex="-1">Your next step</h2>
             <p class="play-hint">
               Choose a glowing marker or a direction below, or press its number key. Numbers run clockwise from north.
             </p>

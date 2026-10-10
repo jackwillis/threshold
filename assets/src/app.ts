@@ -12,5 +12,13 @@ const liveSocket = new LiveSocket("/live", Socket, {
   hooks: { MapEditor, PlayerMap, AtlasPrototype },
 });
 
+// A server-side `push_event(socket, "restore-focus", %{to: selector})` moves focus to `to`, but only if
+// focus was lost (the focused element was removed by the patch). Focus the user placed is never stolen.
+window.addEventListener("phx:restore-focus", (event) => {
+  const target = document.querySelector<HTMLElement>((event as CustomEvent<{ to: string }>).detail.to);
+  const active = document.activeElement;
+  if (target && (!active || active === document.body || !active.isConnected)) target.focus();
+});
+
 liveSocket.connect();
 (window as unknown as { liveSocket: unknown }).liveSocket = liveSocket;
