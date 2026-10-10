@@ -1271,13 +1271,13 @@
     {
       "anchor": {
         "kind": "edge",
-        "offset": 0.38745405040145153,
+        "offset": 0.0,
         "point": [
-          -89.3843831,
-          43.0747133
+          -89.3844708,
+          43.0749329
         ],
-        "ref": "edge:5449533723-5449533723-566001292",
-        "ref_geometry_hash": "4a82f704318df3f7"
+        "ref": "edge:1160713899-1160713946-100404531",
+        "ref_geometry_hash": "9fcceb2dc8114633"
       },
       "id": "loc:9821f05090ce",
       "name": "New location",
