@@ -22,11 +22,18 @@ defmodule Threshold.Game.World do
 
   @doc """
   Loads a world for play. `graph: :authored` plays on the designer's authored nodes and walks
-  (see `Threshold.EffectiveGraph`); the default plays on the generated playable graph.
+  (see `Threshold.EffectiveGraph`); the default plays on the generated playable graph. Built
+  worlds are immutable and cached by what they were built from (`Threshold.WorldCache`).
   """
-  def load(name, opts \\ [])
-  def load(name, graph: :authored), do: Threshold.EffectiveGraph.load(name)
-  def load(name, _opts), do: load_generated(name)
+  def load(name, opts \\ []) do
+    graph = if Keyword.get(opts, :graph) == :authored, do: :authored, else: :generated
+
+    Threshold.WorldCache.fetch(name, graph, fn ->
+      if graph == :authored,
+        do: Threshold.EffectiveGraph.load(name),
+        else: load_generated(name)
+    end)
+  end
 
   defp load_generated(name) do
     with {:ok, world} <- Threshold.World.load(name),
