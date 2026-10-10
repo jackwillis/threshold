@@ -1,7 +1,19 @@
-# Handoff memo for Codex
+# Handoff memo
 
 Date: October 8, 2026. From: Claude Code (implementation so far). To: Codex.
 Repository: `git@github.com:jackwillis/threshold.git`. Read `AGENTS.md` (commands and conventions) first, then this file, then `docs/implementation-plan.md` (the operational task list).
+
+## Update, October 9, 2026 (Claude Code): read this first
+
+Newer than the tables below. The steering memos are in `docs/` (`steering-memo-2026-10-09.md`, `frontend-v2-memo-2026-10-09.md`, `keyboard-navigation.md`, `camera-rules.md`, `cartography-brief.md`, `cartographic-labels-memo.md`); `implementation-status.md` lists what is guaranteed and what is unverified.
+
+- **Reliability (done):** per-world write lock (`world_file.ex`), atomic generated-geography snapshots (`generated.ex`), server-derived edge anchors, concurrency tests, CI workflow (never yet run on GitHub).
+- **Player map (`/play`):** strict one-hop movement; radial numbered keyboard shortcuts (`Game.numbered_moves/2`, `assets/src/map/shortcuts.ts`); camera limits (`assets/src/map/camera.ts`; zoom 17-19.5, 200 m tether). `make check` also runs `bun test`.
+- **Authored map as the playable graph (opt-in, `/play?graph=authored`):** the designer's authored places are traversable nodes (intersections or mid-block); `RouteResolver` resolves each authored connection to a real street walk and `EffectiveGraph` turns them into a `Game.World`. The generated playable graph is still the default. See `docs/movement-design.md` and `docs/authored-integration-audit.md`.
+- **Read-only tools:** `mix threshold.audit`, `mix threshold.routes [--details]`, and the editor's "Route check" section. They change nothing.
+- **Open designer decisions:** the two free-point places (`loc:6216b9ecc50a`, `loc:9821f05090ce`) have no street position, which leaves 10 connections unresolved; whether `authored` should become the default graph; whether to add `travel` on connections and to allow spawns on authored places (both schema changes needing approval); how the authored area meets generated scaffolding beyond it; destination versus route-departure bearing for key numbering.
+- **Not built:** Frontend V2 (Studio/Atlas), curved cartographic labels (note: MapLibre text labels need a glyph source the offline style lacks), editor recovery drafts, the offscreen-destination indicator.
+- The committed `authored.json` is the designer's real work: never run tests against it; experiment on a copy via `THRESHOLD_WORLDS_DIR`.
 
 ## What this project is
 
