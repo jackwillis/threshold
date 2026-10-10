@@ -19,6 +19,7 @@ defmodule ThresholdWeb.Router do
 
     live "/", EditorLive
     live "/play", PlayLive
+    live "/atlas", AtlasLive
     get "/worlds/:world/:layer", WorldController, :show
   end
 

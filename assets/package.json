@@ -9,6 +9,8 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@fontsource/eb-garamond": "^5.3.0",
+    "@mapbox/tiny-sdf": "^2.3.0",
     "maplibre-gl": "^5",
     "terra-draw": "^1",
     "terra-draw-maplibre-gl-adapter": "^1"

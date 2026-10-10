@@ -111,7 +111,7 @@ V2 runs beside V1 at `/studio-v2`; V1 routes and `authored.json` are untouched. 
 
 ## Risks and open questions
 
-- **Glyphs (now on the critical path):** Classic Atlas depends on elegant curved labels. MapLibre symbol text needs glyph PBFs, and the style is intentionally offline. Options: generate and bundle glyph sets for one or two open-licensed serif and sans fonts, or render curved labels outside MapLibre's text pipeline. Decide before the style module, because label typography drives the whole look.
+- **Glyphs: RESOLVED, see [classic-atlas-typography.md](classic-atlas-typography.md).** MapLibre 5.24 draws map text locally from bundled font faces when the style has no `glyphs` URL; no PBFs needed. Original concern:  Classic Atlas depends on elegant curved labels. MapLibre symbol text needs glyph PBFs, and the style is intentionally offline. Options: generate and bundle glyph sets for one or two open-licensed serif and sans fonts, or render curved labels outside MapLibre's text pipeline. Decide before the style module, because label typography drives the whole look.
 - **Two UI technologies:** LiveView and Preact coexist. Keep Preact confined to `/studio-v2` and the shared map code framework-free, so Atlas never depends on it.
 - **Duplicated rules:** the client must not re-implement validation; every edit result comes from the server. Any rule found on the client during review is a bug to move.
 

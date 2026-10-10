@@ -1,0 +1,14 @@
+/* Classic Atlas prototype page. Colours come from the --atlas-* variables the hook sets from the
+   season tokens (assets/src/map/atlas/tokens.ts); nothing here hard-codes a season. */
+.atlas { position: relative; height: 100%; min-height: 420px; background: var(--atlas-ground, #f3ecd9); color: var(--atlas-ink, #43382b); font-family: var(--atlas-sans, system-ui, sans-serif); }
+#atlas-canvas { position: absolute; inset: 0; }
+.atlas-title { position: absolute; top: 20px; left: 24px; pointer-events: none; padding: 10px 16px 12px; background: color-mix(in srgb, var(--atlas-halo, #f6f0e0) 88%, transparent); border: 1px solid var(--atlas-road-casing, #cbbd9c); border-radius: 2px; }
+.atlas-title h1 { margin: 0; font: 500 28px/1.1 var(--atlas-serif, Georgia, serif); letter-spacing: .14em; text-transform: uppercase; }
+.atlas-title p { margin: 4px 0 0; font: italic 400 15px var(--atlas-serif, Georgia, serif); color: var(--atlas-ink-muted, #6d5f4b); min-height: 1.2em; }
+.atlas-seasons { position: absolute; top: 20px; right: 20px; display: flex; gap: 0; border: 1px solid var(--atlas-road-casing, #cbbd9c); border-radius: 2px; overflow: hidden; background: var(--atlas-halo, #f6f0e0); }
+.atlas-seasons button { border: 0; border-right: 1px solid var(--atlas-road-casing, #cbbd9c); background: transparent; color: var(--atlas-ink, #43382b); padding: 7px 13px; font: 500 14px var(--atlas-serif, Georgia, serif); letter-spacing: .06em; text-transform: capitalize; cursor: pointer; }
+.atlas-seasons button:last-child { border-right: 0; }
+.atlas-seasons button[aria-pressed="true"] { background: var(--atlas-destination, #0e6f61); color: var(--atlas-numeral, #fffdf4); }
+.atlas-seasons button:focus-visible { outline: 2px solid var(--atlas-destination, #0e6f61); outline-offset: -2px; }
+.atlas-error:empty { display: none; }
+.atlas-error { position: absolute; left: 24px; bottom: 24px; margin: 0; padding: 8px 12px; background: #fff; color: #8a1c1c; }

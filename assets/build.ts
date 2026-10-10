@@ -3,6 +3,7 @@ import { cp, mkdir } from "node:fs/promises";
 import { watch } from "node:fs";
 
 const production = process.env.NODE_ENV === "production";
+const FONTS = ["400-normal", "400-italic", "500-normal", "600-normal"].map((v) => `eb-garamond-latin-${v}.woff2`);
 const outdir = "../priv/static/assets";
 
 async function build() {
@@ -20,6 +21,9 @@ async function build() {
   }
   await mkdir(`${outdir}/css`, { recursive: true });
   await cp("node_modules/maplibre-gl/dist/maplibre-gl.css", `${outdir}/css/maplibre-gl.css`);
+  // Bundled map and HUD typeface (EB Garamond, SIL OFL), served from /assets/fonts.
+  await mkdir(`${outdir}/fonts`, { recursive: true });
+  for (const file of FONTS) await cp(`node_modules/@fontsource/eb-garamond/files/${file}`, `${outdir}/fonts/${file}`);
   console.log(`built ${new Date().toLocaleTimeString()}`);
   return true;
 }
