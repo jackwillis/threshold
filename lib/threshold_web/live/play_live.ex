@@ -193,7 +193,10 @@ defmodule ThresholdWeb.PlayLive do
             <p :if={@graph == :authored} id="graph-note" class="play-hint">
               Authored map: every stop is a place from the world editor.
             </p>
-            <p :for={warning <- @world.warnings} class="play-hint play-warning">{warning}</p>
+            <details :if={@world.warnings != []} id="map-notes" class="play-hint play-warning">
+              <summary>Map notes ({length(@world.warnings)})</summary>
+              <p :for={warning <- @world.warnings}>{warning}</p>
+            </details>
             <h2>Your next step</h2>
             <p class="play-hint">
               Choose a glowing marker or a direction below, or press its number key. Numbers run clockwise from north.
