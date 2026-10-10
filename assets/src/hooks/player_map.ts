@@ -1,9 +1,10 @@
 import maplibregl from "maplibre-gl";
 import type { FeatureCollection, LineString } from "geojson";
 import { BACKGROUND, layerSpecs } from "../map/style";
+import { destinationForKey } from "../map/shortcuts";
 
 type Point = [number, number];
-type Move = { destination: string; point: Point; geometry: LineString };
+type Move = { destination: string; key: string | null; point: Point; geometry: LineString };
 type State = { point: Point; turn: number; moves: Move[]; visited: Point[]; movement: { turn: number; geometry: LineString } | null; camera: number; zoom: number };
 type Hook = {
   el: HTMLElement; map?: maplibregl.Map; ready: boolean; removed: boolean;
@@ -11,6 +12,8 @@ type Hook = {
   pushEvent(name: string, payload: object): void;
   state(): State; apply(): void; frameCamera(state: State, duration: number): void;
   set(name: string, data: FeatureCollection): void; animate(state: State): void;
+  labels: maplibregl.Marker[]; pending: boolean; pendingTimer?: number; onKey?: (event: KeyboardEvent) => void;
+  requestMove(destination: string): void; showLabels(moves: Move[]): void;
 };
 const empty: FeatureCollection = { type: "FeatureCollection", features: [] };
 function points(positions: Point[], ids: string[] = []): FeatureCollection {
@@ -18,11 +21,12 @@ function points(positions: Point[], ids: string[] = []): FeatureCollection {
     type: "Feature", properties: { destination: ids[i] }, geometry: { type: "Point", coordinates },
   })) };
 }
+const pick = (e: KeyboardEvent) => ({ code: e.code, key: e.key, repeat: e.repeat, ctrlKey: e.ctrlKey, altKey: e.altKey, metaKey: e.metaKey, shiftKey: e.shiftKey, defaultPrevented: e.defaultPrevented, isComposing: e.isComposing });
 const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 export const PlayerMap = {
   mounted(this: Hook) {
-    this.ready = false; this.removed = false; this.lastTurn = -1; this.lastCamera = -1; this.animating = false;
+    this.ready = false; this.removed = false; this.lastTurn = -1; this.lastCamera = -1; this.animating = false; this.labels = []; this.pending = false;
     const canvas = this.el.querySelector<HTMLElement>("#player-map-canvas");
     if (!canvas) return;
     const state = this.state();
@@ -55,8 +59,8 @@ export const PlayerMap = {
         for (const name of ["visited", "moves", "player", "route"]) map.addSource(name, { type: "geojson", data: empty });
         map.addLayer({ id: "walk-route", type: "line", source: "route", paint: { "line-color": "#128d7a", "line-width": 4, "line-opacity": 0.4 } });
         map.addLayer({ id: "visited-points", type: "circle", source: "visited", paint: { "circle-color": "#537468", "circle-radius": 3, "circle-opacity": 0.65 } });
-        map.addLayer({ id: "move-glow", type: "circle", source: "moves", paint: { "circle-color": "#16b69e", "circle-radius": 22, "circle-opacity": 0.3, "circle-blur": 0.6 } });
-        map.addLayer({ id: "move-marker", type: "circle", source: "moves", paint: { "circle-color": "#139884", "circle-radius": 8, "circle-stroke-color": "#fffdf4", "circle-stroke-width": 2 } });
+        map.addLayer({ id: "move-glow", type: "circle", source: "moves", paint: { "circle-color": "#16b69e", "circle-radius": 26, "circle-opacity": 0.3, "circle-blur": 0.6 } });
+        map.addLayer({ id: "move-marker", type: "circle", source: "moves", paint: { "circle-color": "#0e7d6c", "circle-radius": 11, "circle-stroke-color": "#fffdf4", "circle-stroke-width": 2 } });
         map.addLayer({ id: "player-halo", type: "circle", source: "player", paint: { "circle-color": "#253d36", "circle-radius": 17, "circle-opacity": 0.12 } });
         map.addLayer({ id: "player-marker", type: "circle", source: "player", paint: { "circle-color": "#263e37", "circle-radius": 8, "circle-stroke-color": "#fffdf4", "circle-stroke-width": 3 } });
         this.ready = true; this.apply();
@@ -65,21 +69,54 @@ export const PlayerMap = {
     map.on("click", event => {
       if (!this.ready || this.animating) return;
       const marker = map.queryRenderedFeatures([[event.point.x - 10, event.point.y - 10], [event.point.x + 10, event.point.y + 10]], { layers: ["move-marker"] })[0];
-      if (marker) this.pushEvent("move", { destination: marker.properties.destination, turn: this.state().turn });
+      if (marker) this.requestMove(marker.properties.destination);
     });
+    this.onKey = event => {
+      const destination = destinationForKey({ ...pick(event), target: event.target as HTMLElement | null }, this.state().moves, {
+        idle: this.ready && !this.animating && !this.pending,
+        modalOpen: document.querySelector('dialog[open], [aria-modal="true"], [role="dialog"]') !== null,
+      });
+      if (destination) { event.preventDefault(); this.requestMove(destination); }
+    };
+    window.addEventListener("keydown", this.onKey);
     map.on("mousemove", event => {
       if (!this.ready) return;
       map.getCanvas().style.cursor = map.queryRenderedFeatures(event.point, { layers: ["move-glow"] }).length ? "pointer" : "";
     });
   },
   updated(this: Hook) { this.apply(); },
-  destroyed(this: Hook) { this.removed = true; if (this.frame) cancelAnimationFrame(this.frame); this.map?.remove(); },
+  destroyed(this: Hook) {
+    this.removed = true; if (this.frame) cancelAnimationFrame(this.frame);
+    if (this.onKey) window.removeEventListener("keydown", this.onKey);
+    window.clearTimeout(this.pendingTimer); this.showLabels([]); this.map?.remove();
+  },
+  // Clicks, panel buttons' siblings and number keys all end up here: one request at a time, always by destination id.
+  requestMove(this: Hook, destination: string) {
+    if (!this.ready || this.animating || this.pending) return;
+    this.pending = true;
+    this.pendingTimer = window.setTimeout(() => { this.pending = false; }, 1500);
+    this.pushEvent("move", { destination, turn: this.state().turn });
+  },
+  showLabels(this: Hook, moves: Move[]) {
+    for (const label of this.labels) label.remove();
+    this.labels = [];
+    const map = this.map;
+    if (!map) return;
+    for (const move of moves) {
+      if (!move.key) continue;
+      const element = document.createElement("div");
+      element.className = "play-marker-label"; element.textContent = move.key; element.setAttribute("aria-hidden", "true");
+      this.labels.push(new maplibregl.Marker({ element, anchor: "center" }).setLngLat(move.point).addTo(map));
+    }
+  },
   state(this: Hook): State { return JSON.parse(this.el.dataset.state ?? "{}") as State; },
   set(this: Hook, name: string, data: FeatureCollection) { (this.map?.getSource(name) as maplibregl.GeoJSONSource | undefined)?.setData(data); },
   apply(this: Hook) {
     if (!this.ready) return;
     const state = this.state();
+    this.pending = false; window.clearTimeout(this.pendingTimer);
     this.set("visited", points(state.visited));
+    this.showLabels(state.moves);
     this.set("moves", points(state.moves.map(m => m.point), state.moves.map(m => m.destination)));
     if (this.lastTurn >= 0 && state.turn !== this.lastTurn && state.movement?.turn === state.turn) {
       this.animate(state);

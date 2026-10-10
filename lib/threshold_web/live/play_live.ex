@@ -1,7 +1,7 @@
 defmodule ThresholdWeb.PlayLive do
   use ThresholdWeb, :live_view
   alias Threshold.Game
-  alias Threshold.Game.{Sessions, World}
+  alias Threshold.Game.{Geometry, Sessions, World}
 
   @impl true
   def mount(params, _session, socket) do
@@ -122,7 +122,7 @@ defmodule ThresholdWeb.PlayLive do
   defp present(socket) do
     %{world: world, player: player} = socket.assigns
     point = world.locations[player.location]["point"]
-    moves = Game.available_moves(world, player)
+    moves = Game.numbered_moves(world, player)
     spawn = Enum.find(world.spawns, & &1["default"])
 
     state = %{
@@ -147,12 +147,10 @@ defmodule ThresholdWeb.PlayLive do
     )
   end
 
-  defp direction([x, y], [dx, dy]) do
-    angle = :math.atan2((dx - x) * :math.cos(y * :math.pi() / 180), dy - y) * 180 / :math.pi()
-
+  defp direction(from, to) do
     Enum.at(
       ~w(north northeast east southeast south southwest west northwest),
-      rem(round((angle + 360) / 45), 8)
+      rem(round(Geometry.bearing(from, to) / 45), 8)
     )
   end
 
@@ -187,7 +185,7 @@ defmodule ThresholdWeb.PlayLive do
             </div>
             <h2>Your next step</h2>
             <p class="play-hint">
-              Choose a glowing marker or a direction below. Each step takes you to the next place along the way.
+              Choose a glowing marker or a direction below, or press its number key. Numbers run clockwise from north.
             </p>
             <div id="available-moves" class="play-moves">
               <button
@@ -196,8 +194,12 @@ defmodule ThresholdWeb.PlayLive do
                 phx-click="move"
                 phx-value-destination={move.destination}
                 phx-value-turn={@player.turn}
+                aria-keyshortcuts={move.key}
               >
-                <span>Walk {direction(@world.locations[@player.location]["point"], move.point)}</span>
+                <span>
+                  <kbd :if={move.key} class="play-key" aria-hidden="true">{move.key}</kbd>
+                  Walk {direction(@world.locations[@player.location]["point"], move.point)}
+                </span>
                 <small>{round(move.length_m)} m <.icon name="hero-arrow-right" class="w-4 h-4" /></small>
               </button>
             </div>

@@ -5,7 +5,8 @@
   "scripts": {
     "build": "bun build.ts",
     "watch": "bun build.ts --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
   },
   "dependencies": {
     "maplibre-gl": "^5",

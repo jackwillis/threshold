@@ -1,6 +1,9 @@
 defmodule Threshold.Game do
   @moduledoc "Server-authoritative, strictly one-hop walking. Each traversed connection spends one turn."
-  alias Threshold.Game.{Player, World}
+  alias Threshold.Game.{Geometry, Player, World}
+
+  # Keyboard shortcuts: 1-9 then 0, so at most ten moves have one.
+  @shortcuts ~w(1 2 3 4 5 6 7 8 9 0)
 
   def start(%World{} = world) do
     case Enum.filter(world.spawns, & &1["default"]) do
@@ -39,6 +42,24 @@ defmodule Threshold.Game do
       }
     end)
     |> Enum.sort_by(& &1.destination)
+  end
+
+  @doc """
+  The available moves in radial order, each with its geographic `bearing` from the player and a
+  keyboard shortcut `key` (`"1"`..`"9"`, then `"0"`; `nil` beyond ten, which stay reachable by
+  pointer). The order starts at north and runs clockwise, ties broken by destination id. It
+  depends only on geography, never on the camera or screen. Presentation only: moving still goes
+  through `move/3` with the destination id.
+  """
+  def numbered_moves(%World{} = world, %Player{location: location} = player) do
+    origin = world.locations[location]["point"]
+
+    world
+    |> available_moves(player)
+    |> Enum.map(&Map.put(&1, :bearing, Geometry.bearing(origin, &1.point)))
+    |> Enum.sort_by(&{Float.round(&1.bearing, 4), &1.destination})
+    |> Enum.with_index()
+    |> Enum.map(fn {move, index} -> Map.put(move, :key, Enum.at(@shortcuts, index)) end)
   end
 
   @doc """

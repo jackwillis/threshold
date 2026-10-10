@@ -1,6 +1,17 @@
 defmodule Threshold.Game.Geometry do
-  @moduledoc "Boundary coverage for walking routes, including concave polygon excursions."
+  @moduledoc "Geometry for walking routes: boundary coverage (including concave polygon excursions) and bearings."
   @epsilon 1.0e-12
+
+  @doc """
+  Initial geographic bearing in degrees clockwise from north, in `[0, 360)`, from one
+  `[lon, lat]` point to another. Longitude is scaled by the cosine of the starting latitude.
+  """
+  @spec bearing([number], [number]) :: float
+  def bearing([x, y], [dx, dy]) do
+    angle = :math.atan2((dx - x) * :math.cos(y * :math.pi() / 180), dy - y) * 180 / :math.pi()
+    normalized = angle - 360 * Float.floor(angle / 360)
+    if normalized >= 360, do: 0.0, else: normalized
+  end
 
   def covered?(
         %{"type" => "LineString", "coordinates" => [_ | _] = points},

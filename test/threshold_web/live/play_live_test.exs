@@ -43,6 +43,10 @@ defmodule ThresholdWeb.PlayLiveTest do
     state = view |> element("#player-map") |> render() |> state_json()
     refute Map.has_key?(state, "preview")
     assert Enum.map(state["moves"], & &1["destination"]) == ["pn:2"]
+    assert [%{"key" => "1", "bearing" => bearing}] = state["moves"]
+    assert is_number(bearing)
+    assert has_element?(view, "#walk-0 kbd.play-key", "1")
+    assert has_element?(view, "#walk-0[aria-keyshortcuts=\"1\"]")
     render_hook(view, "move", %{"destination" => "pn:3", "turn" => 0})
     assert Repo.get_by!(Progress, world: "tiny").turn == 0
     view |> element("#walk-0") |> render_click()
