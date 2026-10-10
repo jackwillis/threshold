@@ -34,8 +34,9 @@ defmodule Threshold.EffectiveGraph do
          {:ok, authored_text} <- File.read(Path.join(world.dir, "authored.json")),
          {:ok, authored, _} <- Authored.parse(authored_text),
          {:ok, edges_text} <- File.read(Path.join(generated, "edges.geojson")),
-         {:ok, edges} <- Jason.decode(edges_text),
-         {:ok, playable} <- read_json(Path.join(generated, "playable.json")),
+         {:ok, edges} <- Threshold.JsonCache.decode(edges_text),
+         {:ok, playable_text} <- File.read(Path.join(generated, "playable.json")),
+         {:ok, playable} <- Threshold.JsonCache.decode(playable_text),
          {:ok, geography} <- Geography.index(generated) do
       revision =
         Authored.hash(
@@ -210,9 +211,5 @@ defmodule Threshold.EffectiveGraph do
         length(ids) > 1 do
       "Places #{Enum.join(Enum.sort(ids), ", ")} stand on the same point."
     end
-  end
-
-  defp read_json(path) do
-    with {:ok, text} <- File.read(path), do: Jason.decode(text)
   end
 end

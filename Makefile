@@ -57,6 +57,6 @@ determinism:
 	for f in nodes edges context; do diff -q priv/worlds/$(W)/generated/$$f.geojson tmp/determinism/$(W)/generated/$$f.geojson; done
 	diff -q priv/worlds/$(W)/generated/playable.json tmp/determinism/$(W)/generated/playable.json
 
-# The only target that touches the network.
+# The only target that touches the network. `make acquire-world ACQUIRE_FLAGS=--replace` pins a new snapshot over the existing one.
 acquire-world:
-	$(PY)/threshold-gis acquire $(W)
+	$(PY)/threshold-gis acquire $(W) $(ACQUIRE_FLAGS)

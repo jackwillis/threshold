@@ -1,0 +1,382 @@
+{
+  "boundary": {
+    "coordinates": [
+      [
+        [
+          -89.391777,
+          43.06993
+        ],
+        [
+          -89.369448,
+          43.06993
+        ],
+        [
+          -89.369448,
+          43.080139
+        ],
+        [
+          -89.391777,
+          43.080139
+        ],
+        [
+          -89.391777,
+          43.06993
+        ]
+      ]
+    ],
+    "type": "Polygon"
+  },
+  "components": 20,
+  "config": {
+    "access_policy": "inspect_all",
+    "buffer_m": 250,
+    "format_version": 1,
+    "import_bounds": [
+      -89.404,
+      43.0642,
+      -89.3573,
+      43.0858
+    ],
+    "name": "Madison \u00b7 First Settlement",
+    "retain_all_components": true,
+    "source": "source/snapshot.osm"
+  },
+  "crs": "EPSG:4326",
+  "edges": 13722,
+  "format_version": 1,
+  "import_extent": {
+    "coordinates": [
+      [
+        [
+          -89.404,
+          43.0642
+        ],
+        [
+          -89.3573,
+          43.0642
+        ],
+        [
+          -89.3573,
+          43.0858
+        ],
+        [
+          -89.404,
+          43.0858
+        ],
+        [
+          -89.404,
+          43.0642
+        ]
+      ]
+    ],
+    "type": "Polygon"
+  },
+  "nodes": 10000,
+  "pipeline_sha256": "c0841229c7f3ad955cc9122c8ac3f5414b001c3e57dae5ec919c6dd60be7bd67",
+  "python": "3.12.14",
+  "simplification": {
+    "bidirectional": true,
+    "edge_attrs_differ": [
+      "access",
+      "foot",
+      "highway",
+      "service",
+      "footway",
+      "crossing",
+      "bridge",
+      "tunnel",
+      "layer",
+      "level"
+    ],
+    "remove_rings": false
+  },
+  "software": {
+    "geopandas": "1.2.0",
+    "networkx": "3.7",
+    "osmnx": "2.1.1",
+    "pyproj": "3.8.0",
+    "shapely": "2.2.0"
+  },
+  "source": {
+    "attribution": "\u00a9 OpenStreetMap contributors",
+    "bounds": [
+      -89.404,
+      43.0642,
+      -89.3573,
+      43.0858
+    ],
+    "endpoint": "https://overpass-api.de/api/interpreter",
+    "license": "ODbL-1.0",
+    "query": "[out:xml][timeout:300];(way[\"highway\"](43.0642000,-89.4040000,43.0858000,-89.3573000);node[\"highway\"=\"elevator\"](43.0642000,-89.4040000,43.0858000,-89.3573000);way[\"building\"](43.0642000,-89.4040000,43.0858000,-89.3573000);way[\"leisure\"=\"park\"](43.0642000,-89.4040000,43.0858000,-89.3573000);way[\"natural\"=\"water\"](43.0642000,-89.4040000,43.0858000,-89.3573000);relation[\"building\"](43.0642000,-89.4040000,43.0858000,-89.3573000);relation[\"leisure\"=\"park\"](43.0642000,-89.4040000,43.0858000,-89.3573000);relation[\"natural\"=\"water\"](43.0642000,-89.4040000,43.0858000,-89.3573000););(._;>>;);out meta;",
+    "retrieved_at": "2026-10-10T01:25:05.259448+00:00",
+    "sha256": "b4cf2fdda0988b402d92a1093264a3b4567e2229c10d19d4c5ac3295805a3177",
+    "source": "OpenStreetMap"
+  },
+  "summary": {
+    "components": [
+      {
+        "bounds": [
+          -89.4044795,
+          43.0635488,
+          -89.3557307,
+          43.0870666
+        ],
+        "component": 0,
+        "edges": 13686,
+        "length_m": 288744.011,
+        "nodes": 9946
+      },
+      {
+        "bounds": [
+          -89.4021858,
+          43.0735995,
+          -89.4013471,
+          43.0737619
+        ],
+        "component": 1,
+        "edges": 12,
+        "length_m": 107.475,
+        "nodes": 13
+      },
+      {
+        "bounds": [
+          -89.3868104,
+          43.0705951,
+          -89.3863567,
+          43.0709678
+        ],
+        "component": 2,
+        "edges": 3,
+        "length_m": 68.165,
+        "nodes": 4
+      },
+      {
+        "bounds": [
+          -89.3845806,
+          43.0692625,
+          -89.3845475,
+          43.0694462
+        ],
+        "component": 3,
+        "edges": 3,
+        "length_m": 22.359,
+        "nodes": 4
+      },
+      {
+        "bounds": [
+          -89.3896975,
+          43.0651225,
+          -89.3895639,
+          43.0653694
+        ],
+        "component": 4,
+        "edges": 2,
+        "length_m": 30.59,
+        "nodes": 3
+      },
+      {
+        "bounds": [
+          -89.4014462,
+          43.0705527,
+          -89.4014411,
+          43.0707084
+        ],
+        "component": 5,
+        "edges": 1,
+        "length_m": 17.318,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.4040405,
+          43.0744076,
+          -89.4038988,
+          43.074453
+        ],
+        "component": 6,
+        "edges": 1,
+        "length_m": 12.568,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3874921,
+          43.0752491,
+          -89.3873363,
+          43.0753709
+        ],
+        "component": 7,
+        "edges": 1,
+        "length_m": 18.536,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3799893,
+          43.0752581,
+          -89.3798844,
+          43.0753417
+        ],
+        "component": 8,
+        "edges": 1,
+        "length_m": 12.61,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3843864,
+          43.074531,
+          -89.3839447,
+          43.0748562
+        ],
+        "component": 9,
+        "edges": 2,
+        "length_m": 130.118,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.4032131,
+          43.0645174,
+          -89.4030787,
+          43.0648044
+        ],
+        "component": 10,
+        "edges": 1,
+        "length_m": 40.06,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3771159,
+          43.0752476,
+          -89.377081,
+          43.0752706
+        ],
+        "component": 11,
+        "edges": 1,
+        "length_m": 3.818,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3631329,
+          43.0857018,
+          -89.362904,
+          43.0858761
+        ],
+        "component": 12,
+        "edges": 1,
+        "length_m": 26.856,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3719425,
+          43.0782802,
+          -89.371891,
+          43.0783125
+        ],
+        "component": 13,
+        "edges": 1,
+        "length_m": 5.853,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3849656,
+          43.0764279,
+          -89.3849343,
+          43.0764506
+        ],
+        "component": 14,
+        "edges": 1,
+        "length_m": 3.582,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3928191,
+          43.075048,
+          -89.3927827,
+          43.0750522
+        ],
+        "component": 15,
+        "edges": 1,
+        "length_m": 3.085,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.4035353,
+          43.0741634,
+          -89.403492,
+          43.0743171
+        ],
+        "component": 16,
+        "edges": 1,
+        "length_m": 18.04,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3774103,
+          43.0747733,
+          -89.3773847,
+          43.0747903
+        ],
+        "component": 17,
+        "edges": 1,
+        "length_m": 2.81,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3787531,
+          43.0726246,
+          -89.378367,
+          43.0730127
+        ],
+        "component": 18,
+        "edges": 1,
+        "length_m": 59.646,
+        "nodes": 2
+      },
+      {
+        "bounds": [
+          -89.3818907,
+          43.0703496,
+          -89.3814994,
+          43.0705298
+        ],
+        "component": 19,
+        "edges": 1,
+        "length_m": 38.003,
+        "nodes": 2
+      }
+    ],
+    "context_by_classification": {
+      "building": 3296,
+      "park": 32,
+      "pedestrian_area": 811,
+      "vertical": 15,
+      "water": 4
+    },
+    "edges_by_access": {
+      "conditional": 9,
+      "public": 408,
+      "restricted": 561,
+      "unknown": 12744
+    },
+    "edges_by_access_basis": {
+      "default_allowed": 10680,
+      "explicit": 978,
+      "uncertain": 2064
+    },
+    "edges_by_classification": {
+      "alley": 104,
+      "path": 8787,
+      "street": 4831
+    }
+  }
+}

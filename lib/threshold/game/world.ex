@@ -35,9 +35,9 @@ defmodule Threshold.Game.World do
          {:ok, authored_text} <- File.read(Path.join(world.dir, "authored.json")),
          {:ok, authored, _} <- Authored.parse(authored_text),
          {:ok, playable_text} <- File.read(Path.join(world.generated, "playable.json")),
-         {:ok, playable} <- Jason.decode(playable_text),
+         {:ok, playable} <- Threshold.JsonCache.decode(playable_text),
          {:ok, edges_text} <- File.read(Path.join(world.generated, "edges.geojson")),
-         {:ok, edges} <- Jason.decode(edges_text) do
+         {:ok, edges} <- Threshold.JsonCache.decode(edges_text) do
       # The revision identifies exactly the bytes parsed above, all from one generated snapshot.
       revision =
         Authored.hash(
