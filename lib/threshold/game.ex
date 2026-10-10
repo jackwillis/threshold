@@ -82,6 +82,18 @@ defmodule Threshold.Game do
     end
   end
 
+  @doc """
+  Whether the player is at an authored place right now. On the authored graph a place is a node the
+  player stands on, so its id is the player's location; on the generated graph a place is attached
+  to a playable location through `movement_location`. Unlike `nearby/2` this does not depend on
+  whether the place has a name or notes worth inspecting.
+  """
+  def at_place?(%World{graph: :authored} = world, %Player{location: location}, place_id),
+    do: place_id == location and Map.has_key?(world.locations, place_id)
+
+  def at_place?(%World{} = world, %Player{location: location}, place_id),
+    do: Enum.any?(world.places, &(&1["id"] == place_id and &1["movement_location"] == location))
+
   def nearby(%World{} = world, %Player{} = player),
     do: Enum.filter(world.places, &(&1["movement_location"] == player.location))
 end
