@@ -51,15 +51,8 @@ defmodule Threshold.Geography do
   @spec point_at(t, String.t(), number) :: {:ok, [float]} | :error
   def point_at(%{lines: lines}, ref, offset) when is_number(offset) do
     case lines do
-      %{^ref => [[_, lat0] | _] = line} when offset >= 0 and offset <= 1 ->
-        scale = :math.cos(lat0 * :math.pi() / 180)
-        segments = Enum.zip(line, tl(line))
-
-        lengths =
-          for {[x1, y1], [x2, y2]} <- segments,
-              do: :math.sqrt(:math.pow((x2 - x1) * scale, 2) + :math.pow(y2 - y1, 2))
-
-        {:ok, along(segments, lengths, offset * Enum.sum(lengths))}
+      %{^ref => [_, _ | _] = line} when offset >= 0 and offset <= 1 ->
+        {:ok, Threshold.Polyline.at(line, offset)}
 
       _ ->
         :error
@@ -67,17 +60,6 @@ defmodule Threshold.Geography do
   end
 
   def point_at(_geography, _ref, _offset), do: :error
-
-  defp along([{from, to} | rest], [length | lengths], target) do
-    if target <= length or rest == [] do
-      interpolate(from, to, if(length == 0, do: 0.0, else: min(target / length, 1.0)))
-    else
-      along(rest, lengths, target - length)
-    end
-  end
-
-  defp interpolate([x1, y1], [x2, y2], t),
-    do: [Float.round(x1 + (x2 - x1) * t, 7), Float.round(y1 + (y2 - y1) * t, 7)]
 
   # Snapshots are immutable and replaced wholesale; keep only the newest index per world.
   defp drop_other_snapshots(nodes_path) do

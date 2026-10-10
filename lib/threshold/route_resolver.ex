@@ -38,12 +38,20 @@ defmodule Threshold.RouteResolver do
           note: String.t() | nil
         }
 
-  @spec resolve(map, [map], map | nil) :: %{
+  @doc """
+  Options: `:playable` (a map of network node id to generated playable location id, to report
+  which places coincide with one) and `:nodes` (network node id to `[lon, lat]`; when given,
+  every place gets the `stand` point where a player would stand and every resolved connection
+  gets its `geometry`, a continuous LineString along the real streets).
+  """
+  @spec resolve(map, [map], keyword) :: %{
           places: [map],
           connections: [resolution],
           summary: map
         }
-  def resolve(authored, edge_features, nodes_to_playable \\ %{}) do
+  def resolve(authored, edge_features, opts \\ []) do
+    nodes_to_playable = Keyword.get(opts, :playable, %{})
+    nodes = Keyword.get(opts, :nodes)
     edges = Map.new(edge_features, &{&1["id"], &1})
 
     closed =
@@ -52,7 +60,9 @@ defmodule Threshold.RouteResolver do
           do: e
 
     placed =
-      Enum.map(authored["locations"], &position(&1, edges, nodes_to_playable, edge_features))
+      authored["locations"]
+      |> Enum.map(&position(&1, edges, nodes_to_playable, edge_features))
+      |> Enum.map(&stand(&1, edges, nodes))
 
     graph = build_graph(placed, edges, closed)
     by_id = Map.new(placed, &{&1.id, &1})
@@ -60,11 +70,11 @@ defmodule Threshold.RouteResolver do
 
     connections =
       for conn <- authored["connections"] do
-        route(conn, by_id, locations, graph)
+        route(conn, by_id, locations, graph, edges, nodes)
       end
 
     %{
-      places: Enum.map(placed, &Map.drop(&1, [:virtual])),
+      places: Enum.map(placed, &Map.drop(&1, [:virtual, :length, :from, :to])),
       connections: connections,
       summary: summary(placed, connections)
     }
@@ -136,6 +146,19 @@ defmodule Threshold.RouteResolver do
     end
   end
 
+  # Where a player stands for a place: the intersection itself, or the point on the street.
+  defp stand(place, _edges, nil), do: place
+
+  defp stand(%{class: class, node: node} = place, _edges, nodes)
+       when class in [:intersection, :near_intersection],
+       do: Map.put(place, :stand, nodes[node])
+
+  defp stand(%{class: :mid_block, edge: ref, offset: offset} = place, edges, _nodes),
+    do:
+      Map.put(place, :stand, Threshold.Polyline.at(edges[ref]["geometry"]["coordinates"], offset))
+
+  defp stand(place, _edges, _nodes), do: place
+
   # --- Graph ---------------------------------------------------------------------------
 
   # Mid-block places split their edge into chained segments; everything else is an edge as is.
@@ -148,14 +171,14 @@ defmodule Threshold.RouteResolver do
 
       chain =
         case Map.get(splits, id) do
-          nil -> [{p["from"], p["to"], p["length_m"] * 1.0}]
+          nil -> [{p["from"], p["to"], p["length_m"] * 1.0, {0.0, 1.0}}]
           virtuals -> chain(p, Enum.sort_by(virtuals, & &1.offset))
         end
 
-      Enum.reduce(chain, adjacency, fn {a, b, len}, acc ->
+      Enum.reduce(chain, adjacency, fn {a, b, len, {fa, fb}}, acc ->
         acc
-        |> Map.update(a, [{b, len, id, block}], &[{b, len, id, block} | &1])
-        |> Map.update(b, [{a, len, id, block}], &[{a, len, id, block} | &1])
+        |> Map.update(a, [{b, len, id, block, {fa, fb}}], &[{b, len, id, block, {fa, fb}} | &1])
+        |> Map.update(b, [{a, len, id, block, {fb, fa}}], &[{a, len, id, block, {fb, fa}} | &1])
       end)
     end)
   end
@@ -166,7 +189,7 @@ defmodule Threshold.RouteResolver do
 
     stops
     |> Enum.chunk_every(2, 1, :discard)
-    |> Enum.map(fn [{a, fa}, {b, fb}] -> {a, b, max((fb - fa) * length, 0.0)} end)
+    |> Enum.map(fn [{a, fa}, {b, fb}] -> {a, b, max((fb - fa) * length, 0.0), {fa, fb}} end)
   end
 
   defp block_reason(p, id, closed) do
@@ -181,7 +204,7 @@ defmodule Threshold.RouteResolver do
 
   # --- Routing -------------------------------------------------------------------------
 
-  defp route(conn, places, locations, graph) do
+  defp route(conn, places, locations, graph, edges, nodes) do
     a = places[conn["from"]]
     b = places[conn["to"]]
 
@@ -203,22 +226,39 @@ defmodule Threshold.RouteResolver do
 
     cond do
       a.class in [:free_point, :missing_edge] or b.class in [:free_point, :missing_edge] ->
-        %{base | note: unanchored_note(a, b)} |> Map.put(:status, :unanchored)
+        base |> Map.put(:note, unanchored_note(a, b)) |> Map.put(:status, :unanchored)
 
       a.node == b.node ->
         base |> Map.put(:status, :same_position) |> Map.put(:path_m, 0.0)
 
       true ->
         case shortest(graph, a.node, b.node, true) do
-          {:ok, length, edges} ->
+          {:ok, length, arcs} ->
             base
-            |> Map.merge(%{status: :ok, path_m: Float.round(length, 1), edges: Enum.uniq(edges)})
+            |> Map.merge(%{
+              status: :ok,
+              path_m: Float.round(length, 1),
+              edges: arcs |> Enum.map(&elem(&1, 0)) |> Enum.uniq()
+            })
             |> Map.put(:detour, length > straight * @detour_ratio + 60)
+            |> put_geometry(arcs, edges, nodes)
 
           :none ->
             unrestricted(base, graph, a.node, b.node)
         end
     end
+  end
+
+  defp put_geometry(resolution, _arcs, _edges, nil), do: resolution
+
+  defp put_geometry(resolution, arcs, edges, _nodes) do
+    coordinates =
+      Enum.reduce(arcs, [], fn {id, from, to}, acc ->
+        slice = Threshold.Polyline.slice(edges[id]["geometry"]["coordinates"], from, to)
+        if acc != [] and List.last(acc) == hd(slice), do: acc ++ tl(slice), else: acc ++ slice
+      end)
+
+    Map.put(resolution, :geometry, %{"type" => "LineString", "coordinates" => coordinates})
   end
 
   defp unanchored_note(a, b) do
@@ -235,15 +275,18 @@ defmodule Threshold.RouteResolver do
 
   defp unrestricted(base, graph, a, b) do
     case shortest(graph, a, b, false) do
-      {:ok, length, edges} ->
-        blockers = for {edge, reason} <- blockers(graph, edges), do: %{edge: edge, reason: reason}
+      {:ok, length, arcs} ->
+        edge_ids = arcs |> Enum.map(&elem(&1, 0)) |> Enum.uniq()
+
+        blockers =
+          for {edge, reason} <- blockers(graph, edge_ids), do: %{edge: edge, reason: reason}
 
         base
         |> Map.merge(%{
           status: :blocked,
           path_m: Float.round(length, 1),
-          edges: Enum.uniq(edges),
-          blockers: Enum.uniq(blockers)
+          edges: edge_ids,
+          blockers: blockers
         })
 
       :none ->
@@ -254,16 +297,17 @@ defmodule Threshold.RouteResolver do
   defp blockers(graph, edge_ids) do
     reasons =
       for {_node, arcs} <- graph,
-          {_, _, id, reason} <- arcs,
+          {_, _, id, reason, _} <- arcs,
           reason != nil,
           id in edge_ids,
           into: %{},
           do: {id, reason}
 
-    for id <- Enum.uniq(edge_ids), reason = reasons[id], do: {id, reason}
+    for id <- edge_ids, reason = reasons[id], do: {id, reason}
   end
 
-  # Dijkstra with a priority set. `restricted?` honours the traversal rules.
+  # Dijkstra with a priority set. `restricted?` honours the traversal rules. A path is the
+  # list of `{edge id, from fraction, to fraction}` arcs walked, in order.
   defp shortest(graph, from, to, restricted?),
     do: dijkstra(graph, :gb_sets.singleton({0.0, from, []}), MapSet.new(), to, restricted?)
 
@@ -284,10 +328,10 @@ defmodule Threshold.RouteResolver do
           queue =
             graph
             |> Map.get(node, [])
-            |> Enum.reduce(queue, fn {next, len, id, reason}, q ->
+            |> Enum.reduce(queue, fn {next, len, id, reason, {f0, f1}}, q ->
               if (restricted? and reason != nil) or MapSet.member?(done, next),
                 do: q,
-                else: :gb_sets.add({dist + len, next, [id | path]}, q)
+                else: :gb_sets.add({dist + len, next, [{id, f0, f1} | path]}, q)
             end)
 
           dijkstra(graph, queue, MapSet.put(done, node), to, restricted?)

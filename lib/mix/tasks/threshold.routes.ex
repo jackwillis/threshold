@@ -25,7 +25,7 @@ defmodule Mix.Tasks.Threshold.Routes do
          {:ok, edges} <- read(generated, "edges.geojson"),
          {:ok, playable} <- read(generated, "playable.json") do
       to_playable = Map.new(playable["locations"], &{&1["node"], &1["id"]})
-      report = RouteResolver.resolve(authored, edges["features"], to_playable)
+      report = RouteResolver.resolve(authored, edges["features"], playable: to_playable)
       Mix.shell().info(format(name, report, opts[:details] || false))
     else
       error -> Mix.raise("Cannot resolve routes for #{name}: #{inspect(error)}")

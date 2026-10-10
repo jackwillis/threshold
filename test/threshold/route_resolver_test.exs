@@ -65,7 +65,7 @@ defmodule Threshold.RouteResolverTest do
         "closures" => closures
     }
 
-    RouteResolver.resolve(doc, edges(), %{"n:a" => "pn:a"})
+    RouteResolver.resolve(doc, edges(), playable: %{"n:a" => "pn:a"})
   end
 
   defp conn(report, from, to),
@@ -163,5 +163,64 @@ defmodule Threshold.RouteResolverTest do
 
     assert %{status: :ok, detour: true} =
              resolve(near, [link("loc:a", "loc:c")], [closure]) |> conn("loc:a", "loc:c")
+  end
+
+  describe "geometry" do
+    # Along the equator-ish: A (0,0) -- B (0,1) -- C (1,1), each leg of length 1.
+    defp shaped(id, from, to, coordinates) do
+      edge(id, from, to, 100)
+      |> put_in(["geometry", "coordinates"], coordinates)
+    end
+
+    defp shapes,
+      do: [
+        shaped("e:ab", "n:a", "n:b", [[0.0, 0.0], [0.0, 0.5], [0.0, 1.0]]),
+        shaped("e:bc", "n:b", "n:c", [[0.0, 1.0], [1.0, 1.0]])
+      ]
+
+    defp nodes, do: %{"n:a" => [0.0, 0.0], "n:b" => [0.0, 1.0], "n:c" => [1.0, 1.0]}
+
+    defp with_geometry(locations, connections) do
+      doc = %{Authored.empty() | "locations" => locations, "connections" => connections}
+      RouteResolver.resolve(doc, shapes(), nodes: nodes())
+    end
+
+    test "a walk is one continuous LineString from the first place to the last" do
+      report =
+        with_geometry([node("loc:a", "n:a"), node("loc:c", "n:c")], [link("loc:a", "loc:c")])
+
+      assert %{status: :ok, geometry: %{"type" => "LineString", "coordinates" => coordinates}} =
+               conn(report, "loc:a", "loc:c")
+
+      assert coordinates == [[0.0, 0.0], [0.0, 0.5], [0.0, 1.0], [1.0, 1.0]]
+    end
+
+    test "a mid-block place stands on the street and its walks start and end exactly there" do
+      locations = [mid("loc:m", "e:ab", 0.25), node("loc:c", "n:c")]
+      report = with_geometry(locations, [link("loc:m", "loc:c")])
+      stand = Enum.find(report.places, &(&1.id == "loc:m")).stand
+      assert stand == [0.0, 0.25]
+
+      assert %{geometry: %{"coordinates" => [^stand | _] = coordinates}} =
+               conn(report, "loc:m", "loc:c")
+
+      assert List.last(coordinates) == [1.0, 1.0]
+      assert coordinates == [[0.0, 0.25], [0.0, 0.5], [0.0, 1.0], [1.0, 1.0]]
+    end
+
+    test "walking the other way is the exact reverse, and a walk between two mid-block places is a slice" do
+      locations = [mid("loc:m", "e:ab", 0.25), mid("loc:n", "e:ab", 0.75)]
+      report = with_geometry(locations, [link("loc:m", "loc:n"), link("loc:n", "loc:m")])
+      forward = conn(report, "loc:m", "loc:n").geometry["coordinates"]
+      backward = conn(report, "loc:n", "loc:m").geometry["coordinates"]
+      assert forward == [[0.0, 0.25], [0.0, 0.5], [0.0, 0.75]]
+      assert backward == Enum.reverse(forward)
+    end
+
+    test "intersection places stand on the network node" do
+      report = with_geometry([node("loc:a", "n:a")], [])
+      assert [%{stand: stand}] = report.places
+      assert stand == [0.0, 0.0]
+    end
   end
 end
