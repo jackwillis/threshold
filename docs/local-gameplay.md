@@ -20,6 +20,17 @@ Compose publishes PostgreSQL on loopback only. The `postgres_data` named volume 
 
 The official PostgreSQL 18 image stores its versioned data below `/var/lib/postgresql`, which is where the named volume is mounted. The major version is pinned to 18; patch updates follow that image tag. See the [official PostgreSQL image documentation](https://hub.docker.com/_/postgres) and [Compose health checks](https://docs.docker.com/compose/how-tos/startup-order).
 
+## Applying new migrations to your development database
+
+Code that adds tables needs the migration applied to the database your `make run` uses, or the features that read them fail. Agent sessions work only against disposable databases (the test container on port 5433 and scratch databases created and dropped there) and never migrate your development database; that is your step:
+
+```bash
+export THRESHOLD_DATABASE_URL=postgres://threshold:threshold_local@localhost:5432/threshold_game
+mix ecto.migrate
+```
+
+Pending: `20261010000000_create_interaction_progress` (the `player_discoveries` and `completed_interactions` tables, from the interactions work). Until it is applied, **New walk** fails (it now clears those tables) and any world with an `interactions.json` fails; a world without one, such as Madison, otherwise keeps working because it never reads them. The migration is additive and keeps your saves.
+
 ## Full checks with PostgreSQL
 
 The test service runs on a separate port with a disposable filesystem. It never shares the player save volume.

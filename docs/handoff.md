@@ -3,6 +3,10 @@
 Date: October 8, 2026. From: Claude Code (implementation so far). To: Codex.
 Repository: `git@github.com:jackwillis/threshold.git`. Read `AGENTS.md` (commands and conventions) first, then this file, then `docs/implementation-plan.md` (the operational task list).
 
+## Action required: migrate your development database
+
+The interactions work added migration `20261010000000_create_interaction_progress` (two tables). It has **not** been applied to the development database (agent sessions never touch it). Run `mix ecto.migrate` with `THRESHOLD_DATABASE_URL` pointing at it; until then "New walk" and any world with an `interactions.json` fail. Details: [local-gameplay.md](local-gameplay.md).
+
 ## Update, October 9, 2026 (Claude Code): read this first
 
 Newer than the tables below. The steering memos are in `docs/` (`steering-memo-2026-10-09.md`, `frontend-v2-memo-2026-10-09.md`, `keyboard-navigation.md`, `camera-rules.md`, `cartography-brief.md`, `cartographic-labels-memo.md`); `implementation-status.md` lists what is guaranteed and what is unverified.

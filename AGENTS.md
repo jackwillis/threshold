@@ -8,6 +8,7 @@ Single-player Madison-based mystery game. Current milestone: a local geographic 
 - `make check`: **the gate**: `mix precommit` (compile with warnings as errors, format check, tests), ruff, TypeScript type check, pytest, world validation and a byte-identical rebuild check. Do not commit unless it passes.
 - `make run` (Phoenix on localhost:4000 with a Bun watcher), `make test`, `make assets`, `make fmt`.
 - `make build-world` (regenerate geography from the pinned snapshot, offline), `make build-playable`, `make validate-world`, `make acquire-world` (the only networked step; never run it without the designer's approval).
+- Database: agent sessions use only disposable PostgreSQL (the test container on port 5433, `THRESHOLD_TEST_DATABASE_URL`, and scratch databases created and dropped there) and never migrate or write the designer's development database; new migrations are listed in `docs/local-gameplay.md` for the designer to apply.
 - Bun lives at `~/.bun/bin` (the Makefile adds it to PATH). Run a Python module test with `.venv/bin/pytest gis -k name`; a single Elixir test with `mix test path:line`.
 
 ## Where things are
