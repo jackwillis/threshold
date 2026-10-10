@@ -69,6 +69,36 @@ defmodule Threshold.Interactions do
     Jason.encode!(Authored.ordered(sorted), pretty: true) <> "\n"
   end
 
+  # --- Read model ---------------------------------------------------------------------
+
+  @doc """
+  The interactions the panel offers for the player's current place. `state` is the player's
+  `%{discovered: MapSet, completed: MapSet}` (see `Threshold.Game.Sessions.interaction_state/1`).
+  An interaction is `:available` when every required discovery has been made, `:completed` once
+  finished (listed, not actionable), and **absent** while its requirements are unmet, so nothing
+  hints at it. Only interactions at the player's place appear. Pure; the server re-checks all of
+  this inside the completion transaction, so this list is presentation, never authority.
+  """
+  @spec at(t, Threshold.Game.World.t(), Threshold.Game.Player.t(), %{
+          discovered: MapSet.t(),
+          completed: MapSet.t()
+        }) ::
+          [%{interaction: map, status: :available | :completed}]
+  def at(content, world, player, %{discovered: discovered, completed: completed}) do
+    for i <- Enum.sort_by(content["interactions"], & &1["id"]),
+        Threshold.Game.at_place?(world, player, i["place"]),
+        status = status(i, discovered, completed),
+        do: %{interaction: i, status: status}
+  end
+
+  defp status(i, discovered, completed) do
+    cond do
+      MapSet.member?(completed, i["id"]) -> :completed
+      Enum.all?(i["requires"], &MapSet.member?(discovered, &1)) -> :available
+      true -> nil
+    end
+  end
+
   # --- Validation (structure and internal references) ----------------------------------
 
   @spec validate(term) :: {:ok, t} | {:error, [String.t()]}

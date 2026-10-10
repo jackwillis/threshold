@@ -122,7 +122,7 @@ Sessions.complete_interaction(world, content, expected_turn, interaction_id, cho
 
 1. `Threshold.Interactions`: schema, strict validation, load/encode, lint task, fixture, pure tests. **Done**; per-event load cost measured above.
 2. Migration, two Ecto schemas, `Sessions.interaction_state/1`, `complete_interaction/5`, reset cleanup, database and concurrency tests. **Done** (`Game.at_place?/3` was added here because completion needs it).
-3. `Interactions.at/4` read model and its tests.
+3. `Interactions.at/4` read model and its tests. **Done.**
 4. `PlayLive` panel: indicator, open/close, choose, stale handling, LiveView tests.
 5. Browser verification on the scratch world; short note in this memo and `handoff.md`.
 

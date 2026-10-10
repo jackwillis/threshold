@@ -212,3 +212,66 @@ defmodule Threshold.InteractionsTest do
     end
   end
 end
+
+defmodule Threshold.InteractionsReadModelTest do
+  use ExUnit.Case, async: true
+
+  alias Threshold.{Interactions, InteractionsFixture}
+  alias Threshold.Game.Player
+
+  @content InteractionsFixture.content()
+  defp state(discovered \\ [], completed \\ []),
+    do: %{discovered: MapSet.new(discovered), completed: MapSet.new(completed)}
+
+  defp at(world, location, state),
+    do: Interactions.at(@content, world, %Player{location: location}, state)
+
+  defp summary(list), do: Enum.map(list, &{&1.interaction["id"], &1.status})
+
+  test "an interaction with no requirements is available at its place only" do
+    world = InteractionsFixture.world()
+    assert [{"int:door", :available}] = summary(at(world, "pn:1", state()))
+    assert [] = at(world, "pn:2", state())
+    assert [] = at(world, "pn:9", state())
+  end
+
+  test "an interaction with unmet requirements is hidden, then appears once discovered" do
+    world = InteractionsFixture.world()
+    assert [] = at(world, "pn:2", state())
+    assert [] = at(world, "pn:2", state(["disc:other"]))
+    assert [{"int:lamp", :available}] = summary(at(world, "pn:2", state(["disc:tapping"])))
+  end
+
+  test "a completed interaction is listed as completed, not available" do
+    world = InteractionsFixture.world()
+
+    assert [{"int:door", :completed}] =
+             summary(at(world, "pn:1", state(["disc:tapping"], ["int:door"])))
+  end
+
+  test "the same rule holds on the authored graph, where the place is the standing node" do
+    world = %{
+      InteractionsFixture.world()
+      | graph: :authored,
+        locations: %{"loc:a" => %{}, "loc:b" => %{}}
+    }
+
+    assert [{"int:door", :available}] = summary(at(world, "loc:a", state()))
+    assert [] = at(world, "loc:b", state())
+    assert [{"int:lamp", :available}] = summary(at(world, "loc:b", state(["disc:tapping"])))
+  end
+
+  test "an interaction on an unnamed place is still found, though nearby/2 hides the place" do
+    # On the authored graph EffectiveGraph lists only places with a name or notes, so `places` is empty.
+    world = %{
+      InteractionsFixture.world()
+      | graph: :authored,
+        places: [],
+        locations: %{"loc:a" => %{}}
+    }
+
+    player = %Player{location: "loc:a"}
+    assert [] = Threshold.Game.nearby(world, player)
+    assert [{"int:door", :available}] = summary(at(world, "loc:a", state()))
+  end
+end
