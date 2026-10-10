@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { allowedCenter, boundsOf, clampZoom, DEFAULT_LIMITS, distanceM, resolveLimits, violatesLimits, type Bounds, type LngLat } from "./camera";
+import { allowedCenter, boundsOf, reachBounds, clampZoom, DEFAULT_LIMITS, distanceM, resolveLimits, violatesLimits, type Bounds, type LngLat } from "./camera";
 
 const player: LngLat = [-89.384, 43.074];
 const M_LON = 111_320 * Math.cos((43.074 * Math.PI) / 180);
@@ -79,5 +79,29 @@ describe("world bounds", () => {
   test("boundsOf reads a polygon's extent", () => {
     expect(boundsOf([[[-89.4, 43.0], [-89.3, 43.0], [-89.3, 43.1], [-89.4, 43.0]]])).toEqual([-89.4, 43.0, -89.3, 43.1]);
     expect(boundsOf(undefined)).toBeNull();
+  });
+});
+
+describe("reachBounds", () => {
+  const boundary: Bounds = [-89.3918, 43.0699, -89.3694, 43.0801];
+  const grown = (screen: number) => reachBounds(boundary, DEFAULT_LIMITS, screen);
+  const metresWest = (b: Bounds) => (boundary[0] - b[0]) * M_LON;
+  const metresSouth = (b: Bounds) => (boundary[1] - b[1]) * 111_320;
+
+  test("grows the boundary by the tether plus half a screen at the minimum zoom, equally on every side", () => {
+    // 0.436 m per pixel at zoom 17 and 43 degrees north: a 1366 px screen reaches about 298 m past the tether.
+    const b = grown(1366);
+    expect(metresWest(b)).toBeCloseTo(498, -1);
+    expect(metresSouth(b)).toBeCloseTo(498, -1);
+    expect((b[2] - boundary[2]) * M_LON).toBeCloseTo(metresWest(b), 3);
+    expect((b[3] - boundary[3]) * 111_320).toBeCloseTo(metresSouth(b), 3);
+  });
+  test("a larger screen reaches further, so enlarging the window never exposes missing geography", () => {
+    expect(metresWest(grown(3840))).toBeGreaterThan(metresWest(grown(1366)) + 500);
+    expect(metresWest(grown(3840))).toBeCloseTo(1037, -1);
+  });
+  test("always covers at least the tether, and a smaller minimum zoom reaches further", () => {
+    expect(metresWest(grown(0))).toBeCloseTo(200, 0);
+    expect(metresWest(reachBounds(boundary, { ...DEFAULT_LIMITS, minZoom: 16 }, 1366))).toBeGreaterThan(metresWest(grown(1366)));
   });
 });

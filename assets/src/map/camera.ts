@@ -76,3 +76,18 @@ export function boundsOf(polygon: number[][][] | undefined): Bounds | null {
   const lats = points.map(p => p[1]!);
   return [Math.min(...lons), Math.min(...lats), Math.max(...lons), Math.max(...lats)];
 }
+
+/**
+ * The area the player map must have geography for: the playable boundary grown by the tether plus
+ * half the largest screen dimension at the minimum zoom (the widest view the camera can show).
+ * Sizing from the screen rather than the window keeps edges from going missing when the window is
+ * enlarged after loading. Metres per CSS pixel use MapLibre's 512 px tiles.
+ */
+export function reachBounds(bounds: Bounds, limits: CameraLimits, screenPx: number): Bounds {
+  const lat = (bounds[1] + bounds[3]) / 2;
+  const metresPerPixel = (78271.517 * Math.cos((lat * Math.PI) / 180)) / 2 ** limits.minZoom;
+  const margin = limits.maxDisplacementM + (screenPx / 2) * metresPerPixel;
+  const dLat = margin / M_PER_DEG;
+  const dLon = margin / (M_PER_DEG * Math.cos((lat * Math.PI) / 180));
+  return [bounds[0] - dLon, bounds[1] - dLat, bounds[2] + dLon, bounds[3] + dLat];
+}

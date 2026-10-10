@@ -2,7 +2,7 @@ import maplibregl from "maplibre-gl";
 import type { FeatureCollection, LineString } from "geojson";
 import { BACKGROUND, layerSpecs } from "../map/style";
 import { destinationForKey } from "../map/shortcuts";
-import { allowedCenter, clampZoom, resolveLimits, violatesLimits, type Bounds, type CameraLimits } from "../map/camera";
+import { allowedCenter, clampZoom, reachBounds, resolveLimits, violatesLimits, type Bounds, type CameraLimits } from "../map/camera";
 
 type Point = [number, number];
 type Move = { destination: string; key: string | null; point: Point; geometry: LineString };
@@ -45,9 +45,10 @@ export const PlayerMap = {
       try {
         const world = encodeURIComponent(this.el.dataset.world ?? "madison");
         const snapshot = this.el.dataset.snapshot;
-        // Only the area the camera can reach: the playable boundary plus a margin for the tether and viewport.
-        const reach = this.state().bounds;
-        const box = reach ? `${reach[0] - 0.0098},${reach[1] - 0.0072},${reach[2] + 0.0098},${reach[3] + 0.0072}` : "";
+        // Only the area the camera can reach: the playable boundary plus the tether and the widest view the screen allows.
+        const area = this.state().bounds;
+        const reach = area ? reachBounds(area, this.limits, Math.max(screen.width, screen.height)) : null;
+        const box = reach ? reach.map(v => v.toFixed(6)).join(",") : "";
         const query = [snapshot ? `generation=${encodeURIComponent(snapshot)}` : "", box ? `bbox=${box}` : ""].filter(Boolean).join("&");
         const data = await Promise.all(["edges", "context"].map(async layer => {
           const response = await fetch(`/worlds/${world}/${layer}${query ? `?${query}` : ""}`, { cache: "no-store" });

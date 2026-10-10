@@ -46,6 +46,41 @@ defmodule ThresholdWeb.WorldControllerTest do
       end
     end
 
+    test "features are selected whole, not clipped: a street crossing the box keeps every vertex",
+         %{conn: conn} do
+      # The box covers only the western half of edge 1-2 (lon -89.385..-89.380).
+      features =
+        conn
+        |> get("/worlds/tiny/edges?bbox=-89.3855,43.073,-89.3825,43.0755")
+        |> json_response(200)
+        |> Map.fetch!("features")
+
+      assert [
+               %{
+                 "id" => "edge:1-2-101",
+                 "geometry" => %{"coordinates" => [[-89.385, 43.074], [-89.38, 43.075]]}
+               }
+             ] = features
+    end
+
+    test "boxes outside the world, enormous boxes and odd numbers are handled predictably", %{
+      conn: conn
+    } do
+      assert ids(conn, "bbox=170,-10,179,10") == []
+      assert length(ids(conn, "bbox=-180,-90,180,90")) == 2
+      assert length(ids(conn, "bbox=-1.0e9,-1.0e9,1.0e9,1.0e9")) == 2
+
+      for odd <- [
+            "bbox=NaN,0,1,1",
+            "bbox=1e999,0,2e999,1",
+            "bbox=,,,",
+            "bbox=-89.4,43.0,-89.3,43.1,5",
+            "bbox="
+          ] do
+        assert length(ids(conn, odd)) == 2, odd
+      end
+    end
+
     test "layers that are not geometry collections ignore the box", %{conn: conn} do
       assert %{"locations" => _} =
                conn |> get("/worlds/tiny/authored?bbox=0,0,1,1") |> json_response(200)
