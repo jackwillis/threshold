@@ -1,6 +1,6 @@
 defmodule ThresholdWeb.PlayLive do
   use ThresholdWeb, :live_view
-  alias Threshold.Game
+  alias Threshold.{Game, Interactions}
   alias Threshold.Game.{Geometry, Sessions, World}
 
   @impl true
@@ -26,6 +26,10 @@ defmodule ThresholdWeb.PlayLive do
         nearby: [],
         inspected: nil,
         movement: nil,
+        interactions: [],
+        interaction_note: nil,
+        open_interaction: nil,
+        outcome: nil,
         camera: 0,
         map_state: "{}"
       )
@@ -60,6 +64,8 @@ defmodule ThresholdWeb.PlayLive do
            player: player,
            error: nil,
            inspected: nil,
+           open_interaction: nil,
+           outcome: nil,
            movement: %{turn: player.turn, geometry: route.geometry}
          )
        )}
@@ -86,6 +92,50 @@ defmodule ThresholdWeb.PlayLive do
 
   def handle_event("close_inspect", _, socket), do: {:noreply, assign(socket, inspected: nil)}
 
+  # Opening and closing a scene is transient presentation: nothing is written until a choice is
+  # completed, and the server re-validates everything then.
+  def handle_event("open_interaction", %{"id" => id}, socket) do
+    available? =
+      Enum.any?(
+        socket.assigns.interactions,
+        &(&1.status == :available and &1.interaction["id"] == id)
+      )
+
+    {:noreply, assign(socket, open_interaction: if(available?, do: id), outcome: nil)}
+  end
+
+  def handle_event("close_interaction", _, socket),
+    do: {:noreply, assign(socket, open_interaction: nil)}
+
+  def handle_event("complete_interaction", %{"id" => id, "choice" => choice} = params, socket) do
+    with turn when is_integer(turn) <- parse_turn(params["turn"]),
+         true <- socket.assigns.player != nil,
+         {:ok, world} <- World.load(socket.assigns.world_name, graph: socket.assigns.graph),
+         {:ok, content} <- load_interactions(socket.assigns.world_name),
+         {:ok, %{discovered: discovered}} <-
+           Sessions.complete_interaction(world, content, turn, id, choice) do
+      labels = for d <- content["discoveries"], d["id"] in discovered, do: d["label"]
+
+      {:noreply,
+       present(assign(socket, world: world, open_interaction: nil, outcome: {:recorded, labels}))}
+    else
+      {:error, :stale_turn} ->
+        {:noreply, load(socket) |> put_flash(:error, "Your walk was updated. Look around again.")}
+
+      {:error, reason} when reason in [:unavailable, :already_completed, :unknown_choice] ->
+        {:noreply,
+         socket
+         |> assign(open_interaction: nil, outcome: {:refused, reason})
+         |> present()}
+
+      {:error, message} when is_binary(message) ->
+        {:noreply, assign(socket, error: message)}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "Unable to record that.")}
+    end
+  end
+
   def handle_event("recenter", _, socket),
     do: {:noreply, present(update(socket, :camera, &(&1 + 1)))}
 
@@ -100,6 +150,8 @@ defmodule ThresholdWeb.PlayLive do
            player: player,
            error: nil,
            inspected: nil,
+           open_interaction: nil,
+           outcome: nil,
            movement: nil,
            camera: socket.assigns.camera + 1
          )
@@ -124,9 +176,62 @@ defmodule ThresholdWeb.PlayLive do
     end
   end
 
+  defp parse_turn(n) when is_integer(n), do: n
+
+  defp parse_turn(n) when is_binary(n) do
+    case Integer.parse(n) do
+      {value, ""} -> value
+      _ -> nil
+    end
+  end
+
+  defp parse_turn(_), do: nil
+
+  # The interactions file is small and parsed per event (see docs/gameplay-interactions.md). A
+  # missing file is simply no interactions; an invalid one is reported in the panel, not a crash.
+  defp load_interactions(world_name) do
+    with {:ok, dir} <- Threshold.World.dir(world_name),
+         {:ok, content, _hash} <- Interactions.load(dir) do
+      {:ok, content}
+    else
+      {:error, errors} when is_list(errors) -> {:error, Enum.join(errors, " ")}
+      _ -> {:error, "World not found."}
+    end
+  end
+
+  # What can be investigated here. Presentation only: the server re-checks on completion.
+  defp refresh_interactions(socket) do
+    %{world: world, player: player} = socket.assigns
+
+    # A world with no interactions never touches the interaction tables, so it keeps working
+    # before the migration has been applied.
+    with true <- Sessions.enabled?(),
+         {:ok, %{"interactions" => [_ | _]} = content} <-
+           load_interactions(socket.assigns.world_name),
+         {:ok, state} <- Sessions.interaction_state(world) do
+      list = Interactions.at(content, world, player, state)
+
+      open =
+        if Enum.any?(
+             list,
+             &(&1.status == :available and &1.interaction["id"] == socket.assigns.open_interaction)
+           ),
+           do: socket.assigns.open_interaction
+
+      assign(socket, interactions: list, open_interaction: open, interaction_note: nil)
+    else
+      {:error, message} when is_binary(message) ->
+        assign(socket, interactions: [], open_interaction: nil, interaction_note: message)
+
+      _ ->
+        assign(socket, interactions: [], open_interaction: nil, interaction_note: nil)
+    end
+  end
+
   defp present(%{assigns: %{player: nil}} = socket), do: socket
 
   defp present(socket) do
+    socket = refresh_interactions(socket)
     %{world: world, player: player} = socket.assigns
     point = world.locations[player.location]["point"]
     moves = Game.numbered_moves(world, player)
@@ -273,6 +378,67 @@ defmodule ThresholdWeb.PlayLive do
             >
               <span>{place["name"]}</span><small>Inspect</small>
             </button>
+            <section
+              :if={@interactions != [] or @outcome != nil or @interaction_note != nil}
+              id="interactions"
+              aria-labelledby="interactions-heading"
+            >
+              <h2 id="interactions-heading">Investigate</h2>
+              <p :if={@interaction_note} id="interaction-note" class="play-hint play-warning">
+                Investigations are unavailable: {@interaction_note}
+              </p>
+              <p id="interaction-outcome" class="play-hint" role="status">
+                <%= case @outcome do %>
+                  <% {:recorded, []} -> %>
+                    Recorded.
+                  <% {:recorded, labels} -> %>
+                    Recorded: {Enum.join(labels, "; ")}.
+                  <% {:refused, _} -> %>
+                    That is no longer available here.
+                  <% _ -> %>
+                    <%= if Enum.any?(@interactions, &(&1.status == :available)) and @open_interaction == nil do %>
+                      Something here can be investigated.
+                    <% end %>
+                <% end %>
+              </p>
+              <%= for {entry, index} <- Enum.with_index(@interactions) do %>
+                <button
+                  :if={entry.status == :available and @open_interaction != entry.interaction["id"]}
+                  id={"investigate-#{index}"}
+                  class="play-place"
+                  phx-click="open_interaction"
+                  phx-value-id={entry.interaction["id"]}
+                >
+                  <span>{entry.interaction["title"]}</span><small>Investigate</small>
+                </button>
+                <p :if={entry.status == :completed} id={"investigated-#{index}"} class="play-hint">
+                  Investigated: {entry.interaction["title"]}
+                </p>
+                <section
+                  :if={@open_interaction == entry.interaction["id"]}
+                  id="scene"
+                  class="play-inspection play-scene"
+                  aria-labelledby="scene-title"
+                >
+                  <h3 id="scene-title">{entry.interaction["scene"]["title"]}</h3>
+                  <p :for={paragraph <- entry.interaction["scene"]["body"]}>{paragraph}</p>
+                  <div class="play-choices">
+                    <button
+                      :for={{choice, c} <- Enum.with_index(entry.interaction["choices"])}
+                      id={"choice-#{c}"}
+                      class="play-place"
+                      phx-click="complete_interaction"
+                      phx-value-id={entry.interaction["id"]}
+                      phx-value-choice={choice["id"]}
+                      phx-value-turn={@player.turn}
+                    >
+                      <span>{choice["label"]}</span>
+                    </button>
+                  </div>
+                  <button id="close-scene" phx-click="close_interaction">Close</button>
+                </section>
+              <% end %>
+            </section>
             <section :if={@inspected} id="place-inspection" class="play-inspection">
               <h3>{@inspected["name"]}</h3><p>{@inspected["notes"]}</p>
               <button id="close-inspection" phx-click="close_inspect">Close</button>

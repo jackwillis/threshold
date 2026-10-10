@@ -123,8 +123,8 @@ Sessions.complete_interaction(world, content, expected_turn, interaction_id, cho
 1. `Threshold.Interactions`: schema, strict validation, load/encode, lint task, fixture, pure tests. **Done**; per-event load cost measured above.
 2. Migration, two Ecto schemas, `Sessions.interaction_state/1`, `complete_interaction/5`, reset cleanup, database and concurrency tests. **Done** (`Game.at_place?/3` was added here because completion needs it).
 3. `Interactions.at/4` read model and its tests. **Done.**
-4. `PlayLive` panel: indicator, open/close, choose, stale handling, LiveView tests.
-5. Browser verification on the scratch world; short note in this memo and `handoff.md`.
+4. `PlayLive` panel: indicator, open/close, choose, stale handling, LiveView tests. **Done.**
+5. Browser verification on the scratch world; short note in this memo and `handoff.md`. **Done**, see section 10.
 
 ## 9. Incompatibilities found, and what needs approval
 
@@ -138,3 +138,13 @@ None blocks the slice. Flagged:
 6. **Free-point places** without `access` are unwalkable, so their interactions are unreachable; the lint reports this (the walking-access field is how it gets fixed).
 
 Nothing here requires touching `authored.json`, the Madison boundary, generated snapshots or the active symlink.
+
+## 10. Implementation status and verification (October 10, 2026)
+
+Steps 1-5 are implemented and committed. Commits: the pure module and lint task; persistence and `complete_interaction/5`; the `at/4` read model; the `/play` panel.
+
+**Verified by tests** (`make check` with the disposable test database, 0 failures): strict validation and lint; every `complete_interaction` rule above (replay, forged request for a hidden interaction, wrong place, stale turn, unknown choice and interaction, revision change, missing save, reset, forced restart, removed content, per-session scope, unique-index backstop); independent-connection concurrency (16 competing completions record exactly once; a move or a reset racing completions leaves a coherent save, repeated runs); the LiveView panel on the authored graph (arrival only indicates, open/close writes nothing, choosing records for free and unlocks the second place, the other choice does not, an open scene does not block movement and walking away closes it, forged and stale completions are refused, completions survive reload, a new walk discards them, no interactions or an invalid file never breaks the walk).
+
+**Verified in a browser** (headless Firefox, scratch tiny world, scratch PostgreSQL, never Madison): arrival shows "Something here can be investigated" with no scene and no rows; opening a scene writes nothing; pressing the move key with a scene open moves and closes it; at the second place before the discovery nothing is offered; after choosing "Knock back" at the first place the second place offers "Dead streetlamp"; both completions and the discovery are in the database (1 discovery, 2 completions) with the turn unchanged by the choices; reload shows both as investigated. Screenshots were reviewed for layout; the choice buttons' underline was fixed afterwards and that CSS change was not re-screenshotted.
+
+**Not verified or not done:** screen readers (the outcome line has `role="status"`, but it is inserted together with its section so some assistive technology may not announce the first message; consider a persistent live region); keyboard focus placement when a scene opens; mobile layout of the scene; the generated graph in a browser (covered by the pure `at_place?/3` tests only); the migration against the designer's development database (deliberately not run). Studio V2 authoring, the journal and everything in section 1 "Deferred" remain unbuilt.

@@ -24,3 +24,12 @@
   .play-seasons button { padding: 6px 9px; font-size: 13px; }
   #play-chrome .play-map-label { font-size: 20px; padding: 6px 10px 8px; }
 }
+
+/* /play: the investigate panel (LiveView). Static panel colours match the rest of the side panel. */
+.play-scene { margin-top: 14px; }
+.play-scene h3 { font-family: "Atlas Serif", Georgia, serif; }
+.play-scene p { font-family: "Atlas Serif", Georgia, serif; font-size: 16px; }
+.play-choices { display: grid; gap: 8px; margin-top: 14px; }
+.play-choices .play-place { margin-top: 0; }
+.play-scene .play-choices button { margin-top: 0; font-size: 14px; text-decoration: none; }
+.play-scene .play-choices button:hover { text-decoration: underline; }
