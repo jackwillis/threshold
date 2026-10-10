@@ -234,21 +234,28 @@ defmodule Threshold.Authored.Edit do
     end
   end
 
-  def resolve_anchor(
-        %{"kind" => "edge", "ref" => ref, "offset" => offset, "point" => [lon, lat]},
-        geography
-      )
-      when is_number(offset) and is_number(lon) and is_number(lat) do
+  # Edge anchors are derived from the imported edge itself: the client supplies only which edge
+  # and how far along it, never a position.
+  def resolve_anchor(%{"kind" => "edge", "ref" => ref, "offset" => offset}, geography)
+      when is_number(offset) do
     case Map.fetch(geography.edges, ref) do
       {:ok, hash} ->
-        {:ok,
-         %{
-           "kind" => "edge",
-           "ref" => ref,
-           "offset" => min(max(offset, 0), 1),
-           "point" => [lon, lat],
-           "ref_geometry_hash" => hash
-         }}
+        offset = if offset > 1 and offset < 1.000001, do: 1, else: offset
+
+        case Threshold.Geography.point_at(geography, ref, offset) do
+          {:ok, point} ->
+            {:ok,
+             %{
+               "kind" => "edge",
+               "ref" => ref,
+               "offset" => offset,
+               "point" => point,
+               "ref_geometry_hash" => hash
+             }}
+
+          :error ->
+            {:error, "That position is not on the street."}
+        end
 
       :error ->
         {:error, "That street is not in the imported geography."}

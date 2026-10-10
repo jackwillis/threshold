@@ -6,7 +6,11 @@ defmodule Threshold.Authored.EditTest do
 
   @geography %{
     nodes: %{"node:1" => [-89.385, 43.074], "node:2" => [-89.38, 43.075]},
-    edges: %{"edge:1-2-101" => "hash101", "edge:3-4-102" => "hash102"}
+    edges: %{"edge:1-2-101" => "hash101", "edge:3-4-102" => "hash102"},
+    lines: %{
+      "edge:1-2-101" => [[-89.385, 43.074], [-89.38, 43.075]],
+      "edge:3-4-102" => [[-89.375, 43.076], [-89.374, 43.077]]
+    }
   }
 
   defp empty, do: Authored.empty()
@@ -107,16 +111,40 @@ defmodule Threshold.Authored.EditTest do
                Edit.add_location(empty(), %{"kind" => "point", "point" => [500, 0]}, @geography)
     end
 
-    test "edge offsets are clamped" do
+    test "edge anchors are positioned from the edge geometry, not the client" do
       req = %{
         "kind" => "edge",
         "ref" => "edge:1-2-101",
-        "offset" => 3,
-        "point" => [-89.38, 43.07]
+        "offset" => 0.5,
+        "point" => [10.0, 10.0]
       }
 
       {:ok, doc, _} = Edit.add_location(empty(), req, @geography)
-      assert [%{"anchor" => %{"offset" => 1}}] = doc["locations"]
+
+      assert [%{"anchor" => %{"point" => [-89.3825, 43.0745], "offset" => 0.5}}] =
+               doc["locations"]
+
+      {:ok, doc, _} = Edit.add_location(empty(), Map.delete(req, "point"), @geography)
+      assert [%{"anchor" => %{"point" => [-89.3825, 43.0745]}}] = doc["locations"]
+
+      {:ok, doc, _} = Edit.add_location(empty(), %{req | "offset" => 1}, @geography)
+      assert [%{"anchor" => %{"point" => [-89.38, 43.075]}}] = doc["locations"]
+    end
+
+    test "edge offsets outside the edge are rejected" do
+      for offset <- [-0.1, 1.5, 3] do
+        req = %{"kind" => "edge", "ref" => "edge:1-2-101", "offset" => offset}
+
+        assert {:error, "That position is not on the street."} =
+                 Edit.add_location(empty(), req, @geography)
+      end
+    end
+
+    test "moving a location to an edge also derives the position" do
+      {doc, id} = with_location()
+      req = %{"kind" => "edge", "ref" => "edge:3-4-102", "offset" => 0.5, "point" => [0, 0]}
+      {:ok, doc} = Edit.move_location(doc, id, req, @geography)
+      assert [%{"anchor" => %{"point" => [-89.3745, 43.0765]}}] = doc["locations"]
     end
 
     test "rename and notes" do

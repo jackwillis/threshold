@@ -82,4 +82,23 @@ defmodule Threshold.ReferencesTest do
       assert :error = Geography.index("/nonexistent")
     end
   end
+
+  describe "Geography.point_at/3" do
+    @bent %{lines: %{"edge:bent" => [[0.0, 0.0], [0.0, 1.0], [1.0, 1.0]]}}
+
+    test "interpolates by length along a bent edge" do
+      assert {:ok, [x0, y0]} = Geography.point_at(@bent, "edge:bent", 0)
+      assert {x0, y0} == {0.0, 0.0}
+      assert {:ok, [0.5, 1.0]} = Geography.point_at(@bent, "edge:bent", 0.75)
+      assert {:ok, [1.0, 1.0]} = Geography.point_at(@bent, "edge:bent", 1)
+      assert {:ok, [xm, 1.0]} = Geography.point_at(@bent, "edge:bent", 0.5)
+      assert xm == 0.0
+    end
+
+    test "rejects unknown edges and offsets outside 0..1" do
+      assert :error = Geography.point_at(@bent, "edge:nope", 0.5)
+      assert :error = Geography.point_at(@bent, "edge:bent", 1.01)
+      assert :error = Geography.point_at(@bent, "edge:bent", -0.01)
+    end
+  end
 end
