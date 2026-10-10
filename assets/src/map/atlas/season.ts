@@ -1,4 +1,5 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
+import type { Treatment } from "./materials";
 import { applySeason } from "./style";
 import { SEASONS, SEASON_TOKENS, cssVariables, type Season } from "./tokens";
 
@@ -27,13 +28,13 @@ export function paintPage(el: HTMLElement, season: Season): void {
 }
 
 /** Wires the season buttons inside `el` to repaint `map` in place. Returns a function that detaches them. */
-export function bindSeasonButtons(el: HTMLElement, map: MapLibreMap, onChange?: (season: Season) => void): () => void {
+export function bindSeasonButtons(el: HTMLElement, map: MapLibreMap, onChange?: (season: Season) => void, treatment: Treatment = "subtle"): () => void {
   const listeners: [HTMLButtonElement, () => void][] = [];
   el.querySelectorAll<HTMLButtonElement>("[data-season]").forEach((button) => {
     const listener = () => {
       const season = button.dataset.season;
       if (!isSeason(season)) return;
-      applySeason(map, SEASON_TOKENS[season]);
+      applySeason(map, SEASON_TOKENS[season], treatment);
       paintPage(el, season);
       try { localStorage.setItem(STORAGE_KEY, season); } catch { /* storage unavailable */ }
       const url = new URL(location.href);

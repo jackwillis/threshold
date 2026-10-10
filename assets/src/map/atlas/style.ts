@@ -1,4 +1,5 @@
 import type { ExpressionSpecification, LayerSpecification, Map as MapLibreMap } from "maplibre-gl";
+import { materialLayer, type Treatment } from "./materials";
 import { TYPE, type AtlasTokens } from "./tokens";
 
 // The Classic Atlas layer stack. `atlasLayers(tokens)` returns the same layers (ids, sources, filters,
@@ -30,13 +31,16 @@ const labelBase = {
   "text-padding": 4,
 };
 
-export function atlasLayers(t: AtlasTokens): LayerSpecification[] {
+export function atlasLayers(t: AtlasTokens, treatment: Treatment = "subtle"): LayerSpecification[] {
   const halo = { "text-halo-color": t.halo, "text-halo-width": 1.6, "text-halo-blur": 0.4 };
   return [
     { id: "atlas-ground", type: "background", paint: { "background-color": t.ground } },
     { id: "ctx-water", type: "fill", source: "context", filter: classIs("water"), paint: { "fill-color": t.water } },
+    materialLayer("water", t, treatment),
     { id: "ctx-water-edge", type: "line", source: "context", filter: classIs("water"), paint: { "line-color": t.waterEdge, "line-width": 1 } },
     { id: "ctx-park", type: "fill", source: "context", filter: classIs("park"), paint: { "fill-color": t.park } },
+    materialLayer("meadow", t, treatment),
+    materialLayer("canopy", t, treatment),
     { id: "ctx-park-edge", type: "line", source: "context", filter: classIs("park"), paint: { "line-color": t.parkEdge, "line-width": 0.8, "line-dasharray": [3, 2] } },
     { id: "ctx-plaza", type: "fill", source: "context", filter: classIs("pedestrian_area"), paint: { "fill-color": t.plaza } },
     { id: "ctx-building", type: "fill", source: "context", filter: classIs("building"), paint: { "fill-color": t.building } },
@@ -128,8 +132,8 @@ export function movementLayers(t: AtlasTokens): LayerSpecification[] {
 }
 
 /** Switches season in place: same layers, new paint values. */
-export function applySeason(map: MapLibreMap, tokens: AtlasTokens): void {
-  for (const layer of [...atlasLayers(tokens), ...movementLayers(tokens)]) {
+export function applySeason(map: MapLibreMap, tokens: AtlasTokens, treatment: Treatment = "subtle"): void {
+  for (const layer of [...atlasLayers(tokens, treatment), ...movementLayers(tokens)]) {
     if (!map.getLayer(layer.id)) continue;
     const paint = (layer as { paint?: Record<string, unknown> }).paint ?? {};
     for (const [key, value] of Object.entries(paint)) map.setPaintProperty(layer.id, key, value);

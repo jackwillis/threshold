@@ -8,6 +8,7 @@ export type AtlasTokens = {
   ground: string;
   water: string; waterEdge: string;
   park: string; parkEdge: string;
+  canopy: string; canopyHighlight: string; canopyPool: string; grass: string; waterPigment: string;
   plaza: string;
   building: string; buildingEdge: string;
   roadFill: string; roadCasing: string;
@@ -20,6 +21,7 @@ export type AtlasTokens = {
 
 export const SEASON_TOKENS: Record<Season, AtlasTokens> = {
   summer: {
+    canopy: "#72915d", canopyHighlight: "#adc48b", canopyPool: "#486748", grass: "#7e9663", waterPigment: "#789eaf",
     ground: "#f3ecd9",
     water: "#bcd6e4", waterEdge: "#97b8cc",
     park: "#c6d8b0", parkEdge: "#a7be8f",
@@ -31,6 +33,7 @@ export const SEASON_TOKENS: Record<Season, AtlasTokens> = {
     player: "#263e37", destination: "#0e6f61", numeral: "#fffdf4", authored: "#b4741a", visited: "#5f7d70", route: "#128d7a",
   },
   spring: {
+    canopy: "#81a466", canopyHighlight: "#c1d59d", canopyPool: "#5b804e", grass: "#8ba76a", waterPigment: "#83b1c4",
     ground: "#f4efdc",
     water: "#c3deea", waterEdge: "#9fc2d3",
     park: "#c3dfa6", parkEdge: "#a2c785",
@@ -42,6 +45,7 @@ export const SEASON_TOKENS: Record<Season, AtlasTokens> = {
     player: "#263e37", destination: "#0e6f61", numeral: "#fffdf4", authored: "#b4741a", visited: "#5f7d70", route: "#128d7a",
   },
   autumn: {
+    canopy: "#b9914e", canopyHighlight: "#d7b974", canopyPool: "#906943", grass: "#a19760", waterPigment: "#7e9faa",
     ground: "#f1e5cd",
     water: "#b4cbd3", waterEdge: "#8fabb6",
     park: "#d3cb98", parkEdge: "#b8ad78",
@@ -53,6 +57,7 @@ export const SEASON_TOKENS: Record<Season, AtlasTokens> = {
     player: "#2a3a33", destination: "#0e6a5c", numeral: "#fffdf4", authored: "#a8611a", visited: "#6a7b66", route: "#12806f",
   },
   winter: {
+    canopy: "#a5b3a5", canopyHighlight: "#d8e1d6", canopyPool: "#7d928b", grass: "#a1aea0", waterPigment: "#8cabbf",
     ground: "#eef0ee",
     water: "#c3d0da", waterEdge: "#9eb0be",
     park: "#dfe7dd", parkEdge: "#bfcbbc",
