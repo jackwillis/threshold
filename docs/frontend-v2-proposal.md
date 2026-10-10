@@ -114,3 +114,12 @@ V2 runs beside V1 at `/studio-v2`; V1 routes and `authored.json` are untouched. 
 - **Glyphs (now on the critical path):** Classic Atlas depends on elegant curved labels. MapLibre symbol text needs glyph PBFs, and the style is intentionally offline. Options: generate and bundle glyph sets for one or two open-licensed serif and sans fonts, or render curved labels outside MapLibre's text pipeline. Decide before the style module, because label typography drives the whole look.
 - **Two UI technologies:** LiveView and Preact coexist. Keep Preact confined to `/studio-v2` and the shared map code framework-free, so Atlas never depends on it.
 - **Duplicated rules:** the client must not re-implement validation; every edit result comes from the server. Any rule found on the client during review is a bug to move.
+
+## Backlog: display position versus walking access (from the walking-access increment)
+
+The `access` field and its inspector/Route-check buttons exist (commit `0547583`), but the map does not show it and it was not checked in a browser. For Studio V2:
+
+- Draw the display marker and the walking-access point as visually distinct symbols.
+- Draw a connector between them when they differ.
+- Let the designer pick an exact walking-access node or street position on the map, instead of only "nearest street".
+- Verify the whole display/access behaviour in a browser against a scratch world (never the designer's real `authored.json`), including the Atlas player map for a place whose access differs from its marker.
