@@ -2,6 +2,17 @@
 
 Date: 2026-10-09. Read-only. Run on a scratch copy of `priv/worlds/madison` (`THRESHOLD_WORLDS_DIR` pointed at the copy); the real `authored.json` was neither modified nor used by any test. Reproduce with `mix threshold.audit madison [--details]`, implemented by `Threshold.AttachmentAudit` (pure, tested on the `tiny` fixture) and `mix threshold.audit`.
 
+## Update: route resolution on the street network (supersedes the walking comparison below)
+
+The designer clarified that authored places are meant to be **traversable nodes**: street intersections, or sometimes halfway down a long block. That makes the authored graph the set of positions the player can stand on, with the real street network supplying the walk between them, rather than places needing an attachment to a separate playable graph. `mix threshold.routes [world] [--details]` (`Threshold.RouteResolver`, read-only, 8 tests) tests that model: a node anchor is its intersection; an edge anchor is a virtual node splitting its street at the stored offset; each authored connection is routed over the imported pedestrian network under the game's own rules (access status, vehicle service ways, authored closures, playable boundary). On a scratch copy of the real data:
+
+- **52 of 60 places are within 8 m of an intersection** (median 1.4 m, max 7.9 m): the designer's snapping already put them on intersections. 6 are genuinely mid-block. **2 are free points** with no street position (`loc:6216b9ecc50a` "The High Crowd", 3.4 m from `edge:2726175794-4958781132-487772769`; `loc:9821f05090ce`, 14.3 m from the loop edge `edge:5449533723-5449533723-566001292`).
+- **88 of 98 connections resolve to a real walk** (33-213 m, median 98 m), none blocked by access rules, closures or the boundary, and none an unreasonable detour (walk over 3x the straight line plus 60 m).
+- **The other 10 are exactly the connections that touch the two free points.** The earlier "10 with no walking route" were an artefact of those two places having no street position, not of the network. Fixing two anchors would make all 98 resolvable.
+- Only 20 of the 52 intersection places coincide with a generated playable location (the others fall inside a cluster whose representative is a different node), so matching authored nodes to the generated playable graph by position would conflate or lose most of them. Treating the authored nodes as the playable nodes avoids that.
+
+The audit sections below were written before this clarification and assume places are separate from the nodes that a player stands on. Keep them for the findings about ids and ambiguity, but the schema proposal changes: with places as nodes, `movement_node` is unnecessary and `travel` becomes "this connection is a real walk (validated by this resolver)" versus a non-geographic transition.
+
 ## What the designer's data looks like
 
 | | |
