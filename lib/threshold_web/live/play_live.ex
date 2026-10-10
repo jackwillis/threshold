@@ -465,7 +465,9 @@ defmodule ThresholdWeb.PlayLive do
                   id="scene"
                   class="play-inspection play-scene"
                   aria-labelledby="scene-title"
-                  phx-window-keydown={JS.push("close_interaction") |> JS.focus(to: "#investigate-#{index}")}
+                  phx-window-keydown={
+                    JS.push("close_interaction") |> JS.focus(to: "#investigate-#{index}")
+                  }
                   phx-key="Escape"
                 >
                   <h3 id="scene-title" tabindex="-1" phx-mounted={JS.focus()}>
