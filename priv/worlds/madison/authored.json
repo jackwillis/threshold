@@ -1,6 +1,1707 @@
 {
+  "closures": [],
+  "connections": [
+    {
+      "from": "loc:742660a27859",
+      "geometry": null,
+      "id": "conn:04607d423f1d",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:37787d94970b"
+    },
+    {
+      "from": "loc:fdc76510f2b4",
+      "geometry": null,
+      "id": "conn:089401a02143",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:91cf313113f9"
+    },
+    {
+      "from": "loc:d5a73a1d3b7a",
+      "geometry": null,
+      "id": "conn:097cd711fe81",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:b8e5c4e0738c"
+    },
+    {
+      "from": "loc:aed5744346b7",
+      "geometry": null,
+      "id": "conn:09f454adcc47",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:c5462d449011"
+    },
+    {
+      "from": "loc:3efba20e4706",
+      "geometry": null,
+      "id": "conn:0b0b7b4d8058",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:d9bff30b26bf"
+    },
+    {
+      "from": "loc:68125b9f015e",
+      "geometry": null,
+      "id": "conn:0e8dc06d642a",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:d5a73a1d3b7a"
+    },
+    {
+      "from": "loc:91cf313113f9",
+      "geometry": null,
+      "id": "conn:16c8213ecc0e",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:79e04c12ca5c"
+    },
+    {
+      "from": "loc:3efba20e4706",
+      "geometry": null,
+      "id": "conn:1c6d2ceb69d4",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:9821f05090ce"
+    },
+    {
+      "from": "loc:fd59e64670a1",
+      "geometry": null,
+      "id": "conn:1e0602a1156c",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:4795e6f024e6"
+    },
+    {
+      "from": "loc:2b29e1f7aa45",
+      "geometry": null,
+      "id": "conn:211d5ff345c7",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:d9bff30b26bf"
+    },
+    {
+      "from": "loc:0fb2afc8ffc7",
+      "geometry": null,
+      "id": "conn:21a09e2f1759",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:039556415b24"
+    },
+    {
+      "from": "loc:32228f2ef358",
+      "geometry": null,
+      "id": "conn:21a6e6753e70",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:68125b9f015e"
+    },
+    {
+      "from": "loc:fdc76510f2b4",
+      "geometry": null,
+      "id": "conn:22132d28a8c8",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:fed932cc2ce9"
+    },
+    {
+      "from": "loc:44148ff9b509",
+      "geometry": null,
+      "id": "conn:26044b059617",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:9821f05090ce"
+    },
+    {
+      "from": "loc:2b29e1f7aa45",
+      "geometry": null,
+      "id": "conn:277a90b1e332",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:dff7902c8d9c"
+    },
+    {
+      "from": "loc:fed932cc2ce9",
+      "geometry": null,
+      "id": "conn:296e6164b4b5",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:ecbdb683f165"
+    },
+    {
+      "from": "loc:fd59e64670a1",
+      "geometry": null,
+      "id": "conn:2b1b07a64c82",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:2b323f2e9ee7"
+    },
+    {
+      "from": "loc:59fc32d1699b",
+      "geometry": null,
+      "id": "conn:2b3064d3f5d3",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:b8e5c4e0738c"
+    },
+    {
+      "from": "loc:aafdb41a9ac1",
+      "geometry": null,
+      "id": "conn:2caf06aa0987",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:72a13fd2d65e"
+    },
+    {
+      "from": "loc:958464d226db",
+      "geometry": null,
+      "id": "conn:2e5064591ad1",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:a055ad7a46f9"
+    },
+    {
+      "from": "loc:cfbce06ea9a5",
+      "geometry": null,
+      "id": "conn:2ed9762c7590",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:ff5a0fb7c630"
+    },
+    {
+      "from": "loc:ff5a0fb7c630",
+      "geometry": null,
+      "id": "conn:3106fb10e52e",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:9821f05090ce"
+    },
+    {
+      "from": "loc:7ab0d80444c8",
+      "geometry": null,
+      "id": "conn:3117c8f2ec85",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:32228f2ef358"
+    },
+    {
+      "from": "loc:bd9bbe31c34a",
+      "geometry": null,
+      "id": "conn:35ee35fb336a",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:ca46d150dd93"
+    },
+    {
+      "from": "loc:742660a27859",
+      "geometry": null,
+      "id": "conn:364fdf7fd2de",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:958464d226db"
+    },
+    {
+      "from": "loc:b8e5c4e0738c",
+      "geometry": null,
+      "id": "conn:36584605e935",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:a055ad7a46f9"
+    },
+    {
+      "from": "loc:ff5a0fb7c630",
+      "geometry": null,
+      "id": "conn:372820dc1fa3",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:44148ff9b509"
+    },
+    {
+      "from": "loc:377bd2f999a8",
+      "geometry": null,
+      "id": "conn:375c730315ce",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:bb0e5d9c78d2"
+    },
+    {
+      "from": "loc:3efba20e4706",
+      "geometry": null,
+      "id": "conn:39890c20534f",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:ff5a0fb7c630"
+    },
+    {
+      "from": "loc:9deab60658c6",
+      "geometry": null,
+      "id": "conn:3f38b1045d46",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:e62d9ff3cbed"
+    },
+    {
+      "from": "loc:2b29e1f7aa45",
+      "geometry": null,
+      "id": "conn:4a8a04cda4ae",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:377bd2f999a8"
+    },
+    {
+      "from": "loc:1542cbfe7386",
+      "geometry": null,
+      "id": "conn:4a8cf0b61e7a",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:00ad92846572"
+    },
+    {
+      "from": "loc:fd59e64670a1",
+      "geometry": null,
+      "id": "conn:4bc88d8c01cd",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:9821f05090ce"
+    },
+    {
+      "from": "loc:a7806dce86e6",
+      "geometry": null,
+      "id": "conn:4e4b095a2c1b",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:1e9b8245ed76"
+    },
+    {
+      "from": "loc:d9bff30b26bf",
+      "geometry": null,
+      "id": "conn:4e96bbbdc760",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:a055ad7a46f9"
+    },
+    {
+      "from": "loc:00ad92846572",
+      "geometry": null,
+      "id": "conn:576d459e64a9",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:2b29e1f7aa45"
+    },
+    {
+      "from": "loc:ecbdb683f165",
+      "geometry": null,
+      "id": "conn:57f216375b07",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:a6b00c477718"
+    },
+    {
+      "from": "loc:77a3476ebbe3",
+      "geometry": null,
+      "id": "conn:5c068e6ec7e7",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:9663ad011a8d"
+    },
+    {
+      "from": "loc:bd9bbe31c34a",
+      "geometry": null,
+      "id": "conn:5eb45f95ae79",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:4795e6f024e6"
+    },
+    {
+      "from": "loc:92835b884bba",
+      "geometry": null,
+      "id": "conn:604db3c69732",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:a3c75b903992"
+    },
+    {
+      "from": "loc:91cf313113f9",
+      "geometry": null,
+      "id": "conn:61960d5c4d54",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:039556415b24"
+    },
+    {
+      "from": "loc:a3c75b903992",
+      "geometry": null,
+      "id": "conn:624e873c519a",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:a8dcd00ee545"
+    },
+    {
+      "from": "loc:e92bf77667c8",
+      "geometry": null,
+      "id": "conn:62843adf232f",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:a055ad7a46f9"
+    },
+    {
+      "from": "loc:64fcd047b47c",
+      "geometry": null,
+      "id": "conn:650b1e9d8637",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:92835b884bba"
+    },
+    {
+      "from": "loc:c5462d449011",
+      "geometry": null,
+      "id": "conn:6e2d44be44ee",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:0fb2afc8ffc7"
+    },
+    {
+      "from": "loc:b8e5c4e0738c",
+      "geometry": null,
+      "id": "conn:6ead8f4d120d",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:a3c75b903992"
+    },
+    {
+      "from": "loc:bd9bbe31c34a",
+      "geometry": null,
+      "id": "conn:6ffcf1cb6bf5",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:59fc32d1699b"
+    },
+    {
+      "from": "loc:00ad92846572",
+      "geometry": null,
+      "id": "conn:70b5e0dee0dc",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:61d357749e47"
+    },
+    {
+      "from": "loc:2b29e1f7aa45",
+      "geometry": null,
+      "id": "conn:710dec8c0e8b",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:cfbce06ea9a5"
+    },
+    {
+      "from": "loc:0fb2afc8ffc7",
+      "geometry": null,
+      "id": "conn:7195618104b8",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:fdc76510f2b4"
+    },
+    {
+      "from": "loc:dff7902c8d9c",
+      "geometry": null,
+      "id": "conn:7275b7ee9a17",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:ca46d150dd93"
+    },
+    {
+      "from": "loc:9514e272ab78",
+      "geometry": null,
+      "id": "conn:74c9534cf394",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:bb503dc7be45"
+    },
+    {
+      "from": "loc:1e9b8245ed76",
+      "geometry": null,
+      "id": "conn:768d5152c711",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:aed5744346b7"
+    },
+    {
+      "from": "loc:ca46d150dd93",
+      "geometry": null,
+      "id": "conn:7a9b27081bc9",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:2b323f2e9ee7"
+    },
+    {
+      "from": "loc:4795e6f024e6",
+      "geometry": null,
+      "id": "conn:7d4c353afd24",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:9821f05090ce"
+    },
+    {
+      "from": "loc:1542cbfe7386",
+      "geometry": null,
+      "id": "conn:7ef9a03efdab",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:aafdb41a9ac1"
+    },
+    {
+      "from": "loc:a3c75b903992",
+      "geometry": null,
+      "id": "conn:81e155811ed8",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:9821f05090ce"
+    },
+    {
+      "from": "loc:61d357749e47",
+      "geometry": null,
+      "id": "conn:832965c19e93",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:1542cbfe7386"
+    },
+    {
+      "from": "loc:5a9ee2f79739",
+      "geometry": null,
+      "id": "conn:846346f730f6",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:00ad92846572"
+    },
+    {
+      "from": "loc:7c9fa6e04bd4",
+      "geometry": null,
+      "id": "conn:863ba87d9d3f",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:79e04c12ca5c"
+    },
+    {
+      "from": "loc:e7ffc207d41e",
+      "geometry": null,
+      "id": "conn:88deb144ac1f",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:68125b9f015e"
+    },
+    {
+      "from": "loc:a055ad7a46f9",
+      "geometry": null,
+      "id": "conn:8e2b9fcd3ddc",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:3ae160c066d1"
+    },
+    {
+      "from": "loc:a43a136527f2",
+      "geometry": null,
+      "id": "conn:8fc829dbb3e6",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:c5462d449011"
+    },
+    {
+      "from": "loc:72a13fd2d65e",
+      "geometry": null,
+      "id": "conn:915221a25caf",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:61d357749e47"
+    },
+    {
+      "from": "loc:79e04c12ca5c",
+      "geometry": null,
+      "id": "conn:91c65ef8e921",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:ecbdb683f165"
+    },
+    {
+      "from": "loc:7ab0d80444c8",
+      "geometry": null,
+      "id": "conn:93ae62cffd7b",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:e7ffc207d41e"
+    },
+    {
+      "from": "loc:92835b884bba",
+      "geometry": null,
+      "id": "conn:9c49c05c17b0",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:9821f05090ce"
+    },
+    {
+      "from": "loc:5a9ee2f79739",
+      "geometry": null,
+      "id": "conn:9c8b6a40071c",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:ecbdb683f165"
+    },
+    {
+      "from": "loc:e62d9ff3cbed",
+      "geometry": null,
+      "id": "conn:9e90330a23c5",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:37787d94970b"
+    },
+    {
+      "from": "loc:e92bf77667c8",
+      "geometry": null,
+      "id": "conn:9f8e4505d407",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:d5a73a1d3b7a"
+    },
+    {
+      "from": "loc:bb0e5d9c78d2",
+      "geometry": null,
+      "id": "conn:a1bafda46c72",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:697e2425db33"
+    },
+    {
+      "from": "loc:697e2425db33",
+      "geometry": null,
+      "id": "conn:a9b8831cc9a1",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:d9bff30b26bf"
+    },
+    {
+      "from": "loc:958464d226db",
+      "geometry": null,
+      "id": "conn:aa19d3bd89bf",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:9663ad011a8d"
+    },
+    {
+      "from": "loc:a8dcd00ee545",
+      "geometry": null,
+      "id": "conn:aa61e8e10124",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:3efba20e4706"
+    },
+    {
+      "from": "loc:9821f05090ce",
+      "geometry": null,
+      "id": "conn:aa83ef7080bf",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:a8dcd00ee545"
+    },
+    {
+      "from": "loc:61d357749e47",
+      "geometry": null,
+      "id": "conn:ab9dc65dac4d",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:5a9ee2f79739"
+    },
+    {
+      "from": "loc:e7ffc207d41e",
+      "geometry": null,
+      "id": "conn:b1223a83ee2a",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:e92bf77667c8"
+    },
+    {
+      "from": "loc:4795e6f024e6",
+      "geometry": null,
+      "id": "conn:b57e53560f04",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:92835b884bba"
+    },
+    {
+      "from": "loc:039556415b24",
+      "geometry": null,
+      "id": "conn:c5a71772e5f7",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:7c9fa6e04bd4"
+    },
+    {
+      "from": "loc:77a3476ebbe3",
+      "geometry": null,
+      "id": "conn:d236f1ef4b97",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:a43a136527f2"
+    },
+    {
+      "from": "loc:59fc32d1699b",
+      "geometry": null,
+      "id": "conn:d7ca512ea1ff",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:64fcd047b47c"
+    },
+    {
+      "from": "loc:9deab60658c6",
+      "geometry": null,
+      "id": "conn:d919a5e0a216",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:aed5744346b7"
+    },
+    {
+      "from": "loc:a055ad7a46f9",
+      "geometry": null,
+      "id": "conn:dca56ff25585",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:6216b9ecc50a"
+    },
+    {
+      "from": "loc:a6b00c477718",
+      "geometry": null,
+      "id": "conn:e0b1351771cb",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:72a13fd2d65e"
+    },
+    {
+      "from": "loc:fed932cc2ce9",
+      "geometry": null,
+      "id": "conn:e1b01eefc0d7",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:77a3476ebbe3"
+    },
+    {
+      "from": "loc:61d357749e47",
+      "geometry": null,
+      "id": "conn:e3c324008aea",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:a6b00c477718"
+    },
+    {
+      "from": "loc:bb503dc7be45",
+      "geometry": null,
+      "id": "conn:e3d6ea0d936d",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:7ab0d80444c8"
+    },
+    {
+      "from": "loc:44148ff9b509",
+      "geometry": null,
+      "id": "conn:e4c3ed5f600e",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:fd59e64670a1"
+    },
+    {
+      "from": "loc:bb0e5d9c78d2",
+      "geometry": null,
+      "id": "conn:e7b7a429b596",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:5a9ee2f79739"
+    },
+    {
+      "from": "loc:a8dcd00ee545",
+      "geometry": null,
+      "id": "conn:e9d7d779832d",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:3ae160c066d1"
+    },
+    {
+      "from": "loc:742660a27859",
+      "geometry": null,
+      "id": "conn:f365711fecf5",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:a7806dce86e6"
+    },
+    {
+      "from": "loc:697e2425db33",
+      "geometry": null,
+      "id": "conn:f4c48e9328a3",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:fed932cc2ce9"
+    },
+    {
+      "from": "loc:a7806dce86e6",
+      "geometry": null,
+      "id": "conn:f5066d38b9b5",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:9deab60658c6"
+    },
+    {
+      "from": "loc:e7ffc207d41e",
+      "geometry": null,
+      "id": "conn:f6e51026e40b",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:958464d226db"
+    },
+    {
+      "from": "loc:958464d226db",
+      "geometry": null,
+      "id": "conn:fc901236ea9a",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:6216b9ecc50a"
+    },
+    {
+      "from": "loc:dff7902c8d9c",
+      "geometry": null,
+      "id": "conn:fd713da425a5",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:44148ff9b509"
+    },
+    {
+      "from": "loc:9663ad011a8d",
+      "geometry": null,
+      "id": "conn:fde1c5fa122e",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:697e2425db33"
+    },
+    {
+      "from": "loc:37787d94970b",
+      "geometry": null,
+      "id": "conn:fe771a92de1a",
+      "kind": "fictional",
+      "notes": "",
+      "to": "loc:77a3476ebbe3"
+    }
+  ],
   "format_version": 1,
-  "locations": [],
-  "connections": [],
-  "closures": []
+  "locations": [
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.11870495791920002,
+        "point": [
+          -89.38423547481332,
+          43.072889901798426
+        ],
+        "ref": "edge:1186826669-3269870786-1412903291",
+        "ref_geometry_hash": "95399dc45c9059fe"
+      },
+      "id": "loc:00ad92846572",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.45243382287831224,
+        "point": [
+          -89.38821382085898,
+          43.07090842856059
+        ],
+        "ref": "edge:13356204454-13356204455-1247388331",
+        "ref_geometry_hash": "c8062457f283c6ff"
+      },
+      "id": "loc:039556415b24",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.03855921998178449,
+        "point": [
+          -89.38889630083051,
+          43.07135973943608
+        ],
+        "ref": "edge:917593526-5489245732-78088820",
+        "ref_geometry_hash": "b297f10d7e9cb1ad"
+      },
+      "id": "loc:0fb2afc8ffc7",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.03792492825393727,
+        "point": [
+          -89.3833518928859,
+          43.072382850049635
+        ],
+        "ref": "edge:53540659-3269882035-6713983",
+        "ref_geometry_hash": "914b4e3ba3b1d029"
+      },
+      "id": "loc:1542cbfe7386",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.272872144036481,
+        "point": [
+          -89.39175340407789,
+          43.07353396477337
+        ],
+        "ref": "edge:53608986-5486608074-458185239",
+        "ref_geometry_hash": "49c9cc6d08e2eacc"
+      },
+      "id": "loc:1e9b8245ed76",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.11573546992048367,
+        "point": [
+          -89.38421778192705,
+          43.073178596521174
+        ],
+        "ref": "edge:53444038-3414435785-718825711",
+        "ref_geometry_hash": "b094daa47329943f"
+      },
+      "id": "loc:2b29e1f7aa45",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.4812989438458833,
+        "point": [
+          -89.38285303687049,
+          43.074678279037286
+        ],
+        "ref": "edge:1183426948-1183426976-102472455",
+        "ref_geometry_hash": "4c7d5523296d4db8"
+      },
+      "id": "loc:2b323f2e9ee7",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.047001473398916596,
+        "point": [
+          -89.3869917366535,
+          43.07684987907489
+        ],
+        "ref": "edge:2713279291-2713279335-700376931",
+        "ref_geometry_hash": "4c3ccca6d312e286"
+      },
+      "id": "loc:32228f2ef358",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.06495369122103037,
+        "point": [
+          -89.3891090203345,
+          43.074103036898656
+        ],
+        "ref": "edge:53591794-6240784354-1459200460",
+        "ref_geometry_hash": "25b371dd5186c7f3"
+      },
+      "id": "loc:37787d94970b",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.8355694582042158,
+        "point": [
+          -89.38473749043484,
+          43.073531724884994
+        ],
+        "ref": "edge:3414435787-3641395283-6693314",
+        "ref_geometry_hash": "a438eef6f2cbd658"
+      },
+      "id": "loc:377bd2f999a8",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.4063417740282192,
+        "point": [
+          -89.38547975196846,
+          43.074682503170884
+        ],
+        "ref": "edge:1160713823-1160713990-100404527",
+        "ref_geometry_hash": "4f26a89129a2eb49"
+      },
+      "id": "loc:3ae160c066d1",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.16231785298696608,
+        "point": [
+          -89.38466773314184,
+          43.0743536758722
+        ],
+        "ref": "edge:1160713883-1160713967-100404533",
+        "ref_geometry_hash": "2beb4d8ea04398ee"
+      },
+      "id": "loc:3efba20e4706",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.3392314437138564,
+        "point": [
+          -89.38372364852427,
+          43.07435269781853
+        ],
+        "ref": "edge:1160713833-1160713904-100404524",
+        "ref_geometry_hash": "bb2f3428e0ee293b"
+      },
+      "id": "loc:44148ff9b509",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.5495683548681688,
+        "point": [
+          -89.38371401881197,
+          43.07502719327408
+        ],
+        "ref": "edge:1160713816-1160713947-100404530",
+        "ref_geometry_hash": "5401a436498a74be"
+      },
+      "id": "loc:4795e6f024e6",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.9576763978029188,
+        "point": [
+          -89.38413163228223,
+          43.076342689203365
+        ],
+        "ref": "edge:53538736-5489595476-6767436",
+        "ref_geometry_hash": "ca43fa65802b1e36"
+      },
+      "id": "loc:59fc32d1699b",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.05387261718991616,
+        "point": [
+          -89.385124834715,
+          43.07239586831429
+        ],
+        "ref": "edge:53493114-3269870793-33798271",
+        "ref_geometry_hash": "38fb6722f32580f0"
+      },
+      "id": "loc:5a9ee2f79739",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.41404942244603243,
+        "point": [
+          -89.38424686264648,
+          43.07180380910718
+        ],
+        "ref": "edge:1186826687-6577170381-1458937321",
+        "ref_geometry_hash": "e0e5b18b1946a14b"
+      },
+      "id": "loc:61d357749e47",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "point",
+        "point": [
+          -89.387582215,
+          43.07465104
+        ]
+      },
+      "id": "loc:6216b9ecc50a",
+      "name": "The High Crowd",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.3752189676535434,
+        "point": [
+          -89.38414463769708,
+          43.075696051792484
+        ],
+        "ref": "edge:1183426905-1183426940-102472453",
+        "ref_geometry_hash": "3d97590246f85c5d"
+      },
+      "id": "loc:64fcd047b47c",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.4014441619571406,
+        "point": [
+          -89.38616043846883,
+          43.07618553502915
+        ],
+        "ref": "edge:1160692039-1180876933-6782766",
+        "ref_geometry_hash": "768afba152ea56ca"
+      },
+      "id": "loc:68125b9f015e",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.06596443205897187,
+        "point": [
+          -89.38622794128862,
+          43.07323941125856
+        ],
+        "ref": "edge:53615252-3269870796-28588917",
+        "ref_geometry_hash": "7b749a71140822fe"
+      },
+      "id": "loc:697e2425db33",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.5189462175237849,
+        "point": [
+          -89.38427352536992,
+          43.07045897935857
+        ],
+        "ref": "edge:53444048-11595916395-129089263",
+        "ref_geometry_hash": "a16ece2134bdf084"
+      },
+      "id": "loc:72a13fd2d65e",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.06921974423773042,
+        "point": [
+          -89.38994052735832,
+          43.074785837867694
+        ],
+        "ref": "edge:4173748917-5017012827-1455361283",
+        "ref_geometry_hash": "137432197827d9e6"
+      },
+      "id": "loc:742660a27859",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.09331929935346873,
+        "point": [
+          -89.38823622280852,
+          43.07346961420344
+        ],
+        "ref": "edge:53591793-3269709908-1452753267",
+        "ref_geometry_hash": "ffd99f9f67cc24cb"
+      },
+      "id": "loc:77a3476ebbe3",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.3532196995169559,
+        "point": [
+          -89.3867511603223,
+          43.071222679924006
+        ],
+        "ref": "edge:1188428664-7126788075-329005451",
+        "ref_geometry_hash": "e0306cc1f8ba42bb"
+      },
+      "id": "loc:79e04c12ca5c",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.3455868804939501,
+        "point": [
+          -89.38818284032615,
+          43.076011233904545
+        ],
+        "ref": "edge:53720172-5489227311-62376814",
+        "ref_geometry_hash": "f33787e424fa0ead"
+      },
+      "id": "loc:7ab0d80444c8",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.3364785366208323,
+        "point": [
+          -89.38777179462404,
+          43.07051686857707
+        ],
+        "ref": "edge:53482952-13356204453-329005451",
+        "ref_geometry_hash": "ef41e43483b21d96"
+      },
+      "id": "loc:7c9fa6e04bd4",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.04372681397212454,
+        "point": [
+          -89.38721665238094,
+          43.07163700145349
+        ],
+        "ref": "edge:7126788061-7126788071-102917493",
+        "ref_geometry_hash": "282933638e0177d7"
+      },
+      "id": "loc:91cf313113f9",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 1,
+        "point": [
+          -89.3841521,
+          43.0752938
+        ],
+        "ref": "edge:1179421063-1183426972-102472478",
+        "ref_geometry_hash": "bbafb119d1648291"
+      },
+      "id": "loc:92835b884bba",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.15391749583246456,
+        "point": [
+          -89.38997679977392,
+          43.074784231525456
+        ],
+        "ref": "edge:4173748917-5017012822-700376933",
+        "ref_geometry_hash": "60c4880b4ed7e459"
+      },
+      "id": "loc:9514e272ab78",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.041556539088669006,
+        "point": [
+          -89.38805027654999,
+          43.07476274518358
+        ],
+        "ref": "edge:53593500-5017012828-320451319",
+        "ref_geometry_hash": "299d86e68fc12bae"
+      },
+      "id": "loc:958464d226db",
+      "name": "State St x Dayton St x Pinckney St",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.19125031681137536,
+        "point": [
+          -89.38734459502915,
+          43.074094183479595
+        ],
+        "ref": "edge:53604257-3269870798-1452753267",
+        "ref_geometry_hash": "2c44a531fb796fa2"
+      },
+      "id": "loc:9663ad011a8d",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "point",
+        "point": [
+          -89.384207711,
+          43.074710745
+        ]
+      },
+      "id": "loc:9821f05090ce",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.09501694251649849,
+        "point": [
+          -89.39009553383524,
+          43.07341166087111
+        ],
+        "ref": "edge:13386944811-13395949716-6782791",
+        "ref_geometry_hash": "67be3ffb5e6023a5"
+      },
+      "id": "loc:9deab60658c6",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.9903999898071415,
+        "point": [
+          -89.38645802653753,
+          43.07473515476768
+        ],
+        "ref": "edge:387096443-3269674887-62705596",
+        "ref_geometry_hash": "eda9aee8253fd56d"
+      },
+      "id": "loc:a055ad7a46f9",
+      "name": "State St x Mifflin St X Carroll St",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.7000050457372604,
+        "point": [
+          -89.38464173050407,
+          43.075052080360265
+        ],
+        "ref": "edge:1160713946-1160714006-100404525",
+        "ref_geometry_hash": "66a852af6b125c4d"
+      },
+      "id": "loc:a3c75b903992",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.4798309480989988,
+        "point": [
+          -89.38866596059225,
+          43.07316664895855
+        ],
+        "ref": "edge:3098152718-7126261784-6728515",
+        "ref_geometry_hash": "e8c5ec48c018907e"
+      },
+      "id": "loc:a43a136527f2",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.2344210984373186,
+        "point": [
+          -89.38516911451934,
+          43.07110873651325
+        ],
+        "ref": "edge:53467506-3269709902-700376941",
+        "ref_geometry_hash": "655ec8c727002fd9"
+      },
+      "id": "loc:a6b00c477718",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.002321080606858649,
+        "point": [
+          -89.39095994005405,
+          43.07405581255457
+        ],
+        "ref": "edge:13386944813-13395555312-316730787",
+        "ref_geometry_hash": "c3d3b04c222e80f9"
+      },
+      "id": "loc:a7806dce86e6",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.0396757302336873,
+        "point": [
+          -89.38499208677182,
+          43.07470647619456
+        ],
+        "ref": "edge:1160713962-1179421056-100404540",
+        "ref_geometry_hash": "3871e9c8a13ea17e"
+      },
+      "id": "loc:a8dcd00ee545",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.37341124217013466,
+        "point": [
+          -89.38253750075914,
+          43.071715761110674
+        ],
+        "ref": "edge:53540665-3269882032-6763490",
+        "ref_geometry_hash": "0724c2bb5023cee4"
+      },
+      "id": "loc:aafdb41a9ac1",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.15014191890265494,
+        "point": [
+          -89.39088597509044,
+          43.07285051641391
+        ],
+        "ref": "edge:53699396-7259521044-703978382",
+        "ref_geometry_hash": "646096169ee783b6"
+      },
+      "id": "loc:aed5744346b7",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.5624670904577473,
+        "point": [
+          -89.38529890132344,
+          43.075557665264874
+        ],
+        "ref": "edge:53385421-6240793384-666562799",
+        "ref_geometry_hash": "d15d3fc76ee3edc4"
+      },
+      "id": "loc:b8e5c4e0738c",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.01654208369823812,
+        "point": [
+          -89.3855331062148,
+          43.0727151312357
+        ],
+        "ref": "edge:53619090-4172196478-6736816",
+        "ref_geometry_hash": "17e4c0ddf8e86ff6"
+      },
+      "id": "loc:bb0e5d9c78d2",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.5890844020977739,
+        "point": [
+          -89.38926361321205,
+          43.07529501673128
+        ],
+        "ref": "edge:8095812104-8095812107-386673802",
+        "ref_geometry_hash": "0284400d91dcaa0b"
+      },
+      "id": "loc:bb503dc7be45",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.12207077076229009,
+        "point": [
+          -89.38309425454231,
+          43.07547625394474
+        ],
+        "ref": "edge:53326149-3414444398-6758194",
+        "ref_geometry_hash": "dbf74cccf5ca5337"
+      },
+      "id": "loc:bd9bbe31c34a",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.1726401873180224,
+        "point": [
+          -89.3900349085888,
+          43.07222265644161
+        ],
+        "ref": "edge:53604259-5673435463-451481598",
+        "ref_geometry_hash": "31192e43ae41f2a6"
+      },
+      "id": "loc:c5462d449011",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.5397040248673856,
+        "point": [
+          -89.38200311141485,
+          43.0746688951543
+        ],
+        "ref": "edge:53408558-4958744655-6778566",
+        "ref_geometry_hash": "7462274d090bd750"
+      },
+      "id": "loc:ca46d150dd93",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.4175525002690798,
+        "point": [
+          -89.38419856860251,
+          43.073747274501635
+        ],
+        "ref": "edge:1183426855-1183426878-102472443",
+        "ref_geometry_hash": "1db1ee0447ca445f"
+      },
+      "id": "loc:cfbce06ea9a5",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.06513219553276196,
+        "point": [
+          -89.38578045563285,
+          43.0758219004416
+        ],
+        "ref": "edge:1180877002-13305866485-103233529",
+        "ref_geometry_hash": "a05eaaf55364d420"
+      },
+      "id": "loc:d5a73a1d3b7a",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.060015979727978556,
+        "point": [
+          -89.38526788772741,
+          43.073937807359876
+        ],
+        "ref": "edge:53332734-3414435792-453867865",
+        "ref_geometry_hash": "1e68b75370593493"
+      },
+      "id": "loc:d9bff30b26bf",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.003961364733526285,
+        "point": [
+          -89.38312626204667,
+          43.07390348920647
+        ],
+        "ref": "edge:53332729-4957396893-6786776",
+        "ref_geometry_hash": "fdd1c5a5e194bb34"
+      },
+      "id": "loc:dff7902c8d9c",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.3506795775083275,
+        "point": [
+          -89.38955201161752,
+          43.07379634868225
+        ],
+        "ref": "edge:362585424-3269709909-6782791",
+        "ref_geometry_hash": "e26f93c5a3fa719e"
+      },
+      "id": "loc:e62d9ff3cbed",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.15454541930356455,
+        "point": [
+          -89.38730960545156,
+          43.07539026817955
+        ],
+        "ref": "edge:1160692043-13945522969-6665620",
+        "ref_geometry_hash": "477aeb2beb7cba57"
+      },
+      "id": "loc:e7ffc207d41e",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 1,
+        "point": [
+          -89.3868959,
+          43.075083
+        ],
+        "ref": "edge:1180876935-12849307402-1412555699",
+        "ref_geometry_hash": "18457e7a150c16e8"
+      },
+      "id": "loc:e92bf77667c8",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.05069102385783393,
+        "point": [
+          -89.38600069952179,
+          43.071767143790346
+        ],
+        "ref": "edge:53467500-3269709906-329005451",
+        "ref_geometry_hash": "8822b11ee200e2b5"
+      },
+      "id": "loc:ecbdb683f165",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.7448831136304642,
+        "point": [
+          -89.38332880226996,
+          43.07468112755844
+        ],
+        "ref": "edge:1179421049-1183426873-102472447",
+        "ref_geometry_hash": "d95553c8fcf01ae5"
+      },
+      "id": "loc:fd59e64670a1",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.0708326269175197,
+        "point": [
+          -89.38784527124132,
+          43.07210379083941
+        ],
+        "ref": "edge:1188428731-7126291844-666561854",
+        "ref_geometry_hash": "c1907b2e77ad96bd"
+      },
+      "id": "loc:fdc76510f2b4",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 0.35887287566688975,
+        "point": [
+          -89.38714153129708,
+          43.07262400875458
+        ],
+        "ref": "edge:917593109-13324853247-499342921",
+        "ref_geometry_hash": "22b5d6c6d211e593"
+      },
+      "id": "loc:fed932cc2ce9",
+      "name": "New location",
+      "notes": ""
+    },
+    {
+      "anchor": {
+        "kind": "edge",
+        "offset": 1,
+        "point": [
+          -89.3841824,
+          43.0740902
+        ],
+        "ref": "edge:362521369-1183426831-102472441",
+        "ref_geometry_hash": "4f8c323613d1a46c"
+      },
+      "id": "loc:ff5a0fb7c630",
+      "name": "New location",
+      "notes": ""
+    }
+  ],
+  "playable_overrides": [],
+  "spawns": [
+    {
+      "default": false,
+      "id": "spawn:7058fdc6ab34",
+      "location": "pn:2404365570",
+      "zoom": 18.5
+    },
+    {
+      "default": false,
+      "id": "spawn:add6aae53325",
+      "location": "pn:1375424620",
+      "zoom": 18.5
+    },
+    {
+      "default": true,
+      "id": "spawn:db793a6a4228",
+      "location": "pn:1183426912",
+      "zoom": 18.5
+    }
+  ]
 }
