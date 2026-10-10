@@ -278,5 +278,38 @@ defmodule Threshold.AuthoredTest do
       assert {:error, [_ | _]} = Authored.save(dir, %{"format_version" => 1}, hash)
       assert File.read!(Path.join(dir, "authored.json")) == before
     end
+
+    test "competing saves from one base revision: exactly one wins, the rest conflict", %{
+      tmp_dir: dir,
+      hash: hash
+    } do
+      for round <- 1..10 do
+        {:ok, _doc, base} = if round == 1, do: {:ok, nil, hash}, else: Authored.load(dir)
+
+        results =
+          1..8
+          |> Enum.map(fn writer ->
+            locations =
+              for n <- 1..1500 do
+                %{
+                  "id" => "loc:r#{round}w#{writer}n#{n}",
+                  "name" => "Writer #{writer}",
+                  "anchor" => %{"kind" => "point", "point" => [-89.4, 43.07]}
+                }
+              end
+
+            Task.async(fn ->
+              Authored.save(dir, Map.put(Authored.empty(), "locations", locations), base)
+            end)
+          end)
+          |> Task.await_many(60_000)
+
+        assert Enum.count(results, &match?({:ok, _}, &1)) == 1
+        assert Enum.count(results, &(&1 == {:error, :conflict})) == 7
+        assert {:ok, _doc, _hash} = Authored.load(dir)
+      end
+
+      assert Path.wildcard(Path.join(dir, "authored.json*")) == [Path.join(dir, "authored.json")]
+    end
   end
 end

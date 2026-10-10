@@ -14,7 +14,7 @@ Threshold is a single-player, location-based mystery/exploration game inspired b
 | GIS pipeline | `gis/src/threshold_gis/world.py` | Python/OSMnx CLI `threshold-gis`: `acquire` (only networked step), `build`, `validate`, `playable`. Deterministic output. |
 | Playable layer | `gis/src/threshold_gis/playable.py` | Derived candidate "playable locations" (graph-radius clustering, 25 m) with connectivity-integrity checks and designer overrides. |
 | World loading | `lib/threshold/world.ex`, `geography.ex`, `playable.ex` | Reads world files, staleness checks, a cached ID index of nodes/edges. |
-| Authored layer | `lib/threshold/authored.ex`, `authored/edit.ex`, `references.ex`, `boundary.ex` | Strict schema and validation, pure edit operations, reference status (ok/moved/missing), boundary validation, conflict-checked atomic saves. |
+| Authored layer | `lib/threshold/authored.ex`, `authored/edit.ex`, `references.ex`, `boundary.ex` | Strict schema and validation, pure edit operations, reference status (ok/moved/missing), boundary validation, conflict-checked atomic saves (check, write and rename run under a per-world lock in `world_file.ex`; the same lock covers the importer's final input check and publication). |
 | Editor UI | `lib/threshold_web/live/editor_live.ex`, `editor_components.ex` | LiveView owning the working copy; toolbar, inspector, save/discard. |
 | Map | `assets/src/hooks/map_editor.ts`, `assets/src/map/*.ts` | TypeScript MapLibre hook; Terra Draw for placing, moving and boundary editing; snapping. Built with Bun. |
 | Data | `priv/worlds/madison/` | Pinned OSM snapshot, generated geography, `boundary.geojson`, `authored.json`, `playable.json`. |

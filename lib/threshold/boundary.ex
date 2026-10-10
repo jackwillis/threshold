@@ -5,6 +5,8 @@ defmodule Threshold.Boundary do
   reach beyond the pinned source snapshot.
   """
 
+  alias Threshold.WorldFile
+
   # Metres per degree of latitude; longitude is scaled by cos(latitude).
   @m_per_deg 111_320
   # The importer buffers in projected metres, so a degrees-based estimate can differ by a few metres.
@@ -59,17 +61,18 @@ defmodule Threshold.Boundary do
   def save(dir, geometry, base_hash, config) do
     path = Path.join(dir, "boundary.geojson")
 
-    with {:ok, current} <- File.read(path),
-         :ok <- if(hash(current) == base_hash, do: :ok, else: {:error, :conflict}),
-         :ok <- coverage_error(geometry, config, manifest(dir)) |> to_result() do
-      text = encode(geometry, existing_properties(current))
-      temp = path <> ".tmp"
+    WorldFile.locked(dir, fn ->
+      with {:ok, current} <- File.read(path),
+           :ok <- if(hash(current) == base_hash, do: :ok, else: {:error, :conflict}),
+           :ok <- coverage_error(geometry, config, manifest(dir)) |> to_result() do
+        text = encode(geometry, existing_properties(current))
 
-      with :ok <- File.write(temp, text), :ok <- File.rename(temp, path), do: {:ok, hash(text)}
-    else
-      {:error, :enoent} -> {:error, "boundary.geojson is missing."}
-      other -> other
-    end
+        with :ok <- WorldFile.write_atomic(path, text), do: {:ok, hash(text)}
+      else
+        {:error, :enoent} -> {:error, "boundary.geojson is missing."}
+        other -> other
+      end
+    end)
   end
 
   defp existing_properties(text) do

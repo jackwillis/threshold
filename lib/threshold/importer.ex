@@ -62,34 +62,35 @@ defmodule Threshold.Importer do
       File.mkdir_p!(scratch)
       File.cp_r!(dir, Path.join(scratch, world))
 
-      with {:ok, log} <- build_copy(world, scratch),
-           true <- before == inputs(dir) do
-        # Never copy authored.json, the boundary, configuration or source back.
-        for file <- @generated do
-          destination = Path.join(dir, file)
-          temporary = destination <> ".regenerating"
-          File.cp!(Path.join([scratch, world, file]), temporary)
-        end
-
-        for file <- @generated do
-          destination = Path.join(dir, file)
-          File.rename!(destination <> ".regenerating", destination)
-        end
-
-        {:ok, log}
-      else
-        false ->
-          {:error,
-           "World inputs changed during regeneration. No generated files were published; retry with current saved inputs."}
-
-        error ->
-          error
+      with {:ok, log} <- build_copy(world, scratch) do
+        # Saves are held off while the inputs are re-checked and the files published, so an
+        # input cannot change between the check and the publication.
+        Threshold.WorldFile.locked(dir, fn -> publish(dir, scratch, world, before, log) end)
       end
     rescue
       error -> {:error, Exception.message(error)}
     after
       File.rm_rf(scratch)
       for file <- @generated, do: File.rm(Path.join(dir, file) <> ".regenerating")
+    end
+  end
+
+  defp publish(dir, scratch, world, before, log) do
+    if before == inputs(dir) do
+      # Never copy authored.json, the boundary, configuration or source back.
+      for file <- @generated do
+        File.cp!(Path.join([scratch, world, file]), Path.join(dir, file) <> ".regenerating")
+      end
+
+      for file <- @generated do
+        destination = Path.join(dir, file)
+        File.rename!(destination <> ".regenerating", destination)
+      end
+
+      {:ok, log}
+    else
+      {:error,
+       "World inputs changed during regeneration. No generated files were published; retry with current saved inputs."}
     end
   end
 

@@ -7,6 +7,8 @@ defmodule Threshold.Authored do
   and saved only if the file on disk is unchanged since it was loaded.
   """
 
+  alias Threshold.WorldFile
+
   @format_version 1
   @id_formats %{
     "locations" => ~r/\Aloc:[0-9a-z-]+\z/,
@@ -66,15 +68,15 @@ defmodule Threshold.Authored do
   def save(dir, doc, base_hash) do
     path = Path.join(dir, "authored.json")
 
-    with {:ok, doc} <- validate(doc),
-         {:ok, current} <- read(path),
-         :ok <- if(hash(current) == base_hash, do: :ok, else: {:error, :conflict}) do
-      text = encode(doc)
-      temp = path <> ".tmp"
+    with {:ok, doc} <- validate(doc) do
+      WorldFile.locked(dir, fn ->
+        with {:ok, current} <- read(path),
+             :ok <- if(hash(current) == base_hash, do: :ok, else: {:error, :conflict}) do
+          text = encode(doc)
 
-      with :ok <- File.write(temp, text), :ok <- File.rename(temp, path) do
-        {:ok, hash(text)}
-      end
+          with :ok <- WorldFile.write_atomic(path, text), do: {:ok, hash(text)}
+        end
+      end)
     end
   end
 

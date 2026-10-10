@@ -116,5 +116,35 @@ defmodule Threshold.BoundaryTest do
 
       assert {:error, "That boundary plus" <> _} = Boundary.save(dir, geometry, hash, @config)
     end
+
+    test "competing saves from one base revision: exactly one wins, the rest conflict", %{
+      tmp_dir: dir,
+      hash: hash
+    } do
+      results =
+        1..8
+        |> Enum.map(fn writer ->
+          ring =
+            for k <- 0..20_000 do
+              angle = 2 * :math.pi() * rem(k, 20_000) / 20_000
+
+              [
+                -89.38 + 0.001 * writer * :math.cos(angle),
+                43.075 + 0.001 * writer * :math.sin(angle)
+              ]
+            end
+
+          geometry = %{"type" => "Polygon", "coordinates" => [ring]}
+          Task.async(fn -> Boundary.save(dir, geometry, hash, @config) end)
+        end)
+        |> Task.await_many(60_000)
+
+      assert Enum.count(results, &match?({:ok, _}, &1)) == 1
+      assert Enum.count(results, &(&1 == {:error, :conflict})) == 7
+
+      assert Path.wildcard(Path.join(dir, "boundary.geojson*")) == [
+               Path.join(dir, "boundary.geojson")
+             ]
+    end
   end
 end
