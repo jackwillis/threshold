@@ -39,6 +39,24 @@ defmodule Threshold.Authored.Edit do
     end)
   end
 
+  @doc """
+  Sets where a place is reached on foot, without touching its display position. The request is
+  resolved against the imported geography like an anchor and must be a node or an edge.
+  """
+  @spec set_access(Authored.t(), String.t(), map, Threshold.Geography.t()) :: result
+  def set_access(doc, id, %{"kind" => kind} = request, geography) when kind in ["node", "edge"] do
+    with {:ok, access} <- resolve_anchor(request, geography) do
+      update_item(doc, "locations", id, &Map.put(&1, "access", access))
+    end
+  end
+
+  def set_access(_doc, _id, _request, _geography),
+    do: {:error, "Walking access must be on a street or an intersection."}
+
+  @doc "Removes a place's walking access, so it is reached at its anchor again."
+  @spec clear_access(Authored.t(), String.t()) :: result
+  def clear_access(doc, id), do: update_item(doc, "locations", id, &Map.delete(&1, "access"))
+
   @doc "Marks a playable point as a spawn. The first mark becomes the default."
   def add_spawn(doc, location) do
     spawns = doc["spawns"] || []

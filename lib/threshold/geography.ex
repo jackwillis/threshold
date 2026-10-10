@@ -61,6 +61,33 @@ defmodule Threshold.Geography do
 
   def point_at(_geography, _ref, _offset), do: :error
 
+  @doc """
+  The street closest to `point` within `max_m` metres, as an edge request ready for
+  `Threshold.Authored.Edit.set_access/4`, or `:none`.
+  """
+  @spec nearest_street(t, [number], number) ::
+          {:ok, %{request: map, distance_m: float}} | :none
+  def nearest_street(%{lines: lines}, point, max_m) do
+    lines
+    |> Enum.filter(fn {_, line} -> match?([_, _ | _], line) end)
+    |> Enum.map(fn {ref, line} ->
+      {fraction, metres} = Threshold.Polyline.nearest(line, point)
+      {metres, ref, fraction}
+    end)
+    |> Enum.min(fn -> nil end)
+    |> case do
+      {metres, ref, fraction} when metres <= max_m ->
+        {:ok,
+         %{
+           request: %{"kind" => "edge", "ref" => ref, "offset" => Float.round(fraction, 6)},
+           distance_m: Float.round(metres, 1)
+         }}
+
+      _ ->
+        :none
+    end
+  end
+
   # Snapshots are immutable and replaced wholesale; keep only the newest index per world.
   defp drop_other_snapshots(nodes_path) do
     family = nodes_path |> Path.dirname() |> Path.dirname()

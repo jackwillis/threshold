@@ -154,6 +154,39 @@ defmodule ThresholdWeb.EditorComponents do
         <dt :if={@loc["anchor"]["ref"]}>anchored to</dt>
         <dd :if={@loc["anchor"]["ref"]} class="mono">{@loc["anchor"]["ref"]}</dd>
       </dl>
+      <div id="walking-access">
+        <h4>Walking access</h4>
+        <p class="hint">
+          <%= cond do %>
+            <% @loc["access"] -> %>
+              On the street network at {@loc["access"]["kind"]} <span class="mono">{@loc["access"]["ref"]}</span>,
+              separate from the marker above.
+            <% @loc["anchor"]["kind"] == "point" -> %>
+              None: this free point cannot be reached on foot.
+            <% true -> %>
+              Same as the marker's {@loc["anchor"]["kind"]} anchor.
+          <% end %>
+        </p>
+        <div class="actions">
+          <button
+            id="set-access-nearest"
+            type="button"
+            phx-click="set_access_nearest"
+            phx-value-id={@id}
+            disabled={not @editable}
+            class="tool"
+          >Set to nearest street</button>
+          <button
+            :if={@loc["access"]}
+            id="clear-access"
+            type="button"
+            phx-click="clear_access"
+            phx-value-id={@id}
+            disabled={not @editable}
+            class="tool"
+          >Same as marker</button>
+        </div>
+      </div>
       <button
         :if={@loc["anchor"]["ref"] != nil and ref_status(@refs, @id) != "missing"}
         type="button"

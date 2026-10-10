@@ -65,4 +65,43 @@ defmodule ThresholdWeb.EditorRouteCheckTest do
 
     refute has_element?(view, "#route-check-result")
   end
+
+  test "walking access can be set from the route check without moving the marker", %{
+    conn: conn,
+    path: path
+  } do
+    {:ok, view, _} = live(conn, ~p"/")
+    view |> element("#check-routes") |> render_click()
+
+    view
+    |> element(
+      "#route-check-result button[phx-click=set_access_nearest][phx-value-id='loc:free']"
+    )
+    |> render_click()
+
+    assert render(view) =~ "The marker did not move"
+    refute has_element?(view, "#route-check-result")
+
+    view |> element("#save-button") |> render_click()
+    {:ok, saved, _} = Authored.load(Path.dirname(path))
+    free = Enum.find(saved["locations"], &(&1["id"] == "loc:free"))
+    assert free["anchor"] == %{"kind" => "point", "point" => [-89.3805, 43.0751]}
+    assert %{"kind" => "edge", "ref" => "edge:1-2-101"} = free["access"]
+
+    view |> element("#check-routes") |> render_click()
+    assert has_element?(view, "#route-check-result", "conn:bfree") == false
+  end
+
+  test "the inspector offers walking access and can clear it", %{conn: conn} do
+    {:ok, view, _} = live(conn, ~p"/")
+    render_hook(view, "focus_object", %{"id" => "loc:free"})
+    render_hook(view, "pick", %{"layer" => "authored-location", "id" => "loc:free"})
+    assert has_element?(view, "#walking-access", "cannot be reached on foot")
+
+    view |> element("#set-access-nearest") |> render_click()
+    assert has_element?(view, "#walking-access", "edge:1-2-101")
+
+    view |> element("#clear-access") |> render_click()
+    assert has_element?(view, "#walking-access", "cannot be reached on foot")
+  end
 end

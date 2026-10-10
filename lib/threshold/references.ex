@@ -29,12 +29,22 @@ defmodule Threshold.References do
         }
       end
 
+    access =
+      for %{"id" => id, "access" => access} <- authored["locations"] do
+        %{
+          object: id,
+          field: "access",
+          ref: access["ref"],
+          status: anchor_status(access, geography)
+        }
+      end
+
     closures =
       for %{"id" => id, "edge" => edge, "geometry_hash" => hash} <- authored["closures"] do
         %{object: id, field: "edge", ref: edge, status: edge_status(edge, hash, geography)}
       end
 
-    locations ++ closures
+    locations ++ access ++ closures
   end
 
   @doc "References that need attention (not `:ok`)."

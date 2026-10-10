@@ -85,8 +85,11 @@ defmodule Threshold.RouteResolver do
   defp position(loc, edges, to_playable, edge_features) do
     anchor = loc["anchor"]
     base = %{id: loc["id"], name: loc["name"], point: anchor["point"]}
+    # Where the place is reached on foot: its `access` when set, otherwise the anchor itself.
+    access = loc["access"] || anchor
+    base = if loc["access"], do: Map.put(base, :access, true), else: base
 
-    case anchor do
+    case access do
       %{"kind" => "node", "ref" => node} ->
         Map.merge(base, %{class: :intersection, node: node, playable: to_playable[node]})
 

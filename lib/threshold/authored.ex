@@ -262,11 +262,12 @@ defmodule Threshold.Authored do
   defp item_errors(_name, item, path) when not is_map(item), do: ["#{path}: must be an object"]
 
   defp item_errors("locations", loc, path) do
-    check_keys(loc, ~w(id name anchor), ~w(notes movement_location), path) ++
+    check_keys(loc, ~w(id name anchor), ~w(notes movement_location access), path) ++
       id_errors("locations", loc, path) ++
       string_errors(loc, "name", path) ++
       string_errors(loc, "notes", path, optional: true) ++
       anchor_errors(loc["anchor"], path <> ".anchor") ++
+      access_errors(loc, path) ++
       movement_reference_errors(loc, "movement_location", path, true)
   end
 
@@ -306,6 +307,21 @@ defmodule Threshold.Authored do
     do: ["#{path}.geometry: not supported yet (must be null)"]
 
   defp geometry_errors(_, _), do: []
+
+  # Optional walking access: where on the street network a player reaches the place, separate
+  # from the display position in `anchor`. Same shape as a node or edge anchor.
+  defp access_errors(loc, path) do
+    case Map.fetch(loc, "access") do
+      :error ->
+        []
+
+      {:ok, %{"kind" => kind} = access} when kind in ~w(node edge) ->
+        anchor_errors(access, path <> ".access")
+
+      {:ok, _} ->
+        ["#{path}.access: must be a node or edge position"]
+    end
+  end
 
   defp anchor_errors(%{"kind" => kind} = anchor, path) when kind in @anchor_kinds do
     case kind do

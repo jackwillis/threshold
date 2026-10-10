@@ -52,6 +52,7 @@ defmodule ThresholdWeb.EditorLive do
   ]
 
   @modes ~w(inspect place move connect close boundary)
+  @access_search_m 60
   @mutations ~w(add_spawn remove_spawn choose_spawn set_default_spawn start_reconnect reconnect_location review_reference set_mode pick add_location move_location update_location update_connection update_closure set_playable_override detach_location close_edge delete_selected update_boundary reset_boundary discard save regenerate)
 
   @impl true
@@ -321,6 +322,43 @@ defmodule ThresholdWeb.EditorLive do
     end
   end
 
+  # Walking access is explicit: the marker never moves. The nearest street is chosen on the
+  # server from the imported geography, within `@access_search_m` of the marker.
+  def handle_event("set_access_nearest", %{"id" => id}, socket) do
+    with :ok <- allow_edit(socket),
+         %{} = loc <- Enum.find(socket.assigns.authored["locations"], &(&1["id"] == id)),
+         %{} = geography <- socket.assigns.geography,
+         {:ok, %{request: request, distance_m: metres}} <-
+           Geography.nearest_street(geography, loc["anchor"]["point"], @access_search_m),
+         {:ok, doc} <- Edit.set_access(socket.assigns.authored, id, request, geography) do
+      {:noreply,
+       socket
+       |> apply_edit(doc)
+       |> put_flash(
+         :info,
+         "Walking access set on the street #{metres} m from the marker. The marker did not move."
+       )}
+    else
+      {:error, message} when is_binary(message) ->
+        {:noreply, put_flash(socket, :error, message)}
+
+      :none ->
+        {:noreply,
+         put_flash(socket, :error, "No street within #{@access_search_m} m of that marker.")}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "Could not set walking access.")}
+    end
+  end
+
+  def handle_event("clear_access", %{"id" => id}, socket) do
+    with :ok <- allow_edit(socket) do
+      edit(socket, &Edit.clear_access(&1, id))
+    else
+      {:error, message} -> {:noreply, put_flash(socket, :error, message)}
+    end
+  end
+
   def handle_event("choose_spawn", _, socket) do
     {:noreply,
      socket
@@ -510,7 +548,7 @@ defmodule ThresholdWeb.EditorLive do
         detail =
           case p do
             %{class: :free_point, nearest_edge: %{distance_m: m}} ->
-              "free point, #{m} m from the nearest street: snap it to a street or intersection"
+              "free point, #{m} m from the nearest street: give it walking access, or snap it to a street"
 
             %{class: :free_point} ->
               "free point with no street within 60 m"
@@ -519,7 +557,12 @@ defmodule ThresholdWeb.EditorLive do
               "its street #{edge} is no longer in the geography"
           end
 
-        %{id: p.id, label: "place", detail: detail}
+        %{
+          id: p.id,
+          label: "place",
+          detail: detail,
+          set_access: match?(%{class: :free_point, nearest_edge: %{}}, p)
+        }
       end
 
     connection_problems =
@@ -1015,6 +1058,15 @@ defmodule ThresholdWeb.EditorLive do
                     {item.id}
                   </button>
                   <span class="hint">{item.detail}</span>
+                  <button
+                    :if={Map.get(item, :set_access) && @editable}
+                    type="button"
+                    phx-click="set_access_nearest"
+                    phx-value-id={item.id}
+                    class="link-button"
+                  >
+                    Set walking access to the nearest street (marker stays)
+                  </button>
                 </li>
               </ul>
             </div>

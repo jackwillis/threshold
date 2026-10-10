@@ -38,6 +38,32 @@ defmodule Threshold.Polyline do
     |> Enum.dedup()
   end
 
+  @m_per_deg 111_320
+
+  @doc """
+  The closest position on `line` to `point`: `{fraction, metres}`, where `fraction` is the same
+  length fraction `at/2` accepts and `metres` is the distance from `point` to the line.
+  """
+  @spec nearest([point], point) :: {float, float}
+  def nearest([[_, lat] | _] = line, [px, py]) do
+    scale = :math.cos(lat * :math.pi() / 180)
+    {cumulative, total} = measure(line)
+
+    line
+    |> Enum.zip(cumulative)
+    |> Enum.chunk_every(2, 1, :discard)
+    |> Enum.map(fn [{[x1, y1], d1}, {[x2, y2], d2}] ->
+      {dx, dy} = {(x2 - x1) * scale, y2 - y1}
+      len2 = dx * dx + dy * dy
+      {qx, qy} = {(px - x1) * scale, py - y1}
+      t = if len2 == 0, do: 0.0, else: max(0.0, min(1.0, (qx * dx + qy * dy) / len2))
+      dist = :math.sqrt(:math.pow(qx - t * dx, 2) + :math.pow(qy - t * dy, 2)) * @m_per_deg
+      {dist, if(total == 0, do: 0.0, else: (d1 + t * (d2 - d1)) / total)}
+    end)
+    |> Enum.min_by(&elem(&1, 0))
+    |> then(fn {dist, fraction} -> {fraction, dist} end)
+  end
+
   defp measure([[_, lat] | _] = line) do
     scale = :math.cos(lat * :math.pi() / 180)
 
