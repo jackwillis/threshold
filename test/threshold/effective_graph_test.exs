@@ -150,4 +150,37 @@ defmodule Threshold.EffectiveGraphTest do
     {:ok, second} = EffectiveGraph.load("tiny")
     assert first.revision != second.revision
   end
+
+  test "a default spawn outside the playable boundary is explained, not a vague failure", %{
+    dir: dir
+  } do
+    write_authored(dir)
+
+    {:ok, small} =
+      Threshold.Boundary.polygon([
+        [-89.3745, 43.0755],
+        [-89.373, 43.0755],
+        [-89.373, 43.0775],
+        [-89.3745, 43.0775]
+      ])
+
+    File.write!(Path.join(dir, "boundary.geojson"), Threshold.Boundary.encode(small))
+
+    # The boundary file is an input of the generated geography, so mark nothing stale: load the graph directly.
+    world = Threshold.World.load("tiny") |> elem(1)
+    {:ok, playable} = File.read!(Path.join(world.generated, "playable.json")) |> Jason.decode()
+    {:ok, edges} = File.read!(Path.join(world.generated, "edges.geojson")) |> Jason.decode()
+    {:ok, authored, _} = Authored.load(dir)
+
+    assert {:error, "The default spawn lies outside the playable boundary" <> _} =
+             EffectiveGraph.build(
+               "tiny",
+               world,
+               authored,
+               edges["features"],
+               playable,
+               Threshold.Geography.index(world.generated) |> elem(1) |> Map.fetch!(:nodes),
+               "r"
+             )
+  end
 end

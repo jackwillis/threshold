@@ -76,7 +76,7 @@ defmodule Threshold.EffectiveGraph do
 
     {connections, unavailable} = connections(resolution.connections, locations, boundary)
 
-    case map_spawns(authored["spawns"], playable, locations) do
+    case map_spawns(authored["spawns"], playable, locations, boundary) do
       {:ok, spawns, skipped} ->
         {:ok,
          %World{
@@ -149,7 +149,7 @@ defmodule Threshold.EffectiveGraph do
 
   # --- Spawns and places ---------------------------------------------------------------
 
-  defp map_spawns(spawns, playable, locations) do
+  defp map_spawns(spawns, playable, locations, boundary) do
     generated = Map.new(playable["locations"], &{&1["id"], &1["point"]})
 
     mapped =
@@ -171,11 +171,23 @@ defmodule Threshold.EffectiveGraph do
     default_skipped? =
       Enum.any?(mapped, fn {spawn, {id, _}} -> spawn["default"] && is_nil(id) end)
 
-    if default_skipped? do
-      {:error,
-       "The default spawn is not within #{@spawn_snap_m} m of any authored place, so a walk cannot start on the authored graph. Move the spawn or add an authored place there."}
-    else
-      {:ok, ok, skipped}
+    outside_default =
+      Enum.find(ok, fn spawn ->
+        spawn["default"] and
+          not Geometry.inside?(locations[spawn["location"]]["point"], hd(boundary["coordinates"]))
+      end)
+
+    cond do
+      default_skipped? ->
+        {:error,
+         "The default spawn is not within #{@spawn_snap_m} m of any authored place, so a walk cannot start on the authored graph. Move the spawn or add an authored place there."}
+
+      outside_default ->
+        {:error,
+         "The default spawn lies outside the playable boundary, so a walk cannot start. Move the boundary or choose another default spawn."}
+
+      true ->
+        {:ok, ok, skipped}
     end
   end
 
