@@ -23,6 +23,13 @@ defmodule ThresholdWeb.Router do
     get "/worlds/:world/:layer", WorldController, :show
   end
 
+  scope "/", ThresholdWeb do
+    pipe_through :api
+
+    get "/healthz", HealthController, :health
+    get "/readyz", HealthController, :ready
+  end
+
   # Other scopes may use custom stacks.
   # scope "/api", ThresholdWeb do
   #   pipe_through :api
