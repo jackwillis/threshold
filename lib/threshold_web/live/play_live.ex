@@ -353,33 +353,14 @@ defmodule ThresholdWeb.PlayLive do
           data-state={@map_state}
         >
           <div id="player-map-canvas" phx-update="ignore"></div>
-          <%!-- Ignored by LiveView patches so the season variables and button state set by the hook persist. --%>
-          <div id="play-chrome" phx-update="ignore">
-            <div class="play-map-label">Madison <span>One step at a time</span></div>
-            <div
-              id="play-seasons"
-              class="atlas-seasons play-seasons"
-              role="group"
-              aria-label="Map season (appearance only)"
-            >
-              <button
-                :for={season <- ~w(spring summer autumn winter)}
-                type="button"
-                data-season={season}
-                aria-pressed="false"
-              >
-                {season}
-              </button>
-            </div>
-          </div>
+          <div class="play-map-label">Madison <span>One step at a time</span></div>
           <button id="recenter-player" class="play-recenter" phx-click="recenter">Recenter</button>
-          <p :if={@map_error} id="player-map-error" class="map-status map-status-error">
+          <p :if={@map_error} id="player-map-error" class="map-status map-status-error" role="alert">
             {@map_error}
           </p>
         </div>
         <aside id="player-panel" class="play-panel">
-          <p class="play-eyebrow">Threshold · exploration</p>
-          <h1>Walk the city</h1>
+          <p class="play-eyebrow">Threshold · Field Atlas</p>
           <p :if={@error} id="play-error" role="alert">{@error}</p>
           <%= if @player do %>
             <%!-- Always rendered, so assistive technology registers it before its text changes. --%>
@@ -392,56 +373,39 @@ defmodule ThresholdWeb.PlayLive do
             >
               {announcement(assigns)}
             </div>
-            <div id="player-progress" class="play-progress" aria-live="polite">
-              <span>Turn <strong id="player-turn">{@player.turn}</strong></span>
-              <span><strong id="player-visited">{MapSet.size(@player.visited)}</strong> places visited</span>
-            </div>
-            <p :if={@graph == :authored} id="graph-note" class="play-hint">
-              Authored map: every stop is a place from the world editor.
-            </p>
-            <details :if={@world.warnings != []} id="map-notes" class="play-hint play-warning">
-              <summary>Map notes ({length(@world.warnings)})</summary>
-              <p :for={warning <- @world.warnings}>{warning}</p>
-            </details>
-            <h2 id="next-step-heading" tabindex="-1">Your next step</h2>
-            <p class="play-hint">
-              Choose a glowing marker or a direction below, or press its number key. Numbers run clockwise from north.
-            </p>
-            <div id="available-moves" class="play-moves">
-              <button
-                :for={{move, index} <- Enum.with_index(@moves)}
-                id={"walk-#{index}"}
-                phx-click="move"
-                phx-value-destination={move.destination}
-                phx-value-turn={@player.turn}
-                aria-keyshortcuts={move.key}
-              >
-                <span>
-                  <kbd :if={move.key} class="play-key" aria-hidden="true">{move.key}</kbd>
-                  Walk {direction(@world.locations[@player.location]["point"], move.point)}
-                </span>
-                <small>{round(move.length_m)} m <.icon name="hero-arrow-right" class="w-4 h-4" /></small>
-              </button>
-            </div>
-            <p :if={@moves == []} class="play-hint">No walkable routes from here.</p>
-            <h2>Nearby</h2>
-            <p :if={@nearby == []} class="play-hint">Nothing to inspect at this corner.</p>
-            <button
-              :for={{place, index} <- Enum.with_index(@nearby)}
-              id={"inspect-#{index}"}
-              class="play-place"
-              phx-click="inspect"
-              phx-value-id={place["id"]}
-            >
-              <span>{place["name"]}</span><small>Inspect</small>
-            </button>
+            <section id="current-location" aria-labelledby="current-location-heading">
+              <p class="play-eyebrow">Current location</p>
+              <h1 id="current-location-heading">
+                {List.first(@nearby)["name"] || @world.locations[@player.location]["name"] ||
+                  "Street corner"}
+              </h1>
+              <p :if={@nearby == []} class="play-hint">Choose your next step through the city.</p>
+              <div :for={{place, index} <- Enum.with_index(@nearby)}>
+                <p :if={place["notes"] not in [nil, ""]} class="play-location-description">
+                  <span>{place["notes"]}</span>
+                </p>
+                <button
+                  id={"inspect-#{index}"}
+                  class="play-place"
+                  phx-click="inspect"
+                  phx-value-id={place["id"]}
+                >
+                  <span>{place["name"]}</span><small>Inspect</small>
+                </button>
+              </div>
+            </section>
             <section
               :if={@interactions != [] or @outcome != nil or @interaction_note != nil}
               id="interactions"
               aria-labelledby="interactions-heading"
             >
               <h2 id="interactions-heading">Investigate</h2>
-              <p :if={@interaction_note} id="interaction-note" class="play-hint play-warning">
+              <p
+                :if={@interaction_note}
+                id="interaction-note"
+                class="play-hint play-warning"
+                role="alert"
+              >
                 Investigations are unavailable: {@interaction_note}
               </p>
               <%!-- Visible text only; announcements go through the persistent #interaction-live region. --%>
@@ -537,27 +501,83 @@ defmodule ThresholdWeb.PlayLive do
               <h3>{@inspected["name"]}</h3><p>{@inspected["notes"]}</p>
               <button id="close-inspection" phx-click="close_inspect">Close</button>
             </section>
+            <h2 id="next-step-heading" tabindex="-1">Your next step</h2>
+            <p class="play-hint">
+              Choose a glowing marker or a direction below, or press its number key. Numbers run clockwise from north.
+            </p>
+            <div id="available-moves" class="play-moves">
+              <button
+                :for={{move, index} <- Enum.with_index(@moves)}
+                id={"walk-#{index}"}
+                phx-click="move"
+                phx-value-destination={move.destination}
+                phx-value-turn={@player.turn}
+                aria-keyshortcuts={move.key}
+              >
+                <span>
+                  <kbd :if={move.key} class="play-key" aria-hidden="true">{move.key}</kbd>
+                  Walk {direction(@world.locations[@player.location]["point"], move.point)}
+                </span>
+                <small>{round(move.length_m)} m <.icon name="hero-arrow-right" class="w-4 h-4" /></small>
+              </button>
+            </div>
+            <p :if={@moves == []} class="play-hint">No walkable routes from here.</p>
           <% end %>
-          <div class="play-footer">
-            <p>Your walk is saved after every step.</p>
-            <button
-              :if={@player || @error}
-              id="new-walk"
-              phx-click="new_walk"
-              data-confirm="Start a new walk? This resets your saved turns and visited places."
-            >New walk</button>
-            <a href={~p"/?world=#{@world_name}"}>World editor</a>
-            <a
-              id="switch-graph"
-              href={
-                if @graph == :authored,
-                  do: ~p"/play?world=#{@world_name}&graph=generated",
-                  else: ~p"/play?world=#{@world_name}&graph=authored"
-              }
-            >
-              {if @graph == :authored, do: "Play the generated map", else: "Play the authored map"}
-            </a>
-          </div>
+          <details id="play-menu" class="play-menu">
+            <summary>Menu / Details</summary>
+            <div :if={@player}>
+              <div id="player-progress" class="play-progress" aria-live="polite">
+                <span>Turn <strong id="player-turn">{@player.turn}</strong></span>
+                <span><strong id="player-visited">{MapSet.size(@player.visited)}</strong>
+                places visited</span>
+              </div>
+              <p :if={@graph == :authored} id="graph-note" class="play-hint">
+                Authored map: every stop is a place from the world editor.
+              </p>
+              <details :if={@world.warnings != []} id="map-notes" class="play-hint play-warning">
+                <summary>Map notes ({length(@world.warnings)})</summary>
+                <p :for={warning <- @world.warnings}>{warning}</p>
+              </details>
+            </div>
+            <%!-- Ignored by LiveView patches so the season variables and button state set by the hook persist. --%>
+            <div id="play-chrome" phx-update="ignore">
+              <div
+                id="play-seasons"
+                class="atlas-seasons play-seasons"
+                role="group"
+                aria-label="Map season (appearance only)"
+              >
+                <button
+                  :for={season <- ~w(spring summer autumn winter)}
+                  type="button"
+                  data-season={season}
+                  aria-pressed="false"
+                >
+                  {season}
+                </button>
+              </div>
+            </div>
+            <div class="play-footer">
+              <p>Your walk is saved after every step.</p>
+              <button
+                :if={@player || @error}
+                id="new-walk"
+                phx-click="new_walk"
+                data-confirm="Start a new walk? This resets your saved turns, visited places, discoveries and completed interactions."
+              >New walk</button>
+              <a href={~p"/?world=#{@world_name}"}>World editor</a>
+              <a
+                id="switch-graph"
+                href={
+                  if @graph == :authored,
+                    do: ~p"/play?world=#{@world_name}&graph=generated",
+                    else: ~p"/play?world=#{@world_name}&graph=authored"
+                }
+              >
+                {if @graph == :authored, do: "Play the generated map", else: "Play the authored map"}
+              </a>
+            </div>
+          </details>
         </aside>
       </div>
     </Layouts.app>
