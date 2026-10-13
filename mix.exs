@@ -11,7 +11,8 @@ defmodule Threshold.MixProject do
       aliases: aliases(),
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
-      listeners: [Phoenix.CodeReloader]
+      listeners: [Phoenix.CodeReloader],
+      releases: [threshold: [include_executables_for: [:unix]]]
     ]
   end
 

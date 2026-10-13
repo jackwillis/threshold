@@ -25,8 +25,10 @@ if System.get_env("PHX_SERVER") do
   config :threshold, ThresholdWeb.Endpoint, server: true
 end
 
-config :threshold, ThresholdWeb.Endpoint,
-  http: [port: String.to_integer(System.get_env("PORT", "4000"))]
+if config_env() != :prod do
+  config :threshold, ThresholdWeb.Endpoint,
+    http: [port: String.to_integer(System.get_env("PORT", "4000"))]
+end
 
 if config_env() == :dev do
   # Reload browser tabs when matching files change.
@@ -43,21 +45,51 @@ if config_env() == :dev do
     ]
 end
 
-# Threshold is a local, single-user tool. A prod-mode run binds to loopback only.
-# Public hosting would need a deliberate review of this block (TLS, host, exposure).
+# Release settings are runtime-only: a build does not need credentials.
 if config_env() == :prod do
-  secret_key_base =
-    System.get_env("SECRET_KEY_BASE") ||
-      raise "environment variable SECRET_KEY_BASE is missing (generate with: mix phx.gen.secret)"
+  required = ~w(SECRET_KEY_BASE THRESHOLD_DATABASE_URL)
+  missing = Enum.filter(required, &(System.get_env(&1) in [nil, ""]))
+
+  if missing != [] do
+    raise "Missing required production environment variables: #{Enum.join(missing, ", ")}"
+  end
+
+  positive_integer = fn name, default ->
+    case Integer.parse(System.get_env(name, default)) do
+      {value, ""} when value > 0 -> value
+      _ -> raise "#{name} must be a positive integer"
+    end
+  end
+
+  port = positive_integer.("PORT", "4000")
+  if port > 65_535, do: raise("PORT must be between 1 and 65535")
+
+  bind_address = System.get_env("PHX_BIND_ADDRESS", "127.0.0.1")
+
+  ip =
+    case :inet.parse_address(String.to_charlist(bind_address)) do
+      {:ok, address} -> address
+      {:error, _} -> raise "PHX_BIND_ADDRESS must be an IPv4 or IPv6 address"
+    end
+
+  server =
+    case System.get_env("PHX_SERVER", "false") do
+      value when value in ["true", "1"] -> true
+      value when value in ["false", "0"] -> false
+      _ -> raise "PHX_SERVER must be true, false, 1 or 0"
+    end
 
   config :threshold, ThresholdWeb.Endpoint,
-    url: [
-      host: "localhost",
-      port: String.to_integer(System.get_env("PORT", "4000")),
-      scheme: "http"
-    ],
-    http: [ip: {127, 0, 0, 1}],
-    secret_key_base: secret_key_base
+    url: [host: System.get_env("PHX_HOST", "localhost"), port: port, scheme: "http"],
+    http: [ip: ip, port: port],
+    server: server,
+    secret_key_base: System.fetch_env!("SECRET_KEY_BASE")
+
+  config :threshold, :database_enabled, true
+
+  config :threshold, Threshold.Repo,
+    url: System.fetch_env!("THRESHOLD_DATABASE_URL"),
+    pool_size: positive_integer.("POOL_SIZE", "5")
 end
 
 # Gameplay persistence is optional for the editor. Tests never use the development URL.
@@ -66,7 +98,7 @@ database_url =
     if config_env() == :test, do: "THRESHOLD_TEST_DATABASE_URL", else: "THRESHOLD_DATABASE_URL"
   )
 
-if database_url do
+if database_url && config_env() != :prod do
   if config_env() == :test and not String.ends_with?(URI.parse(database_url).path || "", "_test") do
     raise "THRESHOLD_TEST_DATABASE_URL must name a dedicated database ending in _test"
   end
