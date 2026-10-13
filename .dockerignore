@@ -1,0 +1,35 @@
+# Allow only inputs copied by Dockerfile. In particular, no designer world,
+# checkout metadata, local secrets, caches, crash dumps or scratch directories
+# are sent to the builder, even when building from a dirty checkout.
+**
+!Dockerfile
+!.dockerignore
+!mix.exs
+!mix.lock
+!config/
+!config/config.exs
+!config/prod.exs
+!config/runtime.exs
+!lib/
+!lib/**
+!assets/
+!assets/**
+!priv/
+!priv/static/
+!priv/static/**
+!priv/repo/
+!priv/repo/**
+priv/worlds
+priv/worlds/**
+config/dev.exs
+config/test.exs
+**/node_modules
+**/.env*
+**/.venv
+**/deps
+**/_build
+**/tmp
+**/erl_crash.dump
+priv/static/assets/js
+priv/static/assets/css/maplibre-gl.css
+priv/static/assets/fonts
