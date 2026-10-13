@@ -1,5 +1,7 @@
 # Threshold
 
+[![CI](https://github.com/jackwillis/threshold/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jackwillis/threshold/actions/workflows/ci.yml?query=branch%3Amain)
+
 Threshold is a single-player mystery game set in Madison, Wisconsin. Explore a Classic Atlas map, walk one connection at a time, investigate places, and record discoveries. Phoenix LiveView and TypeScript/MapLibre power the game and its local world-authoring editor; a Python/OSMnx pipeline builds the geography.
 
 The editor (`/editor`) and player map (`/play`) work locally, with PostgreSQL-saved progress and four visual seasons. The first authored mystery, *The Quiet Hour*, has automated content checks and scratch-world browser playtests. Studio V2, the Field Journal, and radio gameplay are planned. [Implementation status](docs/implementation-status.md) describes the features and verification limits.
