@@ -26,7 +26,9 @@ For each PR:
    - scope: nothing outside the issue's Scope; no new gameplay system; no
      needless abstraction; Out of scope respected;
    - PR hygiene: "Closes #N", honest verification notes.
-4. Post ONE comment on the PR, first line exactly one of:
+4. Post ONE comment on the PR. Comments post from the designer's GitHub
+   account, so the first line is `Reviewer: Claude Code` (or the reviewer's
+   name), and the second line is exactly one of:
    **Approve** (ready for the designer),
    **Request changes** (numbered findings, most severe first, each with file:line
    and the concrete fix wanted), or
