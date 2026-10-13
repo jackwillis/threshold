@@ -1,55 +1,82 @@
 # Threshold
 
-A Madison-based single-player mystery and exploration project. The first milestone is a local geographic editor built with Phoenix, browser-based mapping, and a Python GIS pipeline.
+Threshold is a single-player mystery game set in Madison, Wisconsin. Explore a Classic Atlas map, walk one connection at a time, investigate places, and record discoveries. Phoenix LiveView and TypeScript/MapLibre power the game and its local world-authoring editor; a Python/OSMnx pipeline builds the geography.
 
-**Status (October 10, 2026): the world-authoring editor and a first playable slice work locally.** The editor (`/`) imports and shows the Madison study area and lets a designer place locations, connect them, restrict streets, give places a separate walking-access position, and edit the playable boundary. The player map (`/play`) walks the designer's authored graph one hop at a time in a Classic Atlas style (four seasons, display-only), with PostgreSQL-saved progress and a first interaction system: authored investigations at places, a field-notebook scene panel, declared discoveries, and completed interactions. There is no story content yet beyond a synthetic test world; Studio V2 (editing interactions) is planned. See [Implementation status](docs/implementation-status.md) for what is verified and what is not, and [docs/handoff.md](docs/handoff.md) for the current state and the one action the designer owes (applying a database migration).
+The editor (`/`) and player map (`/play`) work locally, with PostgreSQL-saved progress and four visual seasons. The first authored mystery, *The Quiet Hour*, has automated content checks and scratch-world browser playtests. Studio V2, the Field Journal, and radio gameplay are planned. [Implementation status](docs/implementation-status.md) describes the features and verification limits.
 
-## Project memos
+## Quick start
 
-- [Original design memo](docs/initial-design-memo.md): the user's initial proposal, preserved verbatim. Its viewer-only milestone is superseded by the editor decision below.
-- [Project decisions](docs/project-decisions.md): agreed direction, geographic boundary, technology, data layers, Git workflow, and open questions.
-- [Editor design](docs/design.md) and [implementation plan](docs/implementation-plan.md): draft, with open product decisions listed in the plan.
-- [Handoff memo](docs/handoff.md): current state, decisions, gotchas and next steps for the next engineer or agent.
-- [Network review](docs/network-review.md) and [playable-node experiment](docs/playable-node-experiment.md): findings on the real Madison data.
-- [Implementation status](docs/implementation-status.md): what exists and is verified, active work, planned and deferred items.
-- [Gameplay interactions](docs/gameplay-interactions.md), [session compatibility proposal](docs/world-revisions-proposal.md), [Classic Atlas typography](docs/classic-atlas-typography.md) and the [Frontend V2 proposal](docs/frontend-v2-proposal.md): the current gameplay and presentation direction.
-- [Game design memo](docs/game-design.md) and [engineering/architecture memo](docs/architecture.md): long-term vision. Where they differ from the implementation plan, the plan is the operational task list.
+Use Bash, Git, Make, Docker with Compose, and the versions in [.tool-versions](.tool-versions): Elixir 1.19.6 / OTP 26.2.5.21, Python 3.12 (including `venv`), and Bun 1.4.2. Install the Erlang/Elixir build prerequisites for your platform. Bun's usual `~/.bun/bin` location is added to PATH by Make. Initial setup downloads dependencies.
 
-## Layout
+This quick start uses a disposable PostgreSQL service on loopback port 5433 and a scratch copy of the tiny synthetic world. It does not play the Madison mystery or edit its files. In a new Bash shell:
 
-```text
-lib/threshold/            World files, authored layer, movement, interactions, sessions
-lib/threshold_web/        Phoenix web interface (editor, /play, /atlas prototype)
-assets/                  TypeScript frontend (MapLibre, Terra Draw), built with Bun
-priv/worlds/madison/      Boundary, import configuration, authored world
-gis/                     Python importer package (threshold-gis), tests, pinned dependencies
-docs/                    Project memos
-```
+```bash
+git clone https://github.com/jackwillis/threshold.git
+cd threshold
 
-Imported source geography, generated geographic graphs, and authored game metadata must remain separate. Editor saves should produce reviewable file changes; committing and deployment remain explicit actions.
-
-## Development
-
-Needs Elixir 1.19 / OTP 26, Python 3.12 and [Bun](https://bun.sh) (installed to `~/.bun/bin`; the Makefile adds it to PATH) (see `.tool-versions`; [mise](https://mise.jdx.dev) reads it).
-
-```text
-make setup           deps, .venv, gis package, Bun packages, build frontend
-make assets          rebuild the TypeScript bundle (`make run` also watches in dev)
-make run             start the Phoenix server (localhost:4000)
-make test            Elixir and Python tests
-make check           everything CI would run (precommit, ruff, Bun type check and tests, pytest, world validation, determinism)
-make build-world     regenerate geography and the playable layer from the pinned snapshot (offline)
-make build-playable  regenerate only the playable layer
-make acquire-world   download a new OSM snapshot (the only networked step)
-```
-
-### PostgreSQL
-
-Player progress, discoveries and completed interactions live in PostgreSQL; world files stay the source artifacts. See [docs/local-gameplay.md](docs/local-gameplay.md) for the Compose setup and for **applying new migrations to your development database** (agent sessions only use disposable databases). For the full gate including database tests:
-
-```text
+# Choose a local password; if the test service already exists, use its password.
+read -rsp 'Disposable PostgreSQL password: ' THRESHOLD_POSTGRES_PASSWORD
+printf '\n'
+export THRESHOLD_POSTGRES_PASSWORD
 docker compose --profile test up -d --wait postgres-test
-THRESHOLD_TEST_DATABASE_URL=postgres://threshold:threshold_local@localhost:5433/threshold_test make check
+export THRESHOLD_DATABASE_URL="$(python3.12 - <<'PYURL'
+import os
+from urllib.parse import quote
+password = quote(os.environ["THRESHOLD_POSTGRES_PASSWORD"], safe="")
+print(f"postgres://threshold:{password}@localhost:5433/threshold_test")
+PYURL
+)"
+export THRESHOLD_TEST_DATABASE_URL="$THRESHOLD_DATABASE_URL"
+
+export THRESHOLD_WORLDS_DIR="$(mktemp -d)"
+cp -R test/fixtures/worlds/tiny "$THRESHOLD_WORLDS_DIR/tiny"
+# Give only the scratch fixture a starting point on its generated graph.
+python3.12 - <<'PYWORLD'
+import json, os
+from pathlib import Path
+path = Path(os.environ["THRESHOLD_WORLDS_DIR"]) / "tiny" / "authored.json"
+world = json.loads(path.read_text())
+world["spawns"] = [{"id": "spawn:demo", "location": "pn:1", "default": True}]
+path.write_text(json.dumps(world) + "\n")
+PYWORLD
+
+make setup
+mix ecto.migrate
+make run
 ```
 
-Without that variable the database tests are excluded, and `make check` still passes. No CI provider or deployment target has been selected (the CI workflow has never run on GitHub). PostGIS is not used yet.
+Open [the scratch player map](http://localhost:4000/play?world=tiny&graph=generated). Choose the numbered destination to walk the fixture's connection. This small world has no story content. The [scratch editor](http://localhost:4000/?world=tiny) is available too.
+
+Stop Phoenix with Ctrl-C. From the same shell, run the full gate:
+
+```bash
+# Tests use their own fixture copies, not the scratch world's edited spawn.
+unset THRESHOLD_WORLDS_DIR
+make check
+```
+
+`make check` runs Elixir compilation/format/tests, ruff, TypeScript checks, Bun tests/material checks, Python tests, and world validation plus a byte-identical offline rebuild. Without `THRESHOLD_TEST_DATABASE_URL`, database tests are excluded. The test database name must end in `_test`; do not point it at a player-save database. Stop the test service with `docker compose --profile test stop postgres-test` when no other session is using it. Its data is disposable, not a persistent game save.
+
+For a persistent local game and deliberate Madison authoring, follow [local gameplay setup](docs/local-gameplay.md). [Release configuration](docs/release.md) and [health checks](docs/health-checks.md) cover the existing production runtime; hosted staging remains planned.
+
+## Repository map
+
+| Path | Contents |
+| --- | --- |
+| `lib/threshold/` | World validation/loading, authored edits, movement, interactions, saved sessions |
+| `lib/threshold_web/` | Phoenix editor, `/play`, and `/atlas` prototype |
+| `assets/` | TypeScript mapping hooks, cartography, bundled frontend assets |
+| `gis/` | Python geographic import, build, validation, and tests |
+| `priv/worlds/` | Pinned source geography, generated snapshots, authored worlds |
+| `test/fixtures/worlds/` | Synthetic worlds for isolated verification |
+| `docs/` | Design, architecture, operations, and planning references |
+
+Useful commands: `make assets` rebuilds the frontend; `make test` runs Elixir and Python tests; `make fmt` formats Elixir and Python. `make build-world` and `make build-playable` rebuild geography offline, while `make acquire-world` downloads a new snapshot and requires designer approval. See [Makefile](Makefile) for targets.
+
+## Documentation and contributing
+
+Read [current design](docs/current-design.md), [implementation status](docs/implementation-status.md), and the [handoff](docs/handoff.md). The [documentation index](docs/README.md) preserves the detailed memo links and points to the [architecture](docs/architecture/ux-v2.md) and [planning](docs/planning/next-milestones.md) references.
+
+Work is tracked in [GitHub Issues](https://github.com/jackwillis/threshold/issues) and [milestones](https://github.com/jackwillis/threshold/milestones). Follow [AGENTS.md](AGENTS.md) and the [agent workflow](docs/planning/agent-workflow.md): a Ready label needs designer authorization; implement on an issue branch, run `make check`, open a reviewed PR, and let the designer merge.
+
+Keep source snapshots, generated geography, and authored data separate. Never hand-edit generated files or overwrite `priv/worlds/madison/authored.json`, the playable boundary, the `generated` symlink, or generation snapshots. Agents use scratch worlds and disposable PostgreSQL only; they never migrate or write the development database. New gameplay systems, environmental notes, and default-spawn changes need explicit designer approval. Do not push `main`, merge, or deploy.
