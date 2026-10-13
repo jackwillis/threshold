@@ -7,7 +7,7 @@ defmodule Threshold.Authored do
   and saved only if the file on disk is unchanged since it was loaded.
   """
 
-  alias Threshold.WorldFile
+  alias Threshold.{Interactions, WorldFile}
 
   @format_version 1
   @id_formats %{
@@ -65,6 +65,9 @@ defmodule Threshold.Authored do
   @doc """
   Saves a document if `authored.json` still has `base_hash` (the hash from `load/1`). Returns the new hash.
   Another writer having changed the file in the meantime is a `:conflict`; nothing is overwritten.
+  The sibling `interactions.json` must validate and all its referenced place ids must remain
+  in this document. Errors report the affected interactions without rewriting either file.
+  Display-name and notes edits do not change place references and save normally.
   """
   @spec save(Path.t(), t, String.t()) ::
           {:ok, String.t()} | {:error, :conflict | [String.t()] | term}
@@ -74,12 +77,27 @@ defmodule Threshold.Authored do
     with {:ok, doc} <- validate(doc) do
       WorldFile.locked(dir, fn ->
         with {:ok, current} <- read(path),
-             :ok <- if(hash(current) == base_hash, do: :ok, else: {:error, :conflict}) do
+             :ok <- if(hash(current) == base_hash, do: :ok, else: {:error, :conflict}),
+             :ok <- validate_interactions(dir, doc) do
           text = encode(doc)
 
           with :ok <- WorldFile.write_atomic(path, text), do: {:ok, hash(text)}
         end
       end)
+    end
+  end
+
+  # Read the sibling file under the directory lock, after the base-revision check.
+  # Missing places orphan scenes; the other lint findings remain advisory.
+  defp validate_interactions(dir, doc) do
+    with {:ok, interactions, _hash} <- Interactions.load(dir) do
+      errors =
+        interactions
+        |> Interactions.lint(doc)
+        |> Enum.filter(&(&1.kind == :missing_place))
+        |> Enum.map(& &1.message)
+
+      if errors == [], do: :ok, else: {:error, errors}
     end
   end
 
