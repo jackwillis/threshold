@@ -17,7 +17,8 @@ defmodule ThresholdWeb.Router do
   scope "/", ThresholdWeb do
     pipe_through :browser
 
-    live "/", EditorLive
+    get "/", HomeController, :index
+    live "/editor", EditorLive
     live "/play", PlayLive
     live "/atlas", AtlasLive
     get "/worlds/:world/:layer", WorldController, :show

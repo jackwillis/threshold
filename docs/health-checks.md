@@ -29,6 +29,9 @@ or gameplay tables must produce `migrations_pending`; a missing or malformed
 scratch world must produce `world_unavailable`. Do not stop a shared test container
 or alter the development database for this check.
 
+For editor checks, use `/editor?world=tiny`; `/` is the landing page and
+root URLs with query parameters also show the landing page without redirecting.
+
 HTTP readiness does not prove a reverse proxy passes WebSocket upgrades. For the
 LiveView smoke check, open `/play` in a browser against the release or staging URL.
 In the Network panel, confirm `/live/websocket` upgrades with HTTP 101, and the

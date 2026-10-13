@@ -53,7 +53,7 @@ defmodule ThresholdWeb.EditorReferenceReviewTest do
     dir: dir
   } do
     before = File.read!(Path.join(dir, "authored.json"))
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     assert has_element?(view, "#review", "missing")
     view |> element("#review button[phx-value-id='loc:missing']") |> render_click()
     assert has_element?(view, "#inspector", "node:gone")
@@ -77,7 +77,7 @@ defmodule ThresholdWeb.EditorReferenceReviewTest do
   end
 
   test "moved references remain unchanged until explicitly reconnected", %{conn: conn} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     view |> element("#review button[phx-value-id='loc:moved']") |> render_click()
     assert has_element?(view, "#inspector", "has changed")
     assert has_element?(view, "#inspector", "Current intersection position")
@@ -94,7 +94,7 @@ defmodule ThresholdWeb.EditorReferenceReviewTest do
   end
 
   test "missing closure can reconnect to a street while retaining its reason", %{conn: conn} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     view |> element("#review button[phx-value-id='clo:missing']") |> render_click()
     assert has_element?(view, "#inspector", "edge:gone")
     view |> element("#reconnect-closure") |> render_click()
@@ -114,7 +114,7 @@ defmodule ThresholdWeb.EditorReferenceReviewTest do
   end
 
   test "designer can deliberately detach a location or remove a missing closure", %{conn: conn} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     view |> element("#review button[phx-value-id='loc:missing']") |> render_click()
     view |> element("#inspector button", "Keep as free point") |> render_click()
     loc = Enum.find(state(view)["authored"]["locations"], &(&1["id"] == "loc:missing"))

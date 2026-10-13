@@ -144,7 +144,7 @@ Recorded in `docs/implementation-plan.md` (numbered). In short: LiveView plus on
 
 ## First playable exploration update — October 9, 2026
 
-The project now also has a first playable exploration prototype at `/play`, with pure movement in `lib/threshold/game.ex` and `lib/threshold/game/`, PostgreSQL progress through `Threshold.Repo`, a dedicated `PlayLive`, and `assets/src/hooks/player_map.ts`. The editor remains at `/`. World files remain source artifacts; there is no PostGIS schema or database migration of geography yet.
+The project now also has a first playable exploration prototype at `/play`, with pure movement in `lib/threshold/game.ex` and `lib/threshold/game/`, PostgreSQL progress through `Threshold.Repo`, a dedicated `PlayLive`, and `assets/src/hooks/player_map.ts`. The editor is now at `/editor`; `/` is the landing page. World files remain source artifacts; there is no PostGIS schema or database migration of geography yet.
 
 Authored spawns and optional location `movement_location` attachments are now supported. The designer approved allowing public/unknown/mixed/conditional routes provisionally, while blocking explicit restrictions, authored closures and any route leaving the boundary. Every constituent edge is checked, with no alternative rerouting. Saves check world revision and expected turn under a PostgreSQL row lock. Nearby inspection is free. An explicit new walk resets progress when a world revision changes.
 

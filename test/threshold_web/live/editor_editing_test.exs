@@ -42,7 +42,7 @@ defmodule ThresholdWeb.EditorEditingTest do
     conn: conn,
     dir: dir
   } do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     render_hook(view, "set_default_spawn", %{"id" => "pn:1"})
     assert [%{"location" => "pn:1", "default" => true}] = state(view)["authored"]["spawns"]
     render_hook(view, "set_default_spawn", %{"id" => "pn:999"})
@@ -69,7 +69,7 @@ defmodule ThresholdWeb.EditorEditingTest do
     conn: conn,
     dir: dir
   } do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     view |> element("#choose-spawn") |> render_click()
     assert state(view)["layers"]["playable"]
 
@@ -103,26 +103,26 @@ defmodule ThresholdWeb.EditorEditingTest do
     assert length(state(view)["authored"]["spawns"]) == 1
     view |> element("#save-button") |> render_click()
     assert [%{"location" => "pn:1", "default" => true}] = saved(dir)["spawns"]
-    {:ok, restored, _} = live(build_conn(), ~p"/")
+    {:ok, restored, _} = live(build_conn(), ~p"/editor")
     assert has_element?(restored, "#spawn-points", "pn:1")
   end
 
   test "tools are listed and the inspect tool is active at first", %{conn: conn} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     assert has_element?(view, "#tool-inspect.tool-active")
     assert has_element?(view, "#tool-hint", "Click a feature")
     assert has_element?(view, "#dirty-indicator", "All changes saved")
   end
 
   test "switching tools updates the mode sent to the map and the hint", %{conn: conn} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     view |> element("#tool-place") |> render_click()
     assert state(view)["mode"] == "place"
     assert has_element?(view, "#tool-hint", "place a location")
   end
 
   test "placing a location creates an unsaved change and selects it", %{conn: conn, dir: dir} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     id = place(view)
 
     assert state(view)["selected"] == id
@@ -134,7 +134,7 @@ defmodule ThresholdWeb.EditorEditingTest do
   end
 
   test "a node anchor takes its position from the geography, not the client", %{conn: conn} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     place(view, %{"kind" => "node", "ref" => "node:2", "point" => [0, 0]})
 
     assert [%{"anchor" => %{"point" => [-89.38, 43.075], "ref" => "node:2"}}] =
@@ -142,7 +142,7 @@ defmodule ThresholdWeb.EditorEditingTest do
   end
 
   test "renaming through the inspector updates the working copy", %{conn: conn} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     id = place(view)
 
     view
@@ -156,7 +156,7 @@ defmodule ThresholdWeb.EditorEditingTest do
   end
 
   test "save writes the file and clears the unsaved state", %{conn: conn, dir: dir} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     id = place(view)
 
     view
@@ -172,7 +172,7 @@ defmodule ThresholdWeb.EditorEditingTest do
   end
 
   test "discard throws away unsaved edits", %{conn: conn, dir: dir} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     place(view)
     view |> element("#discard-button") |> render_click()
 
@@ -185,7 +185,7 @@ defmodule ThresholdWeb.EditorEditingTest do
     conn: conn,
     dir: dir
   } do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     place(view)
 
     {:ok, other} =
@@ -211,7 +211,7 @@ defmodule ThresholdWeb.EditorEditingTest do
   end
 
   test "connect tool joins two locations", %{conn: conn} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     a = place(view)
     b = place(view, %{"kind" => "point", "point" => [-89.381, 43.072]})
 
@@ -227,7 +227,7 @@ defmodule ThresholdWeb.EditorEditingTest do
   end
 
   test "connecting a location to itself or twice is refused", %{conn: conn} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     a = place(view)
     b = place(view, %{"kind" => "point", "point" => [-89.381, 43.072]})
     view |> element("#tool-connect") |> render_click()
@@ -244,7 +244,7 @@ defmodule ThresholdWeb.EditorEditingTest do
   end
 
   test "close tool restricts a street using the geography's shape hash", %{conn: conn} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     view |> element("#tool-close") |> render_click()
     render_hook(view, "pick", %{"layer" => "edges", "id" => "edge:3-4-102"})
 
@@ -267,7 +267,7 @@ defmodule ThresholdWeb.EditorEditingTest do
   test "an imported edge's inspector offers to close it, and shows an existing closure", %{
     conn: conn
   } do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
 
     render_hook(view, "pick", %{
       "layer" => "edges",
@@ -288,7 +288,7 @@ defmodule ThresholdWeb.EditorEditingTest do
   end
 
   test "deleting a location removes its connections and says so", %{conn: conn} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     a = place(view)
     b = place(view, %{"kind" => "point", "point" => [-89.381, 43.072]})
     view |> element("#tool-connect") |> render_click()
@@ -305,7 +305,7 @@ defmodule ThresholdWeb.EditorEditingTest do
   end
 
   test "keeping a detached location as a free point", %{conn: conn} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     id = place(view, %{"kind" => "node", "ref" => "node:1", "point" => [0, 0]})
     view |> element("#inspector button", "Keep as free point") |> render_click()
 
@@ -314,7 +314,7 @@ defmodule ThresholdWeb.EditorEditingTest do
   end
 
   test "moving a location re-snaps it", %{conn: conn} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     id = place(view)
 
     render_hook(view, "move_location", %{
@@ -331,7 +331,7 @@ defmodule ThresholdWeb.EditorEditingTest do
       conn: conn,
       dir: dir
     } do
-      {:ok, view, _} = live(conn, ~p"/")
+      {:ok, view, _} = live(conn, ~p"/editor")
       refute has_element?(view, "#stale-banner")
 
       view |> element("#tool-boundary") |> render_click()
@@ -348,7 +348,7 @@ defmodule ThresholdWeb.EditorEditingTest do
     end
 
     test "invalid shapes are rejected without changing the working boundary", %{conn: conn} do
-      {:ok, view, _} = live(conn, ~p"/")
+      {:ok, view, _} = live(conn, ~p"/editor")
       before = state(view)["boundary"]
 
       render_hook(view, "update_boundary", %{
@@ -366,7 +366,7 @@ defmodule ThresholdWeb.EditorEditingTest do
         ~s({"sha256": "abc123", "bounds": [-89.3935, 43.0677, -89.3665, 43.0823]})
       )
 
-      {:ok, view, _} = live(conn, ~p"/")
+      {:ok, view, _} = live(conn, ~p"/editor")
 
       render_hook(view, "update_boundary", %{
         "coordinates" => [[-89.41, 43.07], [-89.37, 43.07], [-89.37, 43.08], [-89.41, 43.08]]
@@ -381,7 +381,7 @@ defmodule ThresholdWeb.EditorEditingTest do
 
   test "editing is disabled while authored.json is invalid", %{conn: conn, dir: dir} do
     File.write!(Path.join(dir, "authored.json"), "{broken")
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
 
     assert has_element?(view, "#tool-place[disabled]")
     assert has_element?(view, "#authored-errors", "Editing is disabled")
@@ -392,7 +392,7 @@ defmodule ThresholdWeb.EditorEditingTest do
 
   describe "playable layer" do
     test "the panel shows what was built and its integrity", %{conn: conn} do
-      {:ok, view, _} = live(conn, ~p"/")
+      {:ok, view, _} = live(conn, ~p"/editor")
       assert has_element?(view, "#playable", "4 locations")
       assert has_element?(view, "#playable-integrity", "Components kept: 2/2")
       refute has_element?(view, "#playable-stale")
@@ -406,13 +406,13 @@ defmodule ThresholdWeb.EditorEditingTest do
         ~s({"type":"FeatureCollection","features":[]})
       )
 
-      {:ok, view, _} = live(conn, ~p"/")
+      {:ok, view, _} = live(conn, ~p"/editor")
       assert has_element?(view, "#playable-stale", "Out of date")
     end
 
     test "a missing layer says how to build it", %{conn: conn, dir: dir} do
       File.rm!(Path.join([dir, "generated", "playable.json"]))
-      {:ok, view, _} = live(conn, ~p"/")
+      {:ok, view, _} = live(conn, ~p"/editor")
       assert has_element?(view, "#playable", "make build-playable")
       assert state(view)["playable"] == "missing"
     end
@@ -421,7 +421,7 @@ defmodule ThresholdWeb.EditorEditingTest do
       conn: conn,
       dir: dir
     } do
-      {:ok, view, _} = live(conn, ~p"/")
+      {:ok, view, _} = live(conn, ~p"/editor")
 
       props = %{
         "id" => "pn:2",
@@ -474,12 +474,12 @@ defmodule ThresholdWeb.EditorEditingTest do
         |> String.replace(~s("overrides_unmatched": []), ~s("overrides_unmatched": ["pn:999"]))
       )
 
-      {:ok, view, _} = live(conn, ~p"/")
+      {:ok, view, _} = live(conn, ~p"/editor")
       assert has_element?(view, "#playable-unmatched", "pn:999")
     end
 
     test "a candidate connection shows its details", %{conn: conn} do
-      {:ok, view, _} = live(conn, ~p"/")
+      {:ok, view, _} = live(conn, ~p"/editor")
 
       props = %{
         "id" => "pc:1-2",

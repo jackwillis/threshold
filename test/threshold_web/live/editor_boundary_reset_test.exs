@@ -49,7 +49,7 @@ defmodule ThresholdWeb.EditorBoundaryResetTest do
 
   test "reset to saved discards the boundary edit and nothing is written", %{conn: conn, dir: dir} do
     on_disk = File.read!(Path.join(dir, "boundary.geojson"))
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     assert has_element?(view, "#reset-boundary-saved[disabled]")
 
     render_hook(view, "update_boundary", %{"coordinates" => @small})
@@ -66,7 +66,7 @@ defmodule ThresholdWeb.EditorBoundaryResetTest do
     File.write!(Path.join(dir, "default_boundary.geojson"), Boundary.encode(geometry))
     on_disk = File.read!(Path.join(dir, "boundary.geojson"))
 
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     refute has_element?(view, "#reset-boundary-default[disabled]")
     view |> element("#reset-boundary-default") |> render_click()
 
@@ -80,7 +80,7 @@ defmodule ThresholdWeb.EditorBoundaryResetTest do
   end
 
   test "reset to default without a defined default says so and leaves the boundary", %{conn: conn} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     assert has_element?(view, "#reset-boundary-default[disabled]")
     before = ring(view)
     render_hook(view, "reset_boundary", %{"to" => "default"})
@@ -91,7 +91,7 @@ defmodule ThresholdWeb.EditorBoundaryResetTest do
   test "expand to the import area fills the supported area, can be saved, and is unsaved until then",
        %{conn: conn, dir: dir} do
     on_disk = File.read!(Path.join(dir, "boundary.geojson"))
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     view |> element("#expand-boundary") |> render_click()
 
     [[w, s] | _] = ring(view)
@@ -105,7 +105,7 @@ defmodule ThresholdWeb.EditorBoundaryResetTest do
   end
 
   test "reset to saved after expanding returns to the saved boundary", %{conn: conn} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     saved = ring(view)
     view |> element("#expand-boundary") |> render_click()
     refute ring(view) == saved
@@ -115,7 +115,7 @@ defmodule ThresholdWeb.EditorBoundaryResetTest do
   end
 
   test "fit to boundary asks the map to frame the working boundary", %{conn: conn} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     before = state(view)["focus"]["n"]
     render_hook(view, "update_boundary", %{"coordinates" => @small})
     view |> element("#fit-boundary") |> render_click()
@@ -125,7 +125,7 @@ defmodule ThresholdWeb.EditorBoundaryResetTest do
   end
 
   test "resets are refused while regenerating", %{conn: conn} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     render_hook(view, "update_boundary", %{"coordinates" => @small})
     saved = ring(view)
     :sys.replace_state(view.pid, fn s -> put_in(s.socket.assigns.regenerating, true) end)

@@ -1,0 +1,22 @@
+<Layouts.app flash={@flash} mode="home">
+  <section id="landing-page" class="landing-page" aria-labelledby="landing-title">
+    <div class="landing-content">
+      <p class="landing-eyebrow">Madison, Wisconsin</p>
+      <h1 id="landing-title">Threshold</h1>
+      <p class="landing-intro">An ordinary city. An unfamiliar mystery.</p>
+      <p class="landing-description">
+        Explore the Field Atlas, investigate places, and follow the discoveries you make along the way.
+      </p>
+      <nav class="landing-actions" aria-label="Start exploring or author a world">
+        <a id="landing-play" class="landing-link landing-link-primary" href={~p"/play"}>
+          <span>Play</span>
+          <span class="landing-link-description">Walk the city and investigate.</span>
+        </a>
+        <a id="landing-editor" class="landing-link" href={~p"/editor"}>
+          <span>World Editor</span>
+          <span class="landing-link-description">Author places and connections.</span>
+        </a>
+      </nav>
+    </div>
+  </section>
+</Layouts.app>

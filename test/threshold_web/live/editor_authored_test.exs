@@ -61,7 +61,7 @@ defmodule ThresholdWeb.EditorAuthoredTest do
 
   test "authored objects and their reference statuses reach the map", %{conn: conn, dir: dir} do
     write_authored(dir, sample())
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
 
     state = map_state(view)
     assert length(state["authored"]["locations"]) == 3
@@ -77,7 +77,7 @@ defmodule ThresholdWeb.EditorAuthoredTest do
 
   test "the review list names objects whose references need attention", %{conn: conn, dir: dir} do
     write_authored(dir, sample())
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
 
     assert has_element?(view, "#review li.review-missing", "loc:gone")
     assert has_element?(view, "#review li.review-moved", "clo:moved")
@@ -85,14 +85,14 @@ defmodule ThresholdWeb.EditorAuthoredTest do
   end
 
   test "an empty authored layer has no review list", %{conn: conn} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     refute has_element?(view, "#review")
     refute has_element?(view, "#authored-errors")
   end
 
   test "focusing an object asks the map to zoom to it", %{conn: conn, dir: dir} do
     write_authored(dir, sample())
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
 
     view |> element("#review button[phx-value-id='loc:gone']") |> render_click()
     assert %{"n" => 1, "object" => "loc:gone"} = map_state(view)["focus"]
@@ -104,7 +104,7 @@ defmodule ThresholdWeb.EditorAuthoredTest do
       ~s({"format_version": 1, "locations": [{"id": "x"}], "connections": [], "closures": []})
     )
 
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
 
     assert has_element?(view, "#authored-errors", "authored.json is invalid")
     assert has_element?(view, "#authored-errors", "locations[0]")
@@ -115,7 +115,7 @@ defmodule ThresholdWeb.EditorAuthoredTest do
 
   test "malformed JSON is reported", %{conn: conn, dir: dir} do
     File.write!(Path.join(dir, "authored.json"), "{broken")
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     assert has_element?(view, "#authored-errors", "invalid JSON")
   end
 end

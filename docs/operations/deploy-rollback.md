@@ -18,7 +18,7 @@ This operator checklist describes the approved private staging direction. Docker
 3. Run pending migrations exactly once with the candidate release: `bin/threshold eval "Threshold.Release.migrate()"`. The database must already exist. The command is idempotent but still needs operator serialization; do not start HTTP with a partially migrated schema.
 4. Start the selected release with `PHX_SERVER=true` and the approved bind/proxy configuration. Replace only the application service in the future Compose setup, retaining persistent storage.
 5. Check `/healthz` returns HTTP 200 for liveness and `/readyz` returns HTTP 200 for database/schema/world readiness. A 503 is a failed rollout; record the sanitized reason and stop promotion. Liveness alone cannot establish readiness.
-6. Check `/` and `/play`, a real browser LiveView connection and reconnect, approved one-hop movement and persisted progress with a dedicated smoke identity, and editor access restrictions. Do not use the designer's save or publish world edits during smoke checks.
+6. Check `/`, `/editor` and `/play`, a real browser LiveView connection and reconnect, approved one-hop movement and persisted progress with a dedicated smoke identity, and editor access restrictions. Do not use the designer's save or publish world edits during smoke checks.
 7. Record deployed SHA/digest, world manifest, applied migration versions, time, operator, backup reference and verification results. Resume service and watch errors/readiness. Keep the previous artifact for rollback.
 
 ## Rollback matrix
