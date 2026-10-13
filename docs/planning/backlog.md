@@ -8,17 +8,17 @@ Work is tracked in [GitHub Issues](https://github.com/jackwillis/threshold/issue
 
 | Milestone | Issues |
 |---|---|
-| M0 Staging Foundation | #34 get CI passing, #2 release config, #3 health endpoints, #4 Docker image, #5 local Compose smoke, #6 operations docs, #7 CI container smoke, #35 CI badges, #36 README rewrite |
+| M0 Staging Foundation | #34 get CI passing (done), #2 release config (done), #3 health endpoints (done), #4 Docker image, #5 local Compose smoke, #6 operations docs (done), #7 CI container smoke, #35 CI badges, #36 README rewrite (done), #39 test database naming guard, #56 Decimal advisory, #58 verify README quick start on native Docker |
 | M1 Accounts and Authorization | #8 guest identity, #9 users and challenges, #10 email code, #11 magic link, #12 account-owned saves, #13 guest claim, #14 editor/owner policy; decision #26 |
-| M2 Private OVHcloud Staging | #15 bootstrap runbook, #16 GHCR and manual deploy, #17 backups and restore drill; decisions #28, #29 |
-| M3 Field Atlas V2 | #18 simplify panel, #19 focus area, #20 responsive and movement controls, #21 markers |
+| M2 Private OVHcloud Staging | #15 bootstrap runbook, #16 GHCR and manual deploy, #17 backups and restore drill, #46 staging authorization audit; decisions #28, #29 |
+| M3 Field Atlas V2 | #18 simplify panel (done), #19 focus area, #20 responsive and movement controls, #21 markers, #41 Vollkorn map typography |
 | M4 Cases, Journal, Introduction | #22 case projection, #23 Current Investigation and Journal, #24 introduction; decision #27 |
-| M5 Studio Story Editor | #25 cross-file consistency guard |
-| M6 Collaborative Authoring | decisions #30 draft storage, #31 session compatibility |
-| M7 Asset Library | decision #33 |
-| M8 Publishing and Releases | decision #32 |
+| M5 Studio Story Editor | #25 cross-file consistency guard (waits on decision #51), #43 Story editor, #47 Map-to-Story links, #50 activity and validation panel |
+| M6 Collaborative Authoring | #44 playtest sessions, #45 persistent drafts; decisions #30 draft storage, #31 session compatibility |
+| M7 Asset Library | #48 Asset Library MVP; decision #33 |
+| M8 Publishing and Releases | #49 content-only GitHub PR submission; decision #32 |
 
-M5 to M8 implementation issues are written after their decision issues are resolved.
+M5 to M8 implementation issues (#43 to #50) are written but stay `blocked` until their decision issues are resolved. Unmilestoned: #60 landing page at `/` (needs a decision on moving the editor to `/editor`). Decision #51 (referenced-place rename semantics) blocks #25.
 
 ## Lightweight RICE
 
