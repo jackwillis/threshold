@@ -8,7 +8,7 @@
 
 A few editors should author through hosted Studio in their browsers, without cloning the repo. GitHub handles review/version history and GitHub Actions deploys manually selected approved revisions. Merging a PR does **not** automatically make a draft visible to ordinary players or require immediate publication.
 
-The designer and boyfriend may each have GitHub accounts, but Studio's ordinary identity remains Threshold's verified email login. A GitHub account is useful for code review, not required for editing or playing.
+The designer and other invited editors may each have GitHub accounts, but Studio's ordinary identity remains Threshold's verified email login. A GitHub account is useful for code review, not required for editing or playing.
 
 ## Draft persistence and conflict safety
 

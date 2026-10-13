@@ -4,7 +4,7 @@
 
 ## Objective
 
-Host a **private, browser-accessible staging environment** for the designer and a small number of invited editors, independently of the existing OVHcloud 32 GB dedicated server (which has suffered a failed drive). Staging is **not** a public production launch. The dedicated server may someday host production but is not a staging dependency.
+Host a **private, browser-accessible staging environment** for the designer and a small number of invited editors, independently of the existing OVHcloud 32 GB dedicated server (currently impaired). Staging is **not** a public production launch. The dedicated server may someday host production but is not a staging dependency.
 
 ## Hosting choice
 
