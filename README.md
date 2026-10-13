@@ -19,14 +19,16 @@ read -rsp 'Disposable PostgreSQL password: ' THRESHOLD_POSTGRES_PASSWORD
 printf '\n'
 export THRESHOLD_POSTGRES_PASSWORD
 docker compose --profile test up -d --wait postgres-test
+# The demo walk gets its own database so saved progress cannot disturb `make check`.
+docker compose --profile test exec -T postgres-test \
+  sh -c 'createdb -U threshold threshold_test_demo 2>/dev/null || true'
 export THRESHOLD_DATABASE_URL="$(python3.12 - <<'PYURL'
 import os
 from urllib.parse import quote
 password = quote(os.environ["THRESHOLD_POSTGRES_PASSWORD"], safe="")
-print(f"postgres://threshold:{password}@localhost:5433/threshold_test")
+print(f"postgres://threshold:{password}@localhost:5433/threshold_test_demo")
 PYURL
 )"
-export THRESHOLD_TEST_DATABASE_URL="$THRESHOLD_DATABASE_URL"
 
 export THRESHOLD_WORLDS_DIR="$(mktemp -d)"
 cp -R test/fixtures/worlds/tiny "$THRESHOLD_WORLDS_DIR/tiny"
@@ -50,12 +52,20 @@ Open [the scratch player map](http://localhost:4000/play?world=tiny&graph=genera
 Stop Phoenix with Ctrl-C. From the same shell, run the full gate:
 
 ```bash
-# Tests use their own fixture copies, not the scratch world's edited spawn.
+# Tests use their own fixture copies, not the scratch world's edited spawn, and
+# their own database, not the demo one.
 unset THRESHOLD_WORLDS_DIR
+export THRESHOLD_TEST_DATABASE_URL="${THRESHOLD_DATABASE_URL%/threshold_test_demo}/threshold_test"
 make check
 ```
 
-`make check` runs Elixir compilation/format/tests, ruff, TypeScript checks, Bun tests/material checks, Python tests, and world validation plus a byte-identical offline rebuild. Without `THRESHOLD_TEST_DATABASE_URL`, database tests are excluded. The test database name must end in `_test`; do not point it at a player-save database. Stop the test service with `docker compose --profile test stop postgres-test` when no other session is using it. Its data is disposable, not a persistent game save.
+When you are done, drop the demo database (disposable data only; never run this against another database):
+
+```bash
+docker compose --profile test exec -T postgres-test dropdb -U threshold --if-exists threshold_test_demo
+```
+
+`make check` runs Elixir compilation/format/tests, ruff, TypeScript checks, Bun tests/material checks, Python tests, and world validation plus a byte-identical offline rebuild. Without `THRESHOLD_TEST_DATABASE_URL`, database tests are excluded. The test database name must be `threshold_test`, `threshold_test_<suffix>` (for example one per parallel session) or end in `_test`; do not point it at a player-save database. The demo database `threshold_test_demo` also passes this check but holds the walk you just played, so the gate uses `threshold_test`. Stop the test service with `docker compose --profile test stop postgres-test` when no other session is using it. Its data is disposable, not a persistent game save.
 
 For a persistent local game and deliberate Madison authoring, follow [local gameplay setup](docs/local-gameplay.md). [Release configuration](docs/release.md) and [health checks](docs/health-checks.md) cover the existing production runtime; hosted staging remains planned.
 
