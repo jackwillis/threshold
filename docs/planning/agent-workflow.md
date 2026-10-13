@@ -1,6 +1,6 @@
 # Working from the backlog
 
-Tasks are GitHub Issues on the [Threshold Backlog board](https://github.com/users/jackwillis/projects/3) (Backlog, Ready, In Progress, Review, Done). Priorities are in [backlog.md](backlog.md). The loop is short:
+Tasks are GitHub Issues on the [Threshold Backlog board](https://github.com/users/jackwillis/projects/3) (Backlog, Ready, In Progress, Review, Done). Priority and RICE scores are board fields (see [Priority and RICE](#priority-and-rice)). The loop is short:
 
 **Ready ticket → Codex implements and opens a PR → Claude Code reviews → Codex fixes → the designer merges.**
 
@@ -17,7 +17,7 @@ Read `AGENTS.md`, `docs/handoff.md` ("Resume here") and this file. Run `git stat
 
 ## Picking a ticket (Codex)
 
-Take the designer's named ticket, or choose one that: is labelled `ready` and not `blocked` or `needs-decision`; has all its listed dependencies closed; has no assignee or open PR; and has the highest score in [backlog.md](backlog.md). `ready` is not authorization: wait for the designer's go on that ticket.
+Take the designer's named ticket, or choose one that: is labelled `ready` and not `blocked` or `needs-decision`; has all its listed dependencies closed; has no assignee or open PR; and is highest on the board by Priority, then Score (`gh project item-list 3 --owner jackwillis --format json`). `ready` is not authorization: wait for the designer's go on that ticket.
 
 If the work depends on an unresolved choice, comment on the issue and stop. Never decide an irreversible semantic quietly.
 
@@ -56,3 +56,14 @@ Enable the built-in project workflows (project settings, Workflows): new issues 
 ## Rules that do not change
 
 All "Standing instructions" in `AGENTS.md` still apply. In particular: protected data stays untouched; agents may push **issue branches** and open PRs only after the designer says go on that ticket, and never push `main`, merge, deploy, provision or spend.
+
+## Priority and RICE
+
+The board has a `Priority` field (P0, P1, P2) and number fields `Reach`, `Impact`, `Confidence`, `Effort` and `Score`. Score = Reach x Impact x Confidence / Effort. These are quick judgments to order the queue, not measurements; revisit when facts change. P0 is a score of 3 or more, P1 is 1.5 to under 3, P2 is the rest (and unscored or decision tickets, which are scored when they become candidates).
+
+- **Reach** 1 to 3: 1 touches one area, 2 several, 3 unblocks or affects most later work or most players.
+- **Impact** 1 to 3: 1 nice to have, 2 clearly valuable, 3 essential to a milestone goal.
+- **Confidence** 0.5, 0.8 or 1: how sure we are the scope and approach are right (0.5 means an open design question).
+- **Effort** in rough working sessions (0.5, 1, 2, 3).
+
+Decision issues are not scored; do each just before the issue it blocks.

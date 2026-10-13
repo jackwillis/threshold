@@ -8,7 +8,7 @@ Start with [current design](current-design.md), [implementation status](implemen
 - [Private staging architecture](architecture/staging.md)
 - [Collaborative authoring and publishing](architecture/authoring-and-publishing.md)
 - [Milestones and authorization boundaries](planning/next-milestones.md)
-- [Backlog priorities](planning/backlog.md)
+- [Agent workflow, board fields and RICE rubric](planning/agent-workflow.md)
 - [Agent workflow](planning/agent-workflow.md), [batch prompt](planning/codex-batch-prompt.md), and [review prompt](planning/review-prompt.md)
 - [Local gameplay and PostgreSQL](local-gameplay.md), [release configuration](release.md), and [health checks](health-checks.md)
 
