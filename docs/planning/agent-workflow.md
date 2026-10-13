@@ -27,6 +27,7 @@ If the work depends on an unresolved choice, comment on the issue and stop. Neve
 2. Work on branch `issue-N-short-slug` from current `origin/main`, preferably in a separate worktree (`git worktree add ../threshold-issue-N -b issue-N-slug origin/main`).
 3. Stay in the ticket's Scope; Out of scope is binding. Spot adjacent work? Open a new issue.
 4. Follow the ticket's Safety section and `AGENTS.md` (disposable PostgreSQL, scratch worlds, no development-database migrations, no new gameplay systems).
+   Concurrent worktrees each create their own scratch database on the test container (port 5433), named `threshold_test_<N>` (the runtime guard accepts `threshold_test`, `threshold_test_<suffix>` and names ending `_test`), and drop it when done.
 5. Add tests; check UI changes in a real browser at desktop and narrow widths; run `make check`.
 6. Push the issue branch and open a PR using the template, with `Closes #N`, each acceptance criterion with how it was verified, and any gaps stated honestly. Move the card to Review. Do not touch `main`, merge or deploy.
 
