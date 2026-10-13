@@ -8,7 +8,7 @@ The designer has approved the **direction**, not blanket feature implementation,
 - [Private staging architecture](architecture/staging.md)
 - [Collaborative authoring, S3 drafts, Git LFS and PR publishing](architecture/authoring-and-publishing.md)
 - [Milestones and authorization boundaries](planning/next-milestones.md)
-- [Backlog index, issue numbers and RICE priorities](planning/backlog.md)
+- [Agent workflow, board fields and RICE rubric](planning/agent-workflow.md)
 
 **Superseding decisions:** OVHcloud (not Vultr) for a separate small staging VPS; guest-first play with emailed code *or* magic-link optional accounts; owner/editor capabilities only (no moderator system); Git-reviewed content proposals, manually selected periodic releases; draft assets may use private S3 storage and accepted binaries may be promoted into Git LFS in PRs. The OVHcloud 32 GB dedicated server is a separate, currently impaired machine and is not home backup storage. No live server provisioned by this documentation update.
 
