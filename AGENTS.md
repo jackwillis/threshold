@@ -4,6 +4,8 @@ Single-player Madison-based mystery game: a local world-authoring editor, a Clas
 
 **Standing instructions from the designer (October 10, 2026):** no new gameplay systems without explicit approval; do not add environmental notes or change the default spawn (the designer is playing the mystery first); do not touch the development database, `authored.json`, the playable boundary, the `generated` symlink or the generation snapshots; do not push or deploy.
 
+**Working from the backlog:** tasks are GitHub Issues on the [Threshold Backlog board](https://github.com/users/jackwillis/threshold/projects/3). Follow [docs/planning/agent-workflow.md](docs/planning/agent-workflow.md) to load the project, pick a `ready` ticket, claim it, and finish it; priorities are in [docs/planning/backlog.md](docs/planning/backlog.md). `ready` is not authorization: wait for the designer's go.
+
 ## Commands
 
 - `make setup`: Elixir deps, Python venv (`.venv`, Python 3.12), Bun packages, build the frontend.
