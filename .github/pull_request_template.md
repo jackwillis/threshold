@@ -13,4 +13,7 @@ Closes #
 - [ ] No change to `authored.json`, the playable boundary, `generated`, generations or the development database
 - [ ] New migrations (if any) listed in `docs/local-gameplay.md`, not applied to the development database
 
+## Risk
+- [ ] `risk:high` (plan was posted on the issue and answered)
+
 ## Notes for the reviewer
