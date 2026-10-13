@@ -23,7 +23,8 @@ defmodule Threshold.TestDatabaseGuardTest do
   end
 
   test "accepts the documented and parallel scratch test database names" do
-    for name <- ~w(threshold_test threshold_test_34 threshold_test_demo my_scratch_test) do
+    for name <-
+          ~w(threshold_test threshold_test_34 threshold_test_demo my_scratch_test my-scratch_test MY_scratch_test) do
       assert read_with(name)[:threshold][:database_enabled], name
     end
   end

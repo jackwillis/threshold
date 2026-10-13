@@ -21,7 +21,7 @@ export THRESHOLD_POSTGRES_PASSWORD
 docker compose --profile test up -d --wait postgres-test
 # The demo walk gets its own database so saved progress cannot disturb `make check`.
 docker compose --profile test exec -T postgres-test \
-  sh -c 'createdb -U threshold threshold_test_demo 2>/dev/null || true'
+  sh -c "psql -U threshold -d postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'threshold_test_demo'\" | grep -q 1 || createdb -U threshold threshold_test_demo"
 export THRESHOLD_DATABASE_URL="$(python3.12 - <<'PYURL'
 import os
 from urllib.parse import quote

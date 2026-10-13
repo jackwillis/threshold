@@ -99,13 +99,15 @@ database_url =
   )
 
 if database_url && config_env() != :prod do
-  # Accepted test databases: `threshold_test`, a name ending `_test`, or a per-session scratch
-  # name `threshold_test_<suffix>`. The development database (`threshold_game`) never matches.
+  # Accepted test databases: any name ending `_test` (the original rule), `threshold_test`, or a
+  # per-session scratch name `threshold_test_<suffix>`. The development database
+  # (`threshold_game`) never matches.
   if config_env() == :test and
-       not String.match?(
-         URI.parse(database_url).path || "",
-         ~r{^/(threshold_test(_[a-z0-9_]+)?|[a-z0-9_]*_test)$}
-       ) do
+       not (String.ends_with?(URI.parse(database_url).path || "", "_test") or
+              String.match?(
+                URI.parse(database_url).path || "",
+                ~r{^/threshold_test(_[a-z0-9_]+)?$}
+              )) do
     raise "THRESHOLD_TEST_DATABASE_URL must name a dedicated test database: threshold_test, " <>
             "threshold_test_<suffix> or a name ending _test"
   end
