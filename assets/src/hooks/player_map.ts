@@ -49,7 +49,7 @@ export const PlayerMap = {
     this.season = initialSeason();
     const season = this.season;
     const treatment = initialTreatment();
-    this.chrome = this.el.querySelector<HTMLElement>("#play-chrome");
+    this.chrome = this.el.closest<HTMLElement>(".play-layout");
     if (this.chrome) { paintPage(this.chrome, season); this.unbindSeason = bindSeasonButtons(this.chrome, map, s => { this.season = s; }, treatment); }
     const fonts = loadAtlasFonts();
     // Read-only map inspection and projection for browser verification.
@@ -106,7 +106,7 @@ export const PlayerMap = {
       map.getCanvas().style.cursor = map.queryRenderedFeatures(event.point, { layers: ["move-glow"] }).length ? "pointer" : "";
     });
   },
-  // A LiveView patch can drop attributes the hook set on #play-chrome; restore them from the remembered season.
+  // A LiveView patch can drop attributes the hook set on the layout; restore them from the remembered season.
   updated(this: Hook) { if (this.chrome) paintPage(this.chrome, this.season); this.apply(); },
   destroyed(this: Hook) {
     this.removed = true; if (this.frame) cancelAnimationFrame(this.frame);

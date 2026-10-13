@@ -13,16 +13,14 @@
 .atlas-error:empty { display: none; }
 .atlas-error { position: absolute; left: 24px; bottom: 24px; margin: 0; padding: 8px 12px; background: #fff; color: #8a1c1c; }
 
-/* /play: the season switcher and title over the map. Variables are set on #play-chrome by the hook. */
+/* /play: the title over the map and season controls in Menu. Variables inherit from .play-layout. */
 #play-chrome { color: var(--atlas-ink, #43382b); }
-#play-chrome .play-map-label { font: 500 26px var(--atlas-serif, Georgia, serif); letter-spacing: .12em; text-transform: uppercase; padding: 8px 14px 10px; background: color-mix(in srgb, var(--atlas-halo, #f6f0e0) 88%, transparent); border: 1px solid var(--atlas-road-casing, #cbbd9c); border-radius: 2px; }
-#play-chrome .play-map-label span { font: italic 400 14px var(--atlas-serif, Georgia, serif); letter-spacing: 0; text-transform: none; color: var(--atlas-ink-muted, #6d5f4b); }
-.play-seasons { top: 24px; right: 24px; z-index: 2; }
+.play-map-label { font: 500 26px var(--atlas-serif, Georgia, serif); letter-spacing: .12em; text-transform: uppercase; padding: 8px 14px 10px; background: color-mix(in srgb, var(--atlas-halo, #f6f0e0) 88%, transparent); border: 1px solid var(--atlas-road-casing, #cbbd9c); border-radius: 2px; }
+.play-map-label span { font: italic 400 14px var(--atlas-serif, Georgia, serif); letter-spacing: 0; text-transform: none; color: var(--atlas-ink-muted, #6d5f4b); }
+.play-seasons { position: static; display: flex; flex-wrap: wrap; margin-top: 12px; }
 @media (max-width: 700px) {
-  /* Narrow screens: the switcher moves to the bottom-right corner so it never covers the title or markers' area. */
-  .play-seasons { top: auto; bottom: 36px; right: 12px; }
   .play-seasons button { padding: 6px 9px; font-size: 13px; }
-  #play-chrome .play-map-label { font-size: 20px; padding: 6px 10px 8px; }
+  .play-map-label { font-size: 20px; padding: 6px 10px 8px; }
 }
 
 /* /play: the investigate panel (LiveView): a field-notebook page in the side panel.
@@ -66,3 +64,15 @@
 /* Visually hidden, still read by assistive technology. */
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .play-panel [tabindex="-1"]:focus-visible { outline: 3px solid #139884; outline-offset: 3px; border-radius: 2px; }
+
+/* Field Atlas hierarchy: place, investigation focus, movement, then optional details. */
+.play-panel h1 { margin: 8px 0 14px; overflow-wrap: anywhere; }
+.play-location-description { font: 17px/1.6 "Atlas Serif", Georgia, serif; overflow-wrap: anywhere; }
+.play-location-description span { white-space: pre-wrap; }
+.play-menu { margin-top: 28px; border-top: 1px solid #e5e5db; padding-top: 8px; }
+.play-menu > summary { cursor: pointer; min-height: 44px; padding: 12px 0; font-size: 14px; }
+.play-menu > summary:focus-visible { outline: 3px solid #139884; outline-offset: 3px; }
+.play-menu .play-footer { margin-top: 18px; }
+.play-moves button > span, .play-place > span { min-width: 0; overflow-wrap: anywhere; }
+.play-moves small, .play-place small { flex-shrink: 0; margin-left: 8px; }
+.play-seasons button { min-height: 44px; flex: 1; }

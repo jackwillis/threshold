@@ -102,6 +102,32 @@ defmodule ThresholdWeb.PlayLiveTest do
     assert has_element?(view, "#play-error", "no usable movement")
   end
 
+  test "location and investigations precede moves while diagnostics stay in closed Menu", %{
+    conn: conn
+  } do
+    {:ok, view, _} = live(conn, ~p"/play?graph=generated")
+    assert has_element?(view, "#current-location-heading", "Street corner")
+    assert has_element?(view, "#play-menu > summary", "Menu / Details")
+    refute has_element?(view, "#play-menu[open]")
+
+    for selector <- ["#player-progress", "#switch-graph", "#new-walk", "#play-seasons"] do
+      assert has_element?(view, "#play-menu #{selector}")
+    end
+
+    assert has_element?(view, "#new-walk[data-confirm*=discoveries][data-confirm*=completed]")
+    html = render(view)
+
+    assert :binary.match(html, "id=\"current-location\"") <
+             :binary.match(html, "id=\"available-moves\"")
+
+    view |> element("#walk-0") |> render_click()
+    assert has_element?(view, "#current-location-heading", "Unmarked door")
+    assert has_element?(view, "#current-location .play-location-description", "A faint tapping.")
+    render_hook(view, "map_failed", %{message: "Unable to load map."})
+    assert has_element?(view, "#player-map-error[role=alert]", "Unable to load map.")
+    refute has_element?(view, "#play-menu #player-map-error")
+  end
+
   defp state_json(html) do
     [_, encoded] = Regex.run(~r/data-state="([^"]*)"/, html)
     encoded |> unescape() |> Jason.decode!()
