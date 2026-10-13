@@ -38,9 +38,18 @@ defmodule ThresholdWeb.Layouts do
   def app(assigns) do
     ~H"""
     <header class="app-header">
-      <a href="/" class="app-title">Threshold</a>
-      <span class="app-subtitle">{if @mode == "play", do: "exploration", else: "geographic editor"}</span>
-      <a href="/play" class="app-play-link">Explore</a>
+      <a href={if(@mode == "home", do: ~p"/", else: ~p"/editor")} class="app-title">Threshold</a>
+      <span class="app-subtitle">
+        <%= case @mode do %>
+          <% "home" -> %>
+            A Madison mystery
+          <% "play" -> %>
+            exploration
+          <% _ -> %>
+            geographic editor
+        <% end %>
+      </span>
+      <a :if={@mode != "home"} href={~p"/play"} class="app-play-link">Explore</a>
     </header>
 
     <main class="app-main">

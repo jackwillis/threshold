@@ -565,7 +565,7 @@ defmodule ThresholdWeb.PlayLive do
                 phx-click="new_walk"
                 data-confirm="Start a new walk? This resets your saved turns, visited places, discoveries and completed interactions."
               >New walk</button>
-              <a href={~p"/?world=#{@world_name}"}>World editor</a>
+              <a href={~p"/editor?world=#{@world_name}"}>World editor</a>
               <a
                 id="switch-graph"
                 href={

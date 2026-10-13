@@ -40,7 +40,7 @@ defmodule ThresholdWeb.EditorRouteCheckTest do
 
   test "lists what does not resolve to a walk and changes nothing", %{conn: conn, path: path} do
     before = File.read!(path)
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     refute has_element?(view, "#route-check-result")
 
     view |> element("#check-routes") |> render_click()
@@ -55,7 +55,7 @@ defmodule ThresholdWeb.EditorRouteCheckTest do
   end
 
   test "the result is cleared when the authored layer is edited", %{conn: conn} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     view |> element("#check-routes") |> render_click()
     assert has_element?(view, "#route-check-result")
 
@@ -70,7 +70,7 @@ defmodule ThresholdWeb.EditorRouteCheckTest do
     conn: conn,
     path: path
   } do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     view |> element("#check-routes") |> render_click()
 
     view
@@ -93,7 +93,7 @@ defmodule ThresholdWeb.EditorRouteCheckTest do
   end
 
   test "the inspector offers walking access and can clear it", %{conn: conn} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     render_hook(view, "focus_object", %{"id" => "loc:free"})
     render_hook(view, "pick", %{"layer" => "authored-location", "id" => "loc:free"})
     assert has_element?(view, "#walking-access", "cannot be reached on foot")

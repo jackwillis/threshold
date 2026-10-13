@@ -4,8 +4,9 @@ defmodule ThresholdWeb.EditorLiveTest do
   import Phoenix.LiveViewTest
 
   test "renders the map hook with the initial view state", %{conn: conn} do
-    {:ok, view, html} = live(conn, ~p"/")
+    {:ok, view, html} = live(conn, ~p"/editor")
     assert has_element?(view, "#map-hook[phx-hook=MapEditor][data-world=tiny]")
+    assert has_element?(view, ".app-title[href='/editor']", "Threshold")
     assert html =~ "Tiny"
 
     state = view |> element("#map-hook") |> render() |> map_state()
@@ -16,7 +17,7 @@ defmodule ThresholdWeb.EditorLiveTest do
   end
 
   test "layer toggles and color mode update the state sent to the map", %{conn: conn} do
-    {:ok, view, _html} = live(conn, ~p"/")
+    {:ok, view, _html} = live(conn, ~p"/editor")
 
     view
     |> form("#view-form",
@@ -32,7 +33,7 @@ defmodule ThresholdWeb.EditorLiveTest do
   end
 
   test "access basis is a color mode with its own legend", %{conn: conn} do
-    {:ok, view, _html} = live(conn, ~p"/")
+    {:ok, view, _html} = live(conn, ~p"/editor")
 
     view |> form("#view-form", view: %{"color_by" => "access_basis"}) |> render_change()
 
@@ -43,12 +44,12 @@ defmodule ThresholdWeb.EditorLiveTest do
   end
 
   test "fresh geography shows no stale banner", %{conn: conn} do
-    {:ok, view, _html} = live(conn, ~p"/")
+    {:ok, view, _html} = live(conn, ~p"/editor")
     refute has_element?(view, "#stale-banner")
   end
 
   test "lists components and focusing one updates the map focus", %{conn: conn} do
-    {:ok, view, _html} = live(conn, ~p"/")
+    {:ok, view, _html} = live(conn, ~p"/editor")
     assert has_element?(view, "#components", "#1: 1 edges")
 
     view |> element("#components button[phx-value-index='1']") |> render_click()
@@ -58,7 +59,7 @@ defmodule ThresholdWeb.EditorLiveTest do
   end
 
   test "selection from the map shows in the inspector and can be cleared", %{conn: conn} do
-    {:ok, view, _html} = live(conn, ~p"/")
+    {:ok, view, _html} = live(conn, ~p"/editor")
     assert render(view) =~ "Click a street"
 
     props = %{
@@ -83,7 +84,7 @@ defmodule ThresholdWeb.EditorLiveTest do
   end
 
   test "map load results are reflected in the UI", %{conn: conn} do
-    {:ok, view, _html} = live(conn, ~p"/")
+    {:ok, view, _html} = live(conn, ~p"/editor")
     assert has_element?(view, "#map-loading")
     render_hook(view, "map_loaded", %{})
     refute has_element?(view, "#map-loading")

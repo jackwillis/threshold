@@ -24,7 +24,7 @@ defmodule ThresholdWeb.EditorRegenerationTest do
 
   test "regeneration reloads geography without writing authored content", %{conn: conn, dir: dir} do
     authored = File.read!(Path.join(dir, "authored.json"))
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     view |> element("#regenerate-button") |> render_click()
     html = render_async(view)
     assert html =~ "Geography regenerated"
@@ -36,7 +36,7 @@ defmodule ThresholdWeb.EditorRegenerationTest do
   end
 
   test "unsaved changes prevent regeneration even for direct events", %{conn: conn} do
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
 
     render_hook(view, "add_location", %{
       "anchor" => %{"kind" => "point", "point" => [-89.38, 43.071]}
@@ -58,7 +58,7 @@ defmodule ThresholdWeb.EditorRegenerationTest do
       command: {"sh", ["-c", "echo broken; exit 3"]}
     )
 
-    {:ok, view, _} = live(conn, ~p"/")
+    {:ok, view, _} = live(conn, ~p"/editor")
     view |> element("#regenerate-button") |> render_click()
     assert render_async(view) =~ "Regeneration failed"
     assert has_element?(view, "#regeneration-output", "broken")

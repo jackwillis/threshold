@@ -54,6 +54,7 @@ defmodule ThresholdWeb.PlayLiveTest do
     {:ok, view, _} = live(conn, ~p"/play?graph=generated")
     assert has_element?(view, "#player-turn", "0")
     assert has_element?(view, "#walk-0")
+    assert has_element?(view, "#play-menu a[href='/editor?world=tiny']", "World editor")
     refute has_element?(view, "#inspect-0")
     state = view |> element("#player-map") |> render() |> state_json()
     refute Map.has_key?(state, "preview")

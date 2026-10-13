@@ -7,7 +7,8 @@ Elixir and the source checkout are not needed at runtime.
 
 Production requires non-empty `SECRET_KEY_BASE` (generate with `mix phx.gen.secret`)
 and `THRESHOLD_DATABASE_URL`. Startup reports all absent required variables together.
-The database must already exist. Production settings are read at startup:
+The database must already exist. The landing page is at `/`, the world editor at
+`/editor`, and the player map at `/play`. Production settings are read at startup:
 
 | Variable | Default | Purpose |
 | --- | --- | --- |

@@ -76,3 +76,18 @@
 .play-moves button > span, .play-place > span { min-width: 0; overflow-wrap: anywhere; }
 .play-moves small, .play-place small { flex-shrink: 0; margin-left: 8px; }
 .play-seasons button { min-height: 44px; flex: 1; }
+
+/* The public landing page uses the atlas paper, ink and restrained teal. */
+.landing-page { min-height: 100%; display: grid; place-items: center; padding: clamp(32px, 8vw, 96px) 24px; box-sizing: border-box; background: #f3ecd9; color: #43382b; }
+.landing-content { width: 100%; max-width: 680px; }
+.landing-eyebrow { margin: 0 0 16px; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; }
+.landing-page h1 { margin: 0; font: 500 clamp(52px, 10vw, 88px)/1.1 Georgia, serif; letter-spacing: -.025em; }
+.landing-intro { margin: 24px 0 12px; font: 24px/1.4 Georgia, serif; }
+.landing-description { max-width: 520px; margin: 0; font-size: 16px; line-height: 1.7; }
+.landing-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 40px; }
+.landing-link { display: flex; flex-direction: column; justify-content: center; gap: 8px; min-height: 100px; box-sizing: border-box; padding: 20px 24px; border: 1px solid #b7a98a; border-radius: 3px; color: #43382b; background: #faf5e6; text-decoration: none; font: 24px/1.3 Georgia, serif; }
+.landing-link-primary { color: #fffdf4; background: #0e6f61; border-color: #0e6f61; }
+.landing-link-description { font: 14px/1.5 system-ui, sans-serif; }
+.landing-link:hover { text-decoration: underline; text-underline-offset: 4px; }
+.landing-link:focus-visible { outline: 3px solid #43382b; outline-offset: 5px; }
+@media (max-width: 540px) { .landing-actions { grid-template-columns: 1fr; margin-top: 28px; } .landing-link { min-height: 88px; } }

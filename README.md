@@ -2,7 +2,7 @@
 
 Threshold is a single-player mystery game set in Madison, Wisconsin. Explore a Classic Atlas map, walk one connection at a time, investigate places, and record discoveries. Phoenix LiveView and TypeScript/MapLibre power the game and its local world-authoring editor; a Python/OSMnx pipeline builds the geography.
 
-The editor (`/`) and player map (`/play`) work locally, with PostgreSQL-saved progress and four visual seasons. The first authored mystery, *The Quiet Hour*, has automated content checks and scratch-world browser playtests. Studio V2, the Field Journal, and radio gameplay are planned. [Implementation status](docs/implementation-status.md) describes the features and verification limits.
+The editor (`/editor`) and player map (`/play`) work locally, with PostgreSQL-saved progress and four visual seasons. The first authored mystery, *The Quiet Hour*, has automated content checks and scratch-world browser playtests. Studio V2, the Field Journal, and radio gameplay are planned. [Implementation status](docs/implementation-status.md) describes the features and verification limits.
 
 ## Quick start
 
@@ -45,7 +45,7 @@ mix ecto.migrate
 make run
 ```
 
-Open [the scratch player map](http://localhost:4000/play?world=tiny&graph=generated). Choose the numbered destination to walk the fixture's connection. This small world has no story content. The [scratch editor](http://localhost:4000/?world=tiny) is available too.
+Open [the scratch player map](http://localhost:4000/play?world=tiny&graph=generated). Choose the numbered destination to walk the fixture's connection. This small world has no story content. The [scratch editor](http://localhost:4000/editor?world=tiny) is available too.
 
 Stop Phoenix with Ctrl-C. From the same shell, run the full gate:
 
