@@ -2,6 +2,8 @@
 
 **Status:** Roadmap proposal informed by approved product/architecture decisions; only the first bounded implementation increment below is authorized by this planning handoff.
 
+> **Numbering and tracking (October 12, 2026).** GitHub milestones use a finer split than the sections below: M0 Staging Foundation, M1 Accounts and Authorization, M2 Private OVHcloud Staging, M3 Field Atlas V2, M4 Cases, Journal and Introduction, M5 Studio Story Editor, M6 Collaborative Authoring, M7 Asset Library, M8 GitHub Publishing and Releases. This document's M3 is split across GitHub M3 and M4, its M4 across M5 and M6, and its M5 and M6 across M7 and M8. Issues and priority live in [backlog.md](backlog.md).
+
 ## Approved decisions
 
 - Field Atlas map-first redesign and contextual focus area.

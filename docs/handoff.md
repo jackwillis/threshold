@@ -8,10 +8,11 @@ The designer has approved the **direction**, not blanket feature implementation,
 - [Private staging architecture](architecture/staging.md)
 - [Collaborative authoring, S3 drafts, Git LFS and PR publishing](architecture/authoring-and-publishing.md)
 - [Milestones and authorization boundaries](planning/next-milestones.md)
+- [Backlog index, issue numbers and RICE priorities](planning/backlog.md)
 
 **Superseding decisions:** OVHcloud (not Vultr) for a separate small staging VPS; guest-first play with emailed code *or* magic-link optional accounts; owner/editor capabilities only (no moderator system); Git-reviewed content proposals, manually selected periodic releases; draft assets may use private S3 storage and accepted binaries may be promoted into Git LFS in PRs. The OVHcloud 32 GB dedicated server is a separate, currently impaired machine and is not home backup storage. No live server provisioned by this documentation update.
 
-**First bounded engineering increment:** inspect release/deploy assumptions and produce a local production-style Docker/Compose smoke test against **disposable PostgreSQL and a scratch/fixture world**. Do not implement accounts, Github App, asset ingestion, world-revision policy, or a live deployment without a later instruction. Do not push, deploy, provision or modify protected development geography, database, saves, or worktrees. Earlier UX and staging proposals should be reconciled against these newer decisions.
+**First bounded engineering increment:** inspect release/deploy assumptions and produce a local production-style Docker/Compose smoke test against **disposable PostgreSQL and a scratch/fixture world**. Do not implement accounts, GitHub App, asset ingestion, world-revision policy, or a live deployment without a later instruction. Do not push, deploy, provision or modify protected development geography, database, saves, or worktrees. Earlier UX and staging proposals should be reconciled against these newer decisions.
 
 
 Date: October 8, 2026 (this header), updated October 10, 2026 below. From: Claude Code. To: the next engineer or agent.
