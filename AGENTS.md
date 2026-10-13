@@ -4,7 +4,7 @@ Single-player Madison-based mystery game: a local world-authoring editor, a Clas
 
 **Standing instructions from the designer (October 10, 2026):** no new gameplay systems without explicit approval; do not add environmental notes or change the default spawn (the designer is playing the mystery first); do not touch the development database, `authored.json`, the playable boundary, the `generated` symlink or the generation snapshots; do not push to `main`, merge or deploy (an agent may push an `issue-N-*` branch and open a PR only after the designer says go on that ticket).
 
-**Working from the backlog:** tasks are GitHub Issues on the [Threshold Backlog board](https://github.com/users/jackwillis/threshold/projects/3). Codex implements and opens a PR, Claude Code reviews it, the designer merges; follow [docs/planning/agent-workflow.md](docs/planning/agent-workflow.md); priorities are in [docs/planning/backlog.md](docs/planning/backlog.md). `ready` is not authorization: wait for the designer's go.
+**Working from the backlog:** tasks are GitHub Issues on the [Threshold Backlog board](https://github.com/users/jackwillis/threshold/projects/3). Codex implements and opens a PR, Claude Code reviews it, the designer merges; follow [docs/planning/agent-workflow.md](docs/planning/agent-workflow.md); priorities are in [docs/planning/backlog.md](docs/planning/backlog.md). `ready` is not authorization: wait for the designer's go. Agents may open new issues for discovered work (label `needs-triage`, do not start them); a batch run can use [docs/planning/codex-batch-prompt.md](docs/planning/codex-batch-prompt.md).
 
 ## Commands
 
@@ -27,7 +27,7 @@ Single-player Madison-based mystery game: a local world-authoring editor, a Clas
 - The server (LiveView) owns the working copy; the browser sends gestures and receives `data-state`. Keep large geography off the socket (served by `WorldController`).
 - Preserve the layer separation: source snapshot / generated geography / authored world. Closures annotate imported access; references are flagged, never silently rewritten.
 - Add tests with changes, verify UI behaviour in a browser (the LiveView tests do not cover Terra Draw/MapLibre), and report what was and was not verified.
-- Small, reviewable commits, only when asked; never push or deploy unprompted.
+- Small, reviewable commits. Pushes, PRs and deploys follow the standing instruction at the top: issue branches and PRs only after the designer says go on that ticket; never `main`, merging or deploying.
 
 This is a web application written using the Phoenix web framework.
 
