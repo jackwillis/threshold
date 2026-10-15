@@ -191,9 +191,14 @@ defmodule ThresholdWeb.EditorLive do
     do: {:noreply, assign(socket, loading: false, load_error: message)}
 
   def handle_event("focus_component", %{"index" => index}, socket) do
-    index = String.to_integer(index)
-    component = Enum.find(components(socket.assigns.world), &(&1["component"] == index))
-    {:noreply, focus(socket, %{"bounds" => component && component["bounds"], "object" => nil})}
+    with true <- is_binary(index),
+         {index, ""} when index >= 0 <- Integer.parse(index),
+         component when not is_nil(component) <-
+           Enum.find(components(socket.assigns.world), &(&1["component"] == index)) do
+      {:noreply, focus(socket, %{"bounds" => component["bounds"], "object" => nil})}
+    else
+      _ -> {:noreply, socket}
+    end
   end
 
   # Read-only: resolves the working copy's connections to real walks and lists what fails.
