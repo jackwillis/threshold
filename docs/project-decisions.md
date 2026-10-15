@@ -138,3 +138,7 @@ The editor milestone decisions (editor actions, anchoring, closure semantics, ed
 - Define source-update comparisons and how unresolved references are shown.
 - Decide whether source data is small enough to commit once acquired.
 - Establish CI provider and deployment target when needed; neither has been chosen.
+
+## Decisions recorded from issues
+
+- **Generated-graph play mode (#80, 2026-10-14).** Keep it as a developer-only mode; retire nothing yet. Hosted mode will disable `?graph=generated` and its menu link (tracked in #82). Retirement is a separate decision once the authored map is judged sufficient. See [authored-integration-audit.md](authored-integration-audit.md).
