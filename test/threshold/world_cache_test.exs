@@ -45,9 +45,7 @@ defmodule Threshold.WorldCacheTest do
     assert {:ok, first} = load()
     assert {:ok, second} = load()
     assert first == second
-    # The cached copy is the very same term, not a rebuild.
-    key = {Threshold.WorldCache, hd(:persistent_term.get({Threshold.WorldCache, :index}))}
-    assert :persistent_term.get(key) == first
+    assert [{{:worlds, _}, ^first}] = Threshold.BoundedCache.entries(:worlds)
   end
 
   test "the cached world equals an uncached build, revision included", %{dir: dir} do
@@ -124,7 +122,47 @@ defmodule Threshold.WorldCacheTest do
 
     WorldCache.clear()
     assert {:ok, %{generation: "working"}} = load()
-    assert :persistent_term.get({Threshold.WorldCache, :index}, []) == []
+    assert Threshold.BoundedCache.entries(:worlds) == []
+  end
+
+  test "concurrent cold callers build one world" do
+    counter = start_supervised!({Agent, fn -> 0 end})
+
+    build = fn ->
+      Agent.update(counter, &(&1 + 1))
+      load()
+    end
+
+    # Keep the production world loader inside the instrumented builder, using a
+    # different outer graph key to avoid recursively joining its own flight.
+    results =
+      1..16
+      |> Task.async_stream(
+        fn _ ->
+          WorldCache.fetch("tiny", :single_flight_test, build)
+        end,
+        max_concurrency: 16,
+        timeout: :infinity
+      )
+      |> Enum.to_list()
+
+    assert Enum.all?(results, &match?({:ok, {:ok, %World{}}}, &1))
+    assert Agent.get(counter, & &1) == 1
+  end
+
+  test "an edit during a build is never stored under the old key", %{dir: dir} do
+    {:ok, before} = load()
+    WorldCache.clear()
+
+    assert {:ok, ^before} =
+             WorldCache.fetch("tiny", :authored, fn ->
+               write_authored(dir, "Edited during build")
+               {:ok, before}
+             end)
+
+    assert Threshold.BoundedCache.entries(:worlds) == []
+    assert {:ok, after_edit} = load()
+    assert after_edit.revision != before.revision
   end
 
   test "only the most recent worlds are kept", %{dir: dir} do
@@ -133,6 +171,6 @@ defmodule Threshold.WorldCacheTest do
       assert {:ok, _} = load()
     end
 
-    assert length(:persistent_term.get({Threshold.WorldCache, :index})) == 4
+    assert length(Threshold.BoundedCache.entries(:worlds)) == 4
   end
 end
