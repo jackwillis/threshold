@@ -165,6 +165,29 @@ defmodule Threshold.RouteResolverTest do
              resolve(near, [link("loc:a", "loc:c")], [closure]) |> conn("loc:a", "loc:c")
   end
 
+  test "boundary geometry controls routing even when pipeline flags disagree" do
+    doc = %{
+      Authored.empty()
+      | "locations" => [node("loc:a", "n:a"), node("loc:b", "n:b")],
+        "connections" => [link("loc:a", "loc:b")]
+    }
+
+    boundary = %{
+      "type" => "Polygon",
+      "coordinates" => [[[-1, -1], [1, -1], [1, 2], [-1, 2], [-1, -1]]]
+    }
+
+    street =
+      edge("e:ab", "n:a", "n:b", 100, %{"inside_playable" => false, "crosses_boundary" => true})
+
+    assert [%{status: :ok}] = RouteResolver.resolve(doc, [street], boundary: boundary).connections
+
+    outside = put_in(street, ["geometry", "coordinates"], [[0, 0], [2, 1]])
+
+    assert [%{status: :blocked, blockers: [%{reason: :outside_boundary}]}] =
+             RouteResolver.resolve(doc, [outside], boundary: boundary).connections
+  end
+
   describe "geometry" do
     # Along the equator-ish: A (0,0) -- B (0,1) -- C (1,1), each leg of length 1.
     defp shaped(id, from, to, coordinates) do

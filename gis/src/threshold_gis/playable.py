@@ -24,6 +24,7 @@ log = logging.getLogger("threshold_gis")
 
 FORMAT_VERSION = 1
 LAT0 = 43.075  # local metric scale; adequate for a study area a kilometre across
+ACCESS = {"public", "unknown", "conditional", "mixed"}
 VEHICLE_SERVICE = {"driveway", "parking_aisle", "drive-through", "emergency_access"}
 ENTRANCE_M = 3.0
 VERTICAL_M = 15.0
@@ -62,7 +63,7 @@ def build_playable(world, radius_m=DEFAULT_RADIUS_M):
     core = [
         e
         for e in sorted(edges, key=lambda e: e["id"])
-        if e["properties"]["access_status"] != "restricted" and e["properties"].get("service") not in VEHICLE_SERVICE
+        if e["properties"]["access_status"] in ACCESS and e["properties"].get("service") not in VEHICLE_SERVICE
     ]
     g = nx.MultiGraph()
     for e in core:

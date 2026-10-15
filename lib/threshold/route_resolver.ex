@@ -17,8 +17,8 @@ defmodule Threshold.RouteResolver do
   Nothing here changes authored data or the game.
   """
 
-  @access ~w(public unknown conditional mixed)
-  @vehicle_service ~w(driveway parking_aisle drive-through emergency_access)
+  alias Threshold.{Traversal, Game.Geometry}
+
   @detour_ratio 3.0
   @near_node_m 8
   @free_point_search_m 60
@@ -43,6 +43,7 @@ defmodule Threshold.RouteResolver do
   which places coincide with one) and `:nodes` (network node id to `[lon, lat]`; when given,
   every place gets the `stand` point where a player would stand and every resolved connection
   gets its `geometry`, a continuous LineString along the real streets).
+  `:boundary` supplies the playable polygon; when absent this is a network-only diagnostic.
   """
   @spec resolve(map, [map], keyword) :: %{
           places: [map],
@@ -64,7 +65,7 @@ defmodule Threshold.RouteResolver do
       |> Enum.map(&position(&1, edges, nodes_to_playable, edge_features))
       |> Enum.map(&stand(&1, edges, nodes))
 
-    graph = build_graph(placed, edges, closed)
+    graph = build_graph(placed, edges, closed, Keyword.get(opts, :boundary))
     by_id = Map.new(placed, &{&1.id, &1})
     locations = Map.new(authored["locations"], &{&1["id"], &1})
 
@@ -165,12 +166,12 @@ defmodule Threshold.RouteResolver do
   # --- Graph ---------------------------------------------------------------------------
 
   # Mid-block places split their edge into chained segments; everything else is an edge as is.
-  defp build_graph(placed, edges, closed) do
+  defp build_graph(placed, edges, closed, boundary) do
     splits = placed |> Enum.filter(& &1[:virtual]) |> Enum.group_by(& &1.edge)
 
     Enum.reduce(edges, %{}, fn {id, feature}, adjacency ->
       p = feature["properties"]
-      block = block_reason(p, id, closed)
+      block = block_reason(feature, id, closed, boundary)
 
       chain =
         case Map.get(splits, id) do
@@ -195,13 +196,15 @@ defmodule Threshold.RouteResolver do
     |> Enum.map(fn [{a, fa}, {b, fb}] -> {a, b, max((fb - fa) * length, 0.0), {fa, fb}} end)
   end
 
-  defp block_reason(p, id, closed) do
-    cond do
-      MapSet.member?(closed, id) -> :closure
-      p["access_status"] not in @access -> :access
-      p["service"] in @vehicle_service -> :access
-      p["inside_playable"] == false or p["crosses_boundary"] == true -> :outside_boundary
-      true -> nil
+  defp block_reason(feature, id, closed, boundary) do
+    case Traversal.walkable?(Map.put(feature["properties"], "id", id), closed) do
+      {:blocked, reason} ->
+        reason
+
+      :ok ->
+        if boundary && not Geometry.covered?(feature["geometry"], boundary),
+          do: :outside_boundary,
+          else: nil
     end
   end
 

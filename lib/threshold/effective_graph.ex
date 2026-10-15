@@ -64,8 +64,8 @@ defmodule Threshold.EffectiveGraph do
 
   @doc false
   def build(name, world, authored, edge_features, playable, nodes, revision) do
-    resolution = RouteResolver.resolve(authored, edge_features, nodes: nodes)
     boundary = world.boundary["geometry"]
+    resolution = RouteResolver.resolve(authored, edge_features, nodes: nodes, boundary: boundary)
     details = Map.new(authored["locations"], &{&1["id"], &1})
 
     locations =
