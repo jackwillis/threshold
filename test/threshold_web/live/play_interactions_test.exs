@@ -339,4 +339,68 @@ defmodule ThresholdWeb.PlayInteractionsTest do
       refute_push_event(view, "restore-focus", _)
     end
   end
+
+  describe "focus area" do
+    test "names the one detail showing and keeps the order location, focus area, moves", %{
+      conn: conn
+    } do
+      {:ok, view, html} = live(conn, ~p"/play")
+      assert has_element?(view, "#focus-area[data-focus=interactions]")
+
+      [location, focus, moves] =
+        for id <- ~w(current-location focus-area available-moves),
+            do: :binary.match(html, "id=\"#{id}\"") |> elem(0)
+
+      assert location < focus and focus < moves
+
+      view |> element("#investigate-0") |> render_click()
+      assert has_element?(view, "#focus-area[data-focus=scene]")
+
+      view |> element("#close-scene") |> render_click()
+      assert has_element?(view, "#focus-area[data-focus=interactions]")
+
+      view |> element("#investigate-0") |> render_click()
+      view |> element("#choice-0") |> render_click()
+      assert has_element?(view, "#focus-area[data-focus=outcome]")
+    end
+
+    test "inspecting a place and opening a scene replace each other", %{conn: conn} do
+      {:ok, view, _} = live(conn, ~p"/play")
+      view |> element("#inspect-0") |> render_click()
+      assert has_element?(view, "#focus-area[data-focus=place] #place-inspection")
+
+      view |> element("#investigate-0") |> render_click()
+      assert has_element?(view, "#focus-area[data-focus=scene] #scene")
+      refute has_element?(view, "#place-inspection")
+
+      view |> element("#inspect-0") |> render_click()
+      assert has_element?(view, "#place-inspection")
+      refute has_element?(view, "#scene")
+    end
+
+    test "a place description takes focus, closes on Escape and returns focus to its button", %{
+      conn: conn
+    } do
+      {:ok, view, _} = live(conn, ~p"/play")
+      view |> element("#inspect-0") |> render_click()
+      assert has_element?(view, "#place-inspection-title[tabindex='-1'][phx-mounted]")
+
+      section = view |> element("#place-inspection") |> render()
+      assert section =~ ~s(phx-key="Escape")
+      assert section =~ "#inspect-0"
+
+      view |> element("#close-inspection") |> render_click()
+      refute has_element?(view, "#place-inspection")
+    end
+
+    test "arriving or walking away never leaves an open detail behind", %{conn: conn} do
+      {:ok, view, _} = live(conn, ~p"/play")
+      refute has_element?(view, "#scene, #place-inspection")
+
+      view |> element("#inspect-0") |> render_click()
+      view |> element("#walk-0") |> render_click()
+      refute has_element?(view, "#place-inspection")
+      assert {0, 0} = rows()
+    end
+  end
 end
