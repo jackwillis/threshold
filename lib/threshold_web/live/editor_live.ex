@@ -202,7 +202,10 @@ defmodule ThresholdWeb.EditorLive do
     result =
       with {:ok, text} <- File.read(Path.join(dir, "edges.geojson")),
            {:ok, %{"features" => edges}} <- Jason.decode(text) do
-        {:ok, Threshold.RouteResolver.resolve(socket.assigns.authored, edges)}
+        {:ok,
+         Threshold.RouteResolver.resolve(socket.assigns.authored, edges,
+           boundary: socket.assigns.boundary
+         )}
       end
 
     case result do

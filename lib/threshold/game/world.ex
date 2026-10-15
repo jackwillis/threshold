@@ -1,6 +1,6 @@
 defmodule Threshold.Game.World do
   @moduledoc "Loads an immutable movement graph and validates every constituent source edge."
-  alias Threshold.{Authored, Playable}
+  alias Threshold.{Authored, Playable, Traversal}
   alias Threshold.Game.Geometry
 
   defstruct [
@@ -16,9 +16,6 @@ defmodule Threshold.Game.World do
     spawns: [],
     places: []
   ]
-
-  @access ~w(public unknown conditional mixed)
-  @vehicle_service ~w(driveway parking_aisle drive-through emergency_access)
 
   @doc """
   Loads a world for play. `graph: :authored` plays on the designer's authored nodes and walks
@@ -141,34 +138,38 @@ defmodule Threshold.Game.World do
           "properties" => props,
           "geometry" => %{"type" => "LineString", "coordinates" => [_, _ | _] = line}
         } ->
-          cond do
-            id in closures ->
-              {:halt, {:error, :closure}}
+          case Traversal.walkable?(Map.put(props, "id", id), closures) do
+            {:blocked, reason} ->
+              {:halt, {:error, reason}}
 
-            props["access_status"] not in @access or props["service"] in @vehicle_service ->
-              {:halt, {:error, :access}}
-
-            node not in [props["from"], props["to"]] ->
-              {:halt, {:error, :invalid_route}}
-
-            true ->
-              {next, segment} =
-                if node == props["from"],
-                  do: {props["to"], line},
-                  else: {props["from"], Enum.reverse(line)}
-
-              if coordinates == [] or List.last(coordinates) == hd(segment) do
-                {:cont,
-                 {:ok, next, coordinates ++ if(coordinates == [], do: segment, else: tl(segment)),
-                  path ++ [next]}}
-              else
-                {:halt, {:error, :invalid_route}}
-              end
+            :ok ->
+              walk_segment(node, props, line, coordinates, path)
           end
 
         _ ->
           {:halt, {:error, :invalid_route}}
       end
     end)
+  end
+
+  defp walk_segment(node, props, line, coordinates, path) do
+    cond do
+      node not in [props["from"], props["to"]] ->
+        {:halt, {:error, :invalid_route}}
+
+      true ->
+        {next, segment} =
+          if node == props["from"],
+            do: {props["to"], line},
+            else: {props["from"], Enum.reverse(line)}
+
+        if coordinates == [] or List.last(coordinates) == hd(segment) do
+          {:cont,
+           {:ok, next, coordinates ++ if(coordinates == [], do: segment, else: tl(segment)),
+            path ++ [next]}}
+        else
+          {:halt, {:error, :invalid_route}}
+        end
+    end
   end
 end
