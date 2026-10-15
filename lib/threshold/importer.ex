@@ -5,11 +5,14 @@ defmodule Threshold.Importer do
   Only `build`, `playable` and `validate` are exposed. `acquire` contacts OpenStreetMap and
   must stay an explicit command-line action. The command is configurable so tests
   can substitute a stub: `config :threshold, Threshold.Importer, command: {exe, args}`.
+  Requires GNU `timeout` (coreutils). `:timeout` configures the limit in milliseconds
+  (default five minutes); unresponsive processes receive SIGKILL after one second.
   """
   require Logger
 
   @commands ~w(build playable validate)
   @timeout :timer.minutes(5)
+  @kill_after 1_000
 
   @type result :: {:ok, String.t()} | {:error, String.t()}
 
@@ -19,23 +22,63 @@ defmodule Threshold.Importer do
       {exe, args} = executable()
       Logger.info("importer #{command} #{world}")
 
-      task =
-        Task.async(fn ->
-          System.cmd(
-            exe,
-            args ++ [command, world, "--worlds-dir", Path.expand(root)],
-            stderr_to_stdout: true,
-            cd: File.cwd!()
-          )
-        end)
+      timeout_ms = Application.get_env(:threshold, __MODULE__, [])[:timeout] || @timeout
 
-      case Task.yield(task, @timeout) || Task.shutdown(task) do
-        {:ok, {output, 0}} -> {:ok, output}
-        {:ok, {output, status}} -> {:error, "importer exited #{status}\n" <> output}
-        nil -> {:error, "importer timed out"}
-      end
+      # GNU timeout signals the whole subprocess group, then escalates if TERM is ignored.
+      # Killing an Elixir task alone leaves System.cmd's OS process running.
+      run_command(exe, args ++ [command, world, "--worlds-dir", Path.expand(root)], timeout_ms)
     else
       {:error, "invalid world name"}
+    end
+  end
+
+  defp run_command(exe, args, timeout_ms) do
+    scratch =
+      Path.join(
+        System.tmp_dir!(),
+        "threshold-importer-#{Base.url_encode64(:crypto.strong_rand_bytes(12), padding: false)}"
+      )
+
+    File.mkdir!(scratch)
+    status_file = Path.join(scratch, "status")
+
+    try do
+      # Record normal exits separately: 124 and 137 are valid importer exit codes too.
+      script =
+        ~s(status_file="$1"; shift; "$@"; status=$?; printf '%s' "$status" > "$status_file")
+
+      {output, exit_status} =
+        System.cmd(
+          "timeout",
+          [
+            "--kill-after=#{@kill_after / 1_000}s",
+            "#{timeout_ms / 1_000}s",
+            "sh",
+            "-c",
+            script,
+            "--",
+            status_file,
+            exe
+          ] ++ args,
+          stderr_to_stdout: true,
+          cd: File.cwd!()
+        )
+
+      case File.read(status_file) do
+        {:ok, "0"} ->
+          {:ok, output}
+
+        {:ok, status} ->
+          {:error, "importer exited #{status}\n" <> output}
+
+        {:error, :enoent} when exit_status in [124, 137] ->
+          {:error, "importer timed out"}
+
+        {:error, :enoent} ->
+          {:error, "importer exited #{exit_status}\n" <> output}
+      end
+    after
+      File.rm_rf!(scratch)
     end
   end
 

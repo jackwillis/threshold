@@ -60,6 +60,27 @@ defmodule Threshold.ImporterTest do
     assert {:error, "importer exited 3\nboom\n"} = Importer.run("build", "madison")
   end
 
+  test "preserves importer exit codes reserved by timeout" do
+    for status <- [124, 137] do
+      Application.put_env(:threshold, Importer, command: {"sh", ["-c", "exit #{status}"]})
+      assert {:error, "importer exited #{status}\n"} == Importer.run("build", "tiny")
+    end
+  end
+
+  test "timeout terminates the importer OS process", %{dir: dir} do
+    pid_file = Path.join(dir, "importer.pid")
+
+    Application.put_env(:threshold, Importer,
+      command: Threshold.ImporterStub.sleeping_command(pid_file),
+      timeout: 200
+    )
+
+    assert {:error, "importer timed out"} = Importer.run("build", "tiny")
+    pid = pid_file |> File.read!() |> String.trim()
+    assert {_, status} = System.cmd("kill", ["-0", pid], stderr_to_stdout: true)
+    assert status != 0
+  end
+
   test "rejects unsafe world names" do
     assert {:error, "invalid world name"} = Importer.run("build", "../etc")
   end

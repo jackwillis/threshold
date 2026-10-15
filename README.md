@@ -8,7 +8,7 @@ The editor (`/editor`) and player map (`/play`) work locally, with PostgreSQL-sa
 
 ## Quick start
 
-Use Bash, Git, Make, Docker with Compose, and the versions in [.tool-versions](.tool-versions): Elixir 1.19.6 / OTP 26.2.5.21, Python 3.12 (including `venv`), and Bun 1.4.2. Install the Erlang/Elixir build prerequisites for your platform. Bun's usual `~/.bun/bin` location is added to PATH by Make. Initial setup downloads dependencies.
+Use Bash, Git, Make, GNU `timeout` (coreutils, for Studio regeneration), Docker with Compose, and the versions in [.tool-versions](.tool-versions): Elixir 1.19.6 / OTP 26.2.5.21, Python 3.12 (including `venv`), and Bun 1.4.2. Install the Erlang/Elixir build prerequisites for your platform. Bun's usual `~/.bun/bin` location is added to PATH by Make. Initial setup downloads dependencies.
 
 This quick start uses a disposable PostgreSQL service on loopback port 5433 and a scratch copy of the tiny synthetic world. It does not play the Madison mystery or edit its files. In a new Bash shell:
 

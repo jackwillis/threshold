@@ -7,4 +7,8 @@ defmodule Threshold.ImporterStub do
 
     {"sh", ["-c", script, "--"]}
   end
+
+  def sleeping_command(pid_file) do
+    {"sh", ["-c", ~s(echo $$ > "#{pid_file}"; exec sleep 37), "--"]}
+  end
 end
