@@ -96,7 +96,7 @@ defmodule ThresholdWeb.PlayLive do
 
   def handle_event("inspect", %{"id" => id}, socket) do
     place = Enum.find(socket.assigns.nearby, &(&1["id"] == id))
-    {:noreply, assign(socket, inspected: place)}
+    {:noreply, assign(socket, inspected: place, open_interaction: nil, outcome: nil)}
   end
 
   def handle_event("close_inspect", _, socket), do: {:noreply, assign(socket, inspected: nil)}
@@ -110,7 +110,8 @@ defmodule ThresholdWeb.PlayLive do
         &(&1.status == :available and &1.interaction["id"] == id)
       )
 
-    {:noreply, assign(socket, open_interaction: if(available?, do: id), outcome: nil)}
+    {:noreply,
+     assign(socket, open_interaction: if(available?, do: id), outcome: nil, inspected: nil)}
   end
 
   def handle_event("close_interaction", _, socket),
@@ -339,6 +340,159 @@ defmodule ThresholdWeb.PlayLive do
     )
   end
 
+  # The single focus area under the current location. It holds exactly one open detail at a time
+  # (a scene, a place description or a recorded outcome) next to the Investigate disclosure
+  # buttons that open and close them; `data-focus` names which one is showing.
+  attr :interactions, :list, required: true
+  attr :interaction_note, :string, default: nil
+  attr :open_interaction, :string, default: nil
+  attr :outcome, :any, default: nil
+  attr :outcome_seq, :integer, default: 0
+  attr :inspected, :map, default: nil
+  attr :nearby, :list, default: []
+  attr :turn, :integer, required: true
+
+  def focus_area(assigns) do
+    assigns =
+      assign(assigns,
+        mode: focus_mode(assigns),
+        inspected_index:
+          Enum.find_index(assigns.nearby, &(&1["id"] == (assigns.inspected || %{})["id"]))
+      )
+
+    ~H"""
+    <div id="focus-area" class="play-focus" data-focus={@mode}>
+      <section
+        :if={@interactions != [] or @outcome != nil or @interaction_note != nil}
+        id="interactions"
+        aria-labelledby="interactions-heading"
+      >
+        <h2 id="interactions-heading">Investigate</h2>
+        <p
+          :if={@interaction_note}
+          id="interaction-note"
+          class="play-hint play-warning"
+          role="alert"
+        >
+          Investigations are unavailable: {@interaction_note}
+        </p>
+        <%!-- Visible text only; announcements go through the persistent #interaction-live region. --%>
+        <p id="interaction-outcome" class="play-hint">
+          <%= cond do %>
+            <% @outcome != nil -> %>
+              <%!-- A new id per outcome makes this a new element, so phx-mounted moves focus to it each time. --%>
+              <span class={outcome_class(@outcome)}>
+                <span
+                  :if={match?({:recorded, _}, @outcome)}
+                  class="play-stamp"
+                  aria-hidden="true"
+                >
+                  Noted
+                </span>
+                <span
+                  id={"outcome-#{@outcome_seq}"}
+                  class={if(match?({:refused, _}, @outcome), do: "play-refused")}
+                  tabindex="-1"
+                  phx-mounted={JS.focus()}
+                >
+                  {outcome_text(@outcome)}
+                </span>
+              </span>
+            <% Enum.any?(@interactions, &(&1.status == :available)) and @open_interaction == nil -> %>
+              Something here can be investigated.
+            <% true -> %>
+          <% end %>
+        </p>
+        <%= for {entry, index} <- Enum.with_index(@interactions) do %>
+          <% open? = @open_interaction == entry.interaction["id"] %>
+          <button
+            :if={entry.status == :available}
+            id={"investigate-#{index}"}
+            class="play-place"
+            aria-expanded={to_string(open?)}
+            aria-controls="scene"
+            phx-click={
+              if open?,
+                do: JS.push("close_interaction"),
+                else: JS.push("open_interaction", value: %{id: entry.interaction["id"]})
+            }
+          >
+            <span>{entry.interaction["title"]}</span><small>{if open?,
+              do: "Close",
+              else: "Investigate"}</small>
+          </button>
+          <p
+            :if={entry.status == :completed}
+            id={"investigated-#{index}"}
+            class="play-hint play-done"
+          >
+            Investigated: {entry.interaction["title"]}
+          </p>
+          <section
+            :if={open?}
+            id="scene"
+            class="play-inspection play-scene"
+            aria-labelledby="scene-title"
+            phx-window-keydown={JS.push("close_interaction") |> JS.focus(to: "#investigate-#{index}")}
+            phx-key="Escape"
+          >
+            <p class="play-scene-eyebrow">Field note</p>
+            <h3 id="scene-title" tabindex="-1" phx-mounted={JS.focus()}>
+              {entry.interaction["scene"]["title"]}
+            </h3>
+            <p :for={paragraph <- entry.interaction["scene"]["body"]}>{paragraph}</p>
+            <div class="play-choices">
+              <button
+                :for={{choice, c} <- Enum.with_index(entry.interaction["choices"])}
+                id={"choice-#{c}"}
+                class="play-place"
+                phx-click="complete_interaction"
+                phx-value-id={entry.interaction["id"]}
+                phx-value-choice={choice["id"]}
+                phx-value-turn={@turn}
+              >
+                <span>{choice["label"]}</span>
+              </button>
+            </div>
+            <button
+              id="close-scene"
+              phx-click={JS.push("close_interaction") |> JS.focus(to: "#investigate-#{index}")}
+            >
+              Close
+            </button>
+          </section>
+        <% end %>
+      </section>
+      <section
+        :if={@inspected}
+        id="place-inspection"
+        class="play-inspection"
+        aria-labelledby="place-inspection-title"
+        phx-window-keydown={JS.push("close_inspect") |> JS.focus(to: "#inspect-#{@inspected_index}")}
+        phx-key="Escape"
+      >
+        <h3 id="place-inspection-title" tabindex="-1" phx-mounted={JS.focus()}>
+          {@inspected["name"]}
+        </h3>
+        <p>{@inspected["notes"]}</p>
+        <button
+          id="close-inspection"
+          phx-click={JS.push("close_inspect") |> JS.focus(to: "#inspect-#{@inspected_index}")}
+        >
+          Close
+        </button>
+      </section>
+    </div>
+    """
+  end
+
+  defp focus_mode(%{open_interaction: id}) when id != nil, do: :scene
+  defp focus_mode(%{inspected: place}) when place != nil, do: :place
+  defp focus_mode(%{outcome: outcome}) when outcome != nil, do: :outcome
+  defp focus_mode(%{interactions: [_ | _]}), do: :interactions
+  defp focus_mode(%{interaction_note: note}) when note != nil, do: :interactions
+  defp focus_mode(_), do: :idle
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -394,113 +548,16 @@ defmodule ThresholdWeb.PlayLive do
                 </button>
               </div>
             </section>
-            <section
-              :if={@interactions != [] or @outcome != nil or @interaction_note != nil}
-              id="interactions"
-              aria-labelledby="interactions-heading"
-            >
-              <h2 id="interactions-heading">Investigate</h2>
-              <p
-                :if={@interaction_note}
-                id="interaction-note"
-                class="play-hint play-warning"
-                role="alert"
-              >
-                Investigations are unavailable: {@interaction_note}
-              </p>
-              <%!-- Visible text only; announcements go through the persistent #interaction-live region. --%>
-              <p id="interaction-outcome" class="play-hint">
-                <%= cond do %>
-                  <% @outcome != nil -> %>
-                    <%!-- A new id per outcome makes this a new element, so phx-mounted moves focus to it each time. --%>
-                    <span class={outcome_class(@outcome)}>
-                      <span
-                        :if={match?({:recorded, _}, @outcome)}
-                        class="play-stamp"
-                        aria-hidden="true"
-                      >
-                        Noted
-                      </span>
-                      <span
-                        id={"outcome-#{@outcome_seq}"}
-                        class={if(match?({:refused, _}, @outcome), do: "play-refused")}
-                        tabindex="-1"
-                        phx-mounted={JS.focus()}
-                      >
-                        {outcome_text(@outcome)}
-                      </span>
-                    </span>
-                  <% Enum.any?(@interactions, &(&1.status == :available)) and @open_interaction == nil -> %>
-                    Something here can be investigated.
-                  <% true -> %>
-                <% end %>
-              </p>
-              <%= for {entry, index} <- Enum.with_index(@interactions) do %>
-                <% open? = @open_interaction == entry.interaction["id"] %>
-                <button
-                  :if={entry.status == :available}
-                  id={"investigate-#{index}"}
-                  class="play-place"
-                  aria-expanded={to_string(open?)}
-                  aria-controls="scene"
-                  phx-click={
-                    if open?,
-                      do: JS.push("close_interaction"),
-                      else: JS.push("open_interaction", value: %{id: entry.interaction["id"]})
-                  }
-                >
-                  <span>{entry.interaction["title"]}</span><small>{if open?,
-                    do: "Close",
-                    else: "Investigate"}</small>
-                </button>
-                <p
-                  :if={entry.status == :completed}
-                  id={"investigated-#{index}"}
-                  class="play-hint play-done"
-                >
-                  Investigated: {entry.interaction["title"]}
-                </p>
-                <section
-                  :if={open?}
-                  id="scene"
-                  class="play-inspection play-scene"
-                  aria-labelledby="scene-title"
-                  phx-window-keydown={
-                    JS.push("close_interaction") |> JS.focus(to: "#investigate-#{index}")
-                  }
-                  phx-key="Escape"
-                >
-                  <p class="play-scene-eyebrow">Field note</p>
-                  <h3 id="scene-title" tabindex="-1" phx-mounted={JS.focus()}>
-                    {entry.interaction["scene"]["title"]}
-                  </h3>
-                  <p :for={paragraph <- entry.interaction["scene"]["body"]}>{paragraph}</p>
-                  <div class="play-choices">
-                    <button
-                      :for={{choice, c} <- Enum.with_index(entry.interaction["choices"])}
-                      id={"choice-#{c}"}
-                      class="play-place"
-                      phx-click="complete_interaction"
-                      phx-value-id={entry.interaction["id"]}
-                      phx-value-choice={choice["id"]}
-                      phx-value-turn={@player.turn}
-                    >
-                      <span>{choice["label"]}</span>
-                    </button>
-                  </div>
-                  <button
-                    id="close-scene"
-                    phx-click={JS.push("close_interaction") |> JS.focus(to: "#investigate-#{index}")}
-                  >
-                    Close
-                  </button>
-                </section>
-              <% end %>
-            </section>
-            <section :if={@inspected} id="place-inspection" class="play-inspection">
-              <h3>{@inspected["name"]}</h3><p>{@inspected["notes"]}</p>
-              <button id="close-inspection" phx-click="close_inspect">Close</button>
-            </section>
+            <.focus_area
+              interactions={@interactions}
+              interaction_note={@interaction_note}
+              open_interaction={@open_interaction}
+              outcome={@outcome}
+              outcome_seq={@outcome_seq}
+              inspected={@inspected}
+              nearby={@nearby}
+              turn={@player.turn}
+            />
             <h2 id="next-step-heading" tabindex="-1">Your next step</h2>
             <p class="play-hint">
               Choose a glowing marker or a direction below, or press its number key. Numbers run clockwise from north.
