@@ -22,14 +22,23 @@ defmodule Threshold.Game.Sessions do
   def reset(%World{} = world) do
     with {:ok, player, _spawn} <- Game.start(world) do
       Repo.transaction(fn ->
-        # The upsert below keeps the row's id, so cascading deletes would not fire: a new walk
-        # discards discoveries and completed interactions explicitly.
-        clear_interaction_progress(world)
-
+        # Establish the row before locking it, including concurrent first resets.
         Repo.insert!(Progress.changeset(%Progress{}, attrs(world, player)),
-          on_conflict: {:replace, [:world_revision, :location, :turn, :visited, :updated_at]},
+          on_conflict: :nothing,
           conflict_target: [:world, :player_key]
         )
+
+        progress =
+          Repo.one!(
+            from(p in Progress,
+              where: p.world == ^world.name and p.player_key == "local",
+              lock: "FOR UPDATE"
+            )
+          )
+
+        # Serialize with moves and completions before deleting their old-walk state.
+        clear_interaction_progress(world)
+        Repo.update!(Progress.changeset(progress, attrs(world, player)))
 
         player
       end)

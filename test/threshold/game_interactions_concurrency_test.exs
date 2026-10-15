@@ -66,17 +66,70 @@ defmodule Threshold.GameInteractionsConcurrencyTest do
     assert Repo.aggregate(CompletedInteraction, :count) == completed
   end
 
-  test "a reset racing completions leaves no orphan rows", %{world: world, content: content} do
-    parallel(8, fn n ->
-      if n == 0,
-        do: Sessions.reset(world),
-        else: Sessions.complete_interaction(world, content, 0, "int:door", "knock")
+  test "a reset after competing completions clears the old walk", %{
+    world: world,
+    content: content
+  } do
+    parallel(8, fn _ ->
+      Sessions.complete_interaction(world, content, 0, "int:door", "knock")
     end)
 
-    progress = Repo.get_by!(Progress, world: "tiny")
-    completed = Repo.aggregate(CompletedInteraction, :count)
-    discovered = Repo.aggregate(Discovery, :count)
-    assert completed <= 1 and discovered == completed
-    assert Repo.all(CompletedInteraction) |> Enum.all?(&(&1.progress_id == progress.id))
+    assert {:ok, %{turn: 0}} = Sessions.reset(world)
+    assert_fresh_walk()
+  end
+
+  test "reset waits for a locked completion before clearing its rows", %{
+    world: world,
+    content: content
+  } do
+    supervisor = start_supervised!(Task.Supervisor)
+    parent = self()
+
+    completion =
+      Task.Supervisor.async_nolink(supervisor, fn ->
+        Repo.transaction(fn ->
+          Repo.query!("SELECT id FROM player_progress FOR UPDATE")
+          send(parent, :progress_locked)
+          assert_receive :complete, 5_000
+
+          assert {:ok, _} =
+                   Sessions.complete_interaction(world, content, 0, "int:door", "knock")
+        end)
+      end)
+
+    assert_receive :progress_locked, 5_000
+
+    reset =
+      Task.Supervisor.async_nolink(supervisor, fn ->
+        Repo.checkout(fn ->
+          %{rows: [[pid]]} = Repo.query!("SELECT pg_backend_pid()")
+          send(parent, {:reset_backend, pid})
+          Sessions.reset(world)
+        end)
+      end)
+
+    assert_receive {:reset_backend, pid}, 5_000
+    await_database_lock(pid, System.monotonic_time(:millisecond) + 5_000)
+    send(completion.pid, :complete)
+    assert {:ok, _} = Task.await(completion)
+    assert {:ok, %{turn: 0}} = Task.await(reset)
+    assert_fresh_walk()
+  end
+
+  defp await_database_lock(pid, deadline) do
+    %{rows: [[blocked]]} = Repo.query!("SELECT cardinality(pg_blocking_pids($1)) > 0", [pid])
+
+    unless blocked do
+      assert System.monotonic_time(:millisecond) < deadline, "reset never waited on the row lock"
+      await_database_lock(pid, deadline)
+    end
+  end
+
+  defp assert_fresh_walk do
+    assert %{turn: 0, location: "pn:1", visited: ["pn:1"]} =
+             Repo.get_by!(Progress, world: "tiny")
+
+    assert Repo.aggregate(CompletedInteraction, :count) == 0
+    assert Repo.aggregate(Discovery, :count) == 0
   end
 end
