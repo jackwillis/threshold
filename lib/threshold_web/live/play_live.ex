@@ -360,6 +360,23 @@ defmodule ThresholdWeb.PlayLive do
           </p>
         </div>
         <aside id="player-panel" class="play-panel">
+          <%!-- Narrow screens only (CSS): the panel is a bottom sheet that starts compact. The class and
+               aria-expanded are client-side JS commands, so they survive LiveView patches. --%>
+          <button
+            :if={@player}
+            id="panel-toggle"
+            type="button"
+            class="play-sheet-toggle"
+            aria-expanded="false"
+            aria-controls="player-panel"
+            phx-click={
+              JS.toggle_class("is-expanded", to: "#player-panel")
+              |> JS.toggle_attribute({"aria-expanded", "true", "false"}, to: "#panel-toggle")
+            }
+          >
+            <span class="play-sheet-grip" aria-hidden="true"></span>
+            <span class="play-sheet-label">Details</span>
+          </button>
           <p class="play-eyebrow">Threshold · Field Atlas</p>
           <p :if={@error} id="play-error" role="alert">{@error}</p>
           <%= if @player do %>

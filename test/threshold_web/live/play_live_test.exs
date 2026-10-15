@@ -103,6 +103,23 @@ defmodule ThresholdWeb.PlayLiveTest do
     assert has_element?(view, "#play-error", "no usable movement")
   end
 
+  test "the panel has a sheet toggle for narrow screens that starts collapsed", %{conn: conn} do
+    {:ok, view, _} = live(conn, ~p"/play?graph=generated")
+
+    assert has_element?(
+             view,
+             "#panel-toggle[type=button][aria-expanded=false][aria-controls=player-panel]"
+           )
+
+    assert has_element?(view, "#player-panel #panel-toggle", "Details")
+
+    toggle = view |> element("#panel-toggle") |> render()
+    assert toggle =~ "is-expanded"
+    assert toggle =~ "aria-expanded"
+    # Every move is still a real button in the collapsed sheet.
+    assert has_element?(view, "#available-moves button#walk-0[phx-click=move]")
+  end
+
   test "location and investigations precede moves while diagnostics stay in closed Menu", %{
     conn: conn
   } do
