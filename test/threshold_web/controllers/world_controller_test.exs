@@ -15,6 +15,23 @@ defmodule ThresholdWeb.WorldControllerTest do
   end
 
   describe "bbox clipping" do
+    test "distinct clipping boxes keep the decoded source cached", %{conn: conn} do
+      {:ok, path} = Threshold.World.layer_path("tiny", "edges", nil)
+      text = File.read!(path)
+      {:ok, document} = Threshold.JsonCache.decode(text)
+      hash = :crypto.hash(:sha256, text)
+
+      for n <- 1..100 do
+        assert conn
+               |> get("/worlds/tiny/edges?bbox=-89.5,43.0,-89.4,#{43.01 + n / 10_000}")
+               |> json_response(200)
+      end
+
+      assert {{:json_documents, hash}, document} in Threshold.BoundedCache.entries(
+               :json_documents
+             )
+    end
+
     # Edge 1-2 spans lon -89.385..-89.380; edge 3-4 spans lon -89.375..-89.374.
     defp ids(conn, query) do
       conn

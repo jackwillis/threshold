@@ -21,24 +21,17 @@ defmodule Threshold.Geography do
         {__MODULE__, nodes_path, nodes_stat.size, nodes_stat.mtime, edges_stat.size,
          edges_stat.mtime}
 
-      case :persistent_term.get(key, nil) do
-        nil ->
-          with {:ok, nodes} <- read_features(nodes_path),
-               {:ok, edges} <- read_features(edges_path) do
-            index = %{
-              nodes: Map.new(nodes, &{&1["id"], &1["geometry"]["coordinates"]}),
-              edges: Map.new(edges, &{&1["id"], &1["properties"]["geometry_hash"]}),
-              lines: Map.new(edges, &{&1["id"], &1["geometry"]["coordinates"]})
-            }
-
-            drop_other_snapshots(nodes_path)
-            :persistent_term.put(key, index)
-            {:ok, index}
-          end
-
-        index ->
-          {:ok, index}
-      end
+      Threshold.BoundedCache.fetch(:geography, key, fn ->
+        with {:ok, nodes} <- read_features(nodes_path),
+             {:ok, edges} <- read_features(edges_path) do
+          {:ok,
+           %{
+             nodes: Map.new(nodes, &{&1["id"], &1["geometry"]["coordinates"]}),
+             edges: Map.new(edges, &{&1["id"], &1["properties"]["geometry_hash"]}),
+             lines: Map.new(edges, &{&1["id"], &1["geometry"]["coordinates"]})
+           }}
+        end
+      end)
     else
       _ -> :error
     end
@@ -88,27 +81,13 @@ defmodule Threshold.Geography do
     end
   end
 
-  # Snapshots are immutable and replaced wholesale; keep only the newest index per world.
-  defp drop_other_snapshots(nodes_path) do
-    family = nodes_path |> Path.dirname() |> Path.dirname()
-
-    for {{__MODULE__, path, _, _, _, _} = key, _} <- :persistent_term.get(),
-        path != nodes_path and path |> Path.dirname() |> Path.dirname() == family do
-      :persistent_term.erase(key)
-    end
-
-    :ok
-  end
-
   @doc "Clears cached indexes after an explicit regeneration, including same-size writes."
   def invalidate(dir) do
     path = Path.join(dir, "nodes.geojson")
 
-    for {{__MODULE__, ^path, _, _, _, _} = key, _} <- :persistent_term.get() do
-      :persistent_term.erase(key)
-    end
-
-    :ok
+    Threshold.BoundedCache.invalidate(:geography, fn {__MODULE__, cached, _, _, _, _} ->
+      cached == path
+    end)
   end
 
   defp read_features(path) do

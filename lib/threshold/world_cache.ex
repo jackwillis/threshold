@@ -22,9 +22,6 @@ defmodule Threshold.WorldCache do
 
   alias Threshold.Authored
 
-  @keep 4
-  @index {__MODULE__, :index}
-
   @spec fetch(String.t(), atom, (-> {:ok, struct} | {:error, term})) ::
           {:ok, struct} | {:error, term}
   def fetch(name, graph, build) do
@@ -33,24 +30,18 @@ defmodule Threshold.WorldCache do
         build.()
 
       key ->
-        case :persistent_term.get({__MODULE__, key}, nil) do
-          nil -> build_and_store(name, graph, key, build)
-          world -> {:ok, world}
-        end
+        Threshold.BoundedCache.fetch(:worlds, key, fn ->
+          build_and_store(name, graph, key, build)
+        end)
     end
   end
 
   @doc "Forgets every cached world (tests, and anything that wants a cold start)."
-  def clear do
-    for key <- :persistent_term.get(@index, []), do: :persistent_term.erase({__MODULE__, key})
-    :persistent_term.put(@index, [])
-    :ok
-  end
+  def clear, do: Threshold.BoundedCache.clear(:worlds)
 
   defp build_and_store(name, graph, key, build) do
     with {:ok, world} <- build.() do
-      if key(name, graph) == key, do: remember(key, world)
-      {:ok, world}
+      if key(name, graph) == key, do: {:ok, world}, else: {:uncached, world}
     end
   end
 
@@ -64,14 +55,5 @@ defmodule Threshold.WorldCache do
     else
       _ -> nil
     end
-  end
-
-  defp remember(key, world) do
-    recent = [key | List.delete(:persistent_term.get(@index, []), key)]
-    {keep, drop} = Enum.split(recent, @keep)
-    :persistent_term.put({__MODULE__, key}, world)
-    :persistent_term.put(@index, keep)
-    for old <- drop, do: :persistent_term.erase({__MODULE__, old})
-    :ok
   end
 end

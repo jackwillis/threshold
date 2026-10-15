@@ -13,6 +13,7 @@ defmodule Threshold.Application do
     children =
       database_children ++
         [
+          Threshold.BoundedCache,
           {Phoenix.PubSub, name: Threshold.PubSub},
           # Start a worker by calling: Threshold.Worker.start_link(arg)
           # {Threshold.Worker, arg},
