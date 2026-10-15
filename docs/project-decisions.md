@@ -141,4 +141,4 @@ The editor milestone decisions (editor actions, anchoring, closure semantics, ed
 
 ## Decisions recorded from issues
 
-- **Generated-graph play mode (#80, 2026-10-14).** Keep it as a developer-only mode; retire nothing yet. Hosted mode will disable `?graph=generated` and its menu link (tracked in #82). Retirement is a separate decision once the authored map is judged sufficient. See [movement-design.md](movement-design.md).
+- **Generated-graph play mode (#80, 2026-10-14).** Keep it as a developer-only mode; retire nothing yet. Hosted mode will disable `?graph=generated` and its menu link (tracked in #82). Retirement is a separate decision once the authored map is judged sufficient. See [authored-integration-audit.md](authored-integration-audit.md).
