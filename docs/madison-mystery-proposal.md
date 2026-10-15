@@ -1,3 +1,5 @@
+> **Status: Historical.** Implemented Quiet Hour proposal and dated playtest report. #86 selects the later adaptation; no pacing, note, spawn or world-data changes are authorized. See [handoff](handoff.md).
+
 # Proposal: "The Quiet Hour", a four-place Madison mystery
 
 Date: October 10, 2026. Status: **approved and implemented** as `priv/worlds/madison/interactions.json` (see the implementation and playtest report at the end). It was a proposal until the designer's approval on October 10, 2026; the original text of that proposal follows unchanged except for the two approved corrections. Built only from the existing interaction model ([gameplay-interactions.md](gameplay-interactions.md)): declared discoveries, `requires`, one scene per interaction, choices that grant discoveries. No new engine features.

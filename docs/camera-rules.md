@@ -1,3 +1,5 @@
+> **Status: Current.** Camera design reference; see [implementation status](implementation-status.md) for implementation and limits.
+
 # Threshold — Field Atlas Camera and Viewport Rules
 
 **To:** Claude Code  
@@ -183,7 +185,7 @@ The player-centered camera, strict one-hop movement, and radial keyboard navigat
 
 ## Implementation notes (V1 player map, 2026-10-09)
 
-Implemented in the current Field Atlas (`/play`), not only in V2. Rules live in `assets/src/map/camera.ts` (pure, 11 tests in `camera.test.ts`, run by `make check`) and are applied by `hooks/player_map.ts`. The Studio editor keeps its own camera.
+Implemented in the current Field Atlas (`/play`), not only in V2. Rules live in `assets/src/map/camera.ts` (pure, tested in `camera.test.ts`; see `make check` for current counts) and are applied by `hooks/player_map.ts`. The Studio editor keeps its own camera.
 
 - **Limits** default to zoom 17 to 19.5 and a 200 m tether, with the authored spawn zoom clamped into range. They are overridable in one place: `config :threshold, :atlas_camera, min_zoom: ..., max_zoom: ..., max_displacement_m: ...` (0 locks the centre to the player). Zoom uses MapLibre's `minZoom`/`maxZoom`, so wheel, pinch, controls and `fitBounds` all respect it.
 - **Tether** is geographic distance from the player's current location. User gestures (drag, inertia, wheel, pinch) are clamped as they move; programmatic moves are allowed to run and are corrected with a short ease when they settle, so a camera animating towards the destination is never snapped mid-flight.

@@ -1,3 +1,5 @@
+> **Status: Historical.** Early game vision. See [current architecture](architecture/ux-v2.md) and [handoff](handoff.md) for current decisions and implementation boundaries.
+
 # Threshold — Game Design Memo
 
 **Date:** October 8, 2026  

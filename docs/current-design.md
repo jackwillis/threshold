@@ -1,3 +1,5 @@
+> **Status: Historical.** October 9 game-design snapshot. Its vision remains context; implementation/next-step assertions are superseded by [handoff](handoff.md), [implementation status](implementation-status.md) and [UX/story architecture](architecture/ux-v2.md).
+
 # Threshold — Current Game Design Memo
 
 **Date:** October 9, 2026  

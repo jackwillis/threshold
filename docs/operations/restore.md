@@ -1,3 +1,5 @@
+> **Status: Current.** Restore-drill planning outline; no implemented backup service or live recovery authorization.
+
 # Restore drill outline
 
 This outline feeds backup/restore ticket #17 and deployment ticket #16. It is not an implemented backup service, restore script, retention policy or permission to operate a live environment. The designer approves recovery objectives, destinations and any eventual cutover. See [staging architecture](../architecture/staging.md), [credential inventory](secrets.md) and [rollback guidance](deploy-rollback.md).

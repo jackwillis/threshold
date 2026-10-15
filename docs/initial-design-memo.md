@@ -1,3 +1,5 @@
+> **Status: Historical.** Superseded by [project decisions](project-decisions.md) and [current architecture](architecture/ux-v2.md). Original viewer-only proposal; preserved for context.
+
 # Design Memo: Geographic World Importer and Viewer
 
 **Project:** Untitled Madison AR/ARG Game  

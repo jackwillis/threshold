@@ -1,3 +1,5 @@
+> **Status: Current.** Implemented Classic Atlas typography reference with dated browser observations.
+
 # Classic Atlas: typography decision and first baseline
 
 Date: October 9, 2026. Status: decided, prototyped at `/atlas` and applied to `/play` (October 9, 2026). The editor still uses its diagnostic style.

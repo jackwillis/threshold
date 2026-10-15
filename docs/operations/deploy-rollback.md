@@ -1,3 +1,5 @@
+> **Status: Current.** Operator planning checklist; no live deployment authorization. Release image support is implemented (#4); Compose/deploy verification is tracked separately.
+
 # Manual staging deploy and rollback checklist
 
 This operator checklist describes the approved private staging direction. Docker/GHCR/Compose, proxy/access controls and deploy automation are future tickets; no scripts or live deployment are supplied here. The designer alone authorizes deployment. The current standalone release contract is in [release.md](../release.md); credential custody is in [secrets.md](secrets.md).

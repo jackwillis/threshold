@@ -1,3 +1,5 @@
+> **Status: Current.** Approved private staging direction. Later #29 selects fixture-only staging; no provisioning/deployment authorization.
+
 # Threshold — Private OVHcloud Staging Architecture
 
 **Status:** Approved direction, 2026-10-12. No provisioning or deployment authorized by this document.

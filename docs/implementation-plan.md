@@ -1,3 +1,5 @@
+> **Status: Historical.** Original editor implementation checklist. The [backlog board](https://github.com/users/jackwillis/projects/3) and [agent workflow](planning/agent-workflow.md) now own operational work.
+
 # Implementation plan
 
 Status: **Draft for discussion.** Companion to `design.md`. Phases are ordered so each ends with something runnable and committable.
@@ -101,4 +103,4 @@ Recommendations in bold. Please push back on any.
 - Optional authored spawn definitions and explicit place-to-movement attachments, editable and saved through the world editor.
 - PostgreSQL progress with atomic moves, expected-turn checks and world-revision checks. Geography remains file-based; PostGIS is deferred until a spatial database query is needed.
 - Nearby inspection without a turn. Fictional transitions, multi-hop routing, fog, radio and narrative progression remain outside this first prototype.
-- Full gate: 131 Elixir/32 Python tests plus TypeScript, world validation and deterministic rebuild. Browser verified on scratch data; see `movement-design.md` for limits. Local Compose setup is documented in `local-gameplay.md`.
+- Full gate: Elixir/Python tests (see `make check` for current counts) plus TypeScript, world validation and deterministic rebuild. Browser verified on scratch data; see `movement-design.md` for limits. Local Compose setup is documented in `local-gameplay.md`.

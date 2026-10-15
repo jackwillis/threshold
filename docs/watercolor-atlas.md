@@ -1,3 +1,5 @@
+> **Status: Current.** Integrated watercolor materials and retained experiment report; no vegetation gameplay is authorized.
+
 # Procedural watercolor atlas
 
 October 9, 2026. Independent visual experiment based on `867f01e`, on branch
@@ -67,7 +69,7 @@ Adding finer vegetation classifications requires a separate GIS decision.
 ## Verification and performance observations
 
 `THRESHOLD_TEST_DATABASE_URL=postgres://threshold:threshold_local@localhost:5433/threshold_test make check`
-passed, including database tests: **301 Elixir, 42 Bun, 38 Python tests**, TypeScript, formatter,
+passed, including database tests: Elixir, Bun and Python tests (see `make check` for current counts), TypeScript, formatter,
 warnings-as-errors, ruff, world validation and byte-identical geographic rebuild. Existing Shapely
 transform deprecation warnings remain. Targeted tests cover deterministic pixels/PNG encoding,
 checked-in assets, seasonal coverage, corner wrapping, periodic wash value/slope, layering and
@@ -143,6 +145,6 @@ new field-notebook presentation and does not touch the primary checkout's pendin
 implementation-status or Madison geography work. Baseline and painterly URL options remain
 available as visual comparison tools; ordinary page loads use subtle.
 
-The integration gate passed with **303 Elixir, 42 Bun and 38 Python tests**, plus all
+The integration gate passed with Elixir, Bun and Python tests (see `make check` for current counts), plus all
 formatting, type, validation and deterministic rebuild checks. A fresh browser check without
 a `materials` parameter confirmed the default subtle treatment.

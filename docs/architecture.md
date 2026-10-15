@@ -1,3 +1,5 @@
+> **Status: Historical.** Long-term architecture proposal, superseded where different by [current architecture](architecture/ux-v2.md), [staging](architecture/staging.md) and [authoring](architecture/authoring-and-publishing.md).
+
 # Threshold — Engineering and Architecture Memo
 
 **Date:** October 8, 2026  

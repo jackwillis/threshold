@@ -1,3 +1,5 @@
+> **Status: Current.** Reusable independent PR review prompt; substitute the intended PR numbers.
+
 # Reviewer prompt
 
 Paste into Claude Code (or any reviewer with `gh` and repo access). Replace `PR_NUMBERS`. For a batch run, list every PR from the Codex report.

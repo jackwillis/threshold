@@ -1,6 +1,8 @@
+> **Status: Current.** Implemented interaction format/API with dated design and verification notes. See [implementation status](implementation-status.md) for current scope.
+
 # Gameplay interactions: first vertical slice
 
-Date: October 9, 2026. Status: **design memo, nothing implemented.** Decisions below were made by the designer after an independent architecture review; "Needs approval" lists what is still open. Terms: [game-design.md](game-design.md) section 9 (encounters), [movement-design.md](movement-design.md) (sessions), [expanded-world-verification.md](expanded-world-verification.md) (runtime world cache).
+Date: October 9, 2026. Status: **implemented first slice; original design and dated reports follow.** Decisions below were made by the designer after an independent architecture review; "Needs approval" lists what is still open. Terms: [game-design.md](game-design.md) section 9 (encounters), [movement-design.md](movement-design.md) (sessions), [expanded-world-verification.md](expanded-world-verification.md) (runtime world cache).
 
 ## 1. Decisions adopted
 

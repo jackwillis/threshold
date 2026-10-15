@@ -1,3 +1,5 @@
+> **Status: Current.** Consolidated approved UX/story direction; exact case schema remains decision #27 and implementation is ticket-specific.
+
 # Threshold — UX and Story Architecture V2
 
 **Status:** Approved product direction, 2026-10-12. Implementation details require milestone review.

@@ -1,3 +1,5 @@
+> **Status: Current.** Local database, migration and scratch-world setup; development migrations remain the designer's responsibility.
+
 # Local gameplay setup
 
 Use Docker Compose for PostgreSQL and run Phoenix, Bun and the GIS pipeline on the host. Native PostgreSQL works too: the application only needs a connection URL. The editor does not require PostgreSQL.
@@ -56,4 +58,4 @@ This serves on loopback at <http://localhost:4000>. Set `PORT` to use another po
 
 ## Verification limits
 
-Movement, saves and browser restoration were verified using an isolated PostgreSQL 18.6 instance and a scratch Madison world. Docker is not installed in the agent's current environment, so the Compose container startup itself has not been exercised here. Reduced-motion animation handling is implemented but has not been separately tested in the browser.
+Movement, saves and browser restoration were verified using an isolated PostgreSQL 18.6 instance and a scratch Madison world. That dated session did not exercise Compose container startup. Production image support subsequently landed in #4; fresh Compose and browser verification remain tracked separately in #5 and #58. Reduced-motion animation handling is implemented but has not been separately tested in the browser.

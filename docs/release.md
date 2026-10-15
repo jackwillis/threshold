@@ -1,3 +1,5 @@
+> **Status: Current.** Implemented OTP release/image contract; local production-style Compose verification remains separate (#5).
+
 # Phoenix release
 
 ## Container image
