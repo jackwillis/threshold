@@ -91,3 +91,25 @@
 .landing-link:hover { text-decoration: underline; text-underline-offset: 4px; }
 .landing-link:focus-visible { outline: 3px solid #43382b; outline-offset: 5px; }
 @media (max-width: 540px) { .landing-actions { grid-template-columns: 1fr; margin-top: 28px; } .landing-link { min-height: 88px; } }
+
+/* Narrow screens: the map keeps most of the viewport and the panel is a bottom sheet. Collapsed it shows the place,
+   what can be investigated and the moves; it opens fully on demand, and by itself while a scene, place description or
+   recorded outcome is showing. Order in the DOM (location, focus area, moves) is unchanged. */
+.play-sheet-toggle { display: none; }
+@media (max-width: 700px) {
+  .play-layout { height: 100%; min-height: 0; grid-template-rows: minmax(0, 1fr) auto; }
+  #player-map { min-height: 0; }
+  .play-layout .play-panel { max-height: 42dvh; padding: 6px 16px 14px; border-top: 1px solid #d9dacf; box-shadow: 0 -4px 14px rgba(70, 55, 30, .1); overscroll-behavior: contain; }
+  .play-layout .play-panel.is-expanded,
+  .play-layout .play-panel:has(#focus-area[data-focus="scene"], #focus-area[data-focus="place"], #focus-area[data-focus="outcome"]) { max-height: 82dvh; }
+  .play-sheet-toggle { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 44px; margin: 0; background: transparent; border: 0; color: #4d5f55; font: 13px/1 var(--atlas-sans, system-ui, sans-serif); cursor: pointer; }
+  .play-sheet-grip { width: 36px; height: 4px; border-radius: 2px; background: #c9cbbf; }
+  .play-sheet-toggle[aria-expanded="true"] .play-sheet-label::after { content: " (close)"; }
+  .play-sheet-toggle:focus-visible { outline: 3px solid #139884; outline-offset: -3px; }
+  .play-layout .play-panel > .play-eyebrow { display: none; }
+  .play-layout .play-panel h1 { font-size: 24px; margin: 2px 0 8px; }
+  .play-layout .play-moves { margin-top: 8px; gap: 6px; }
+  .play-layout .play-moves button, .play-layout .play-place { min-height: 44px; }
+  /* Collapsed: keep only what is needed to act. The toggle or a scene opens the rest. */
+  .play-layout .play-panel:not(.is-expanded):not(:has(#focus-area[data-focus="scene"], #focus-area[data-focus="place"], #focus-area[data-focus="outcome"])) :is(.play-location-description, #current-location .play-place, #interactions-heading, #next-step-heading, #next-step-heading + .play-hint, #play-menu) { display: none; }
+}

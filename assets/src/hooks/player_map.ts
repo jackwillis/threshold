@@ -18,7 +18,7 @@ type Hook = {
   pushEvent(name: string, payload: object): void;
   state(): State; apply(): void; frameCamera(state: State, duration: number): void;
   set(name: string, data: FeatureCollection): void; animate(state: State): void;
-  unbindSeason?: () => void; season: Season; chrome?: HTMLElement | null; pending: boolean; pendingTimer?: number; onKey?: (event: KeyboardEvent) => void;
+  unbindSeason?: () => void; season: Season; chrome?: HTMLElement | null; pending: boolean; pendingTimer?: number; onKey?: (event: KeyboardEvent) => void; resizer?: ResizeObserver;
   requestMove(destination: string): void;
   limits: CameraLimits; settling: boolean; keepCameraNearPlayer(animated: boolean): void;
 };
@@ -45,6 +45,8 @@ export const PlayerMap = {
       attributionControl: { customAttribution: "© OpenStreetMap contributors" },
     });
     this.map = map;
+    // On narrow screens the bottom sheet changes the map's height; MapLibre only listens to window resizes.
+    if (typeof ResizeObserver !== "undefined") { this.resizer = new ResizeObserver(() => map.resize()); this.resizer.observe(this.el); }
     // Season is a display preference only (CSS variables and map paint); the server never sees it.
     this.season = initialSeason();
     const season = this.season;
@@ -109,7 +111,7 @@ export const PlayerMap = {
   // A LiveView patch can drop attributes the hook set on the layout; restore them from the remembered season.
   updated(this: Hook) { if (this.chrome) paintPage(this.chrome, this.season); this.apply(); },
   destroyed(this: Hook) {
-    this.removed = true; if (this.frame) cancelAnimationFrame(this.frame);
+    this.removed = true; this.resizer?.disconnect(); if (this.frame) cancelAnimationFrame(this.frame);
     if (this.onKey) window.removeEventListener("keydown", this.onKey);
     window.clearTimeout(this.pendingTimer); this.unbindSeason?.(); this.map?.remove();
   },
