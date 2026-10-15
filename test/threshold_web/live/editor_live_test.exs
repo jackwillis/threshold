@@ -83,6 +83,34 @@ defmodule ThresholdWeb.EditorLiveTest do
     assert render(view) =~ "Click a street"
   end
 
+  test "invalid component indexes preserve the live editor and its unsaved working copy", %{
+    conn: conn
+  } do
+    {:ok, view, _html} = live(conn, ~p"/editor")
+
+    render_hook(view, "add_location", %{
+      "anchor" => %{"kind" => "point", "point" => [-89.38, 43.071]}
+    })
+
+    view |> element("#components button[phx-value-index='1']") |> render_click()
+    before = map_state(render(view))
+    assert before["dirty"]
+    assert Enum.any?(before["authored"]["locations"], &(&1["name"] == "New location"))
+
+    for index <- ["bad", "", "1junk", "-1", "999999", nil, 1, %{}] do
+      render_hook(view, "focus_component", %{"index" => index})
+      assert map_state(render(view)) == before
+      assert has_element?(view, "#dirty-indicator", "Unsaved changes")
+    end
+
+    view |> element("#components button[phx-value-index='1']") |> render_click()
+    after_focus = map_state(render(view))
+    assert after_focus["focus"]["n"] == before["focus"]["n"] + 1
+    assert after_focus["focus"]["bounds"] == before["focus"]["bounds"]
+    assert after_focus["authored"] == before["authored"]
+    assert after_focus["dirty"]
+  end
+
   test "map load results are reflected in the UI", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/editor")
     assert has_element?(view, "#map-loading")
