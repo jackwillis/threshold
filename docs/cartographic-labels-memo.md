@@ -1,3 +1,5 @@
+> **Status: Current.** Deferred curved-label requirement; not implemented or authorized by this reference.
+
 # Threshold Studio V2 — Curved Street Labels
 
 **Status:** Additional frontend V2 design requirement  

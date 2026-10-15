@@ -1,3 +1,5 @@
+> **Status: Current.** Implemented release health-check contract and verification commands.
+
 # Release health checks
 
 `GET /healthz` returns `200 {"status":"ok"}` when the HTTP process serves requests.

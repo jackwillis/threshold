@@ -1,3 +1,5 @@
+> **Status: Historical.** Dated algorithm experiment. See [implementation status](implementation-status.md) for the implemented pipeline.
+
 # Playable-node experiment
 
 Date: October 8, 2026. Script: `gis/analysis/playable_nodes.py` (exploratory; reads the committed Madison files, changes nothing; `--svg out.svg` draws a comparison of the Capitol Square area). This document records results and caveats; it does not select a production approach. Judgements about what "feels good" are **inferences**; nothing here was playtested.

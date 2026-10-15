@@ -1,3 +1,5 @@
+> **Status: Historical.** Superseded by [UX/story architecture](architecture/ux-v2.md). Dated frontend proposal; its framework recommendations are not current implementation instructions.
+
 # Threshold — Frontend V2 Architecture and Redesign Memo
 
 **To:** Claude Code  

@@ -1,3 +1,5 @@
+> **Status: Historical.** Dated first-import research; measurements are not current geography counts. See [implementation status](implementation-status.md).
+
 # Madison network review
 
 Date: October 8, 2026. Data: the committed snapshot (retrieved 2026-10-08) and generated geography. Method: exploratory scripts in `gis/analysis/` (run from the repo root; they read files and change nothing). Numbers are for the first import and will change with a new snapshot. Items marked **inference** are heuristics, not verified facts.

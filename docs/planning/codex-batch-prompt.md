@@ -1,3 +1,5 @@
+> **Status: Current.** Reusable batch authorization template; replace its example ticket list before use.
+
 # Codex batch prompt (time-boxed, parallel)
 
 Paste into Codex to work several independent `ready` tickets at once. Edit the ticket list and time box each time; the designer's "go" is the list.

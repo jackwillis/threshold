@@ -1,3 +1,5 @@
+> **Status: Current.** Radial shortcut design reference; dated alternatives below are not all implemented. `/play` uses strict one-hop movement.
+
 # Threshold — Radial Keyboard Navigation Design Memo
 
 **To:** Claude Code  

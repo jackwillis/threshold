@@ -1,3 +1,5 @@
+> **Status: Historical.** Dated route-integrity findings and repairs. See [implementation status](implementation-status.md).
+
 # Playable route integrity review
 
 Date: October 8, 2026. Scope: candidate navigation connections, not gameplay or real-world access certification.

@@ -1,3 +1,5 @@
+> **Status: Historical.** Dated scratch-world verification, not a report on the current workspace or latest gate. See [implementation status](implementation-status.md).
+
 # Expanded world: verification report
 
 Date: 2026-10-09, at commit `dae24a1` plus the changes listed at the end. Everything here was measured or exercised on **scratch copies** of the committed world (`git archive` of HEAD, in the session scratchpad, served on a separate port with a disposable test database) or read-only against a copy of the designer's working tree. The real `priv/worlds/madison/boundary.geojson` and `authored.json` were not modified, no OSM data was acquired, and nothing was pushed. Browser behaviour is headless Firefox driven over Marionette (real pointer and key events); where a result is from a test or a script rather than the browser, it says so.

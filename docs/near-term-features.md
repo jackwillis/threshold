@@ -1,3 +1,5 @@
+> **Status: Historical.** October 10 requirements/proposed schema. [UX/story architecture](architecture/ux-v2.md) consolidates later direction; #27 owns the unresolved schema decision. No implementation authorization.
+
 # Near-term gameplay and UI features
 
 Date: October 10, 2026. Status: **requirements recorded from the designer; nothing implemented, and no new gameplay system is authorized yet.** The next session begins with the designer's own playthrough of *The Quiet Hour* ([madison-mystery-proposal.md](madison-mystery-proposal.md)), then decides how the introduction and the Field Journal should work. Context: [current-design.md](current-design.md), [gameplay-interactions.md](gameplay-interactions.md), [handoff.md](handoff.md).

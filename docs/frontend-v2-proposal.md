@@ -1,3 +1,5 @@
+> **Status: Historical.** Superseded by [UX/story architecture](architecture/ux-v2.md). Preserve the original recommendations; later LiveView-first direction takes precedence.
+
 # Frontend V2: architecture and design proposal (Milestone 1)
 
 Updated 2026-10-09 with the visual direction (Classic Atlas primary, seasonal variations, radio/sonar as a secondary instrument) in section 6.

@@ -1,3 +1,5 @@
+> **Status: Current.** Required ticket implementation/review workflow and authorization boundaries.
+
 # Working from the backlog
 
 Tasks are GitHub Issues on the [Threshold Backlog board](https://github.com/users/jackwillis/projects/3) (Backlog, Ready, In Progress, Review, Done). Priority and RICE scores are board fields (see [Priority and RICE](#priority-and-rice)). The loop is short:
@@ -13,7 +15,7 @@ Tasks are GitHub Issues on the [Threshold Backlog board](https://github.com/user
 
 ## Start of a session
 
-Read `AGENTS.md`, `docs/handoff.md` ("Resume here") and this file. Run `git status` and `git worktree list`. The designer's uncommitted world files (`boundary.geojson`, the `generated` symlink, untracked `generations/`) are protected: never stage, reset, clean or stash them. See what is in flight with `gh pr list` and the board.
+Read `AGENTS.md`, `docs/handoff.md` ("Resume here") and this file. Run `git status` and `git worktree list`. The designer's world files (`boundary.geojson`, the `generated` symlink, `generations/`) are tracked and protected: never stage, reset, clean or stash them. See what is in flight with `gh pr list` and the board.
 
 ## Picking a ticket (Codex)
 

@@ -1,3 +1,5 @@
+> **Status: Current.** Unapproved proposal; #31 owns adoption. No save-policy change is authorized.
+
 # Proposal: session compatibility instead of whole-file revisions
 
 Date: October 10, 2026 (revised after the designer's review). Status: **proposal for approval; nothing implemented.** Related: [gameplay-interactions.md](gameplay-interactions.md), [expanded-world-verification.md](expanded-world-verification.md).

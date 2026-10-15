@@ -1,3 +1,5 @@
+> **Status: Historical.** Superseded by [current architecture](architecture/ux-v2.md), [milestones](planning/next-milestones.md) and [handoff](handoff.md). Dated assessment, not current verification.
+
 # Threshold — End-of-Night Architecture Assessment
 
 **Date:** October 10, 2026 (end of October 9 local development session)  
@@ -6,7 +8,7 @@
 
 ## Executive assessment
 
-Threshold has crossed from a geographic editing prototype into a small playable narrative game. The first complete chapter, **The Quiet Hour**, is now in `priv/worlds/madison/interactions.json`: four approved places, seven interactions, seven discoveries, two narrative branches, and two endings. The handoff reports scratch-world headless-browser playthroughs covering both branches and endings (19- and 21-hop variants), and the full gate at `cd9f7c3`: **311 Elixir, 42 Bun, 38 Python tests**, plus formatting, type checks, lint, world validation, and deterministic rebuild. These are *reported* verification results, not a fresh execution for this memo. The designer has **not yet done a human playthrough**.
+Threshold has crossed from a geographic editing prototype into a small playable narrative game. The first complete chapter, **The Quiet Hour**, is now in `priv/worlds/madison/interactions.json`: four approved places, seven interactions, seven discoveries, two narrative branches, and two endings. The handoff reports scratch-world headless-browser playthroughs covering both branches and endings (19- and 21-hop variants), and the full gate at `cd9f7c3`: automated tests (see `make check` for current counts), plus formatting, type checks, lint, world validation, and deterministic rebuild. These are *reported* verification results, not a fresh execution for this memo. The designer has **not yet done a human playthrough**.
 
 **Assessment:** Keep the architecture. The major design choices are coherent and now supported by executable examples. The immediate risk is not the wrong language or framework; it is allowing systems work to outrun evidence about the player's experience. **Next session begins with playing The Quiet Hour and taking notes, not implementing another engine.**
 

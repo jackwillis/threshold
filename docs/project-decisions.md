@@ -1,3 +1,5 @@
+> **Status: Historical.** Foundational decision log; the original milestone/open-question sections below are dated. Later decisions take precedence as linked in [handoff](handoff.md); see [current architecture](architecture/ux-v2.md).
+
 # Project decisions
 
 Date: October 8, 2026 (America/Chicago)

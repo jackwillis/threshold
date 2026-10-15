@@ -1,6 +1,8 @@
+> **Status: Current.** Roadmap and milestone mapping; consult the board for completion and obtain ticket-specific authorization.
+
 # Threshold — Consolidated Next Milestones
 
-**Status:** Roadmap proposal informed by approved product/architecture decisions; only the first bounded implementation increment below is authorized by this planning handoff.
+**Status:** Roadmap proposal informed by approved product/architecture decisions; the dated first increment below describes M0 scope, not standing authorization. Current ticket state is on the board; each ticket still needs the designer's go.
 
 > **Numbering and tracking (October 12, 2026).** GitHub milestones use a finer split than the sections below: M0 Staging Foundation, M1 Accounts and Authorization, M2 Private OVHcloud Staging, M3 Field Atlas V2, M4 Cases, Journal and Introduction, M5 Studio Story Editor, M6 Collaborative Authoring, M7 Asset Library, M8 GitHub Publishing and Releases. This document's M3 is split across GitHub M3 and M4, its M4 across M5 and M6, and its M5 and M6 across M7 and M8. Issues, milestones and priority live on the [Threshold Backlog board](https://github.com/users/jackwillis/projects/3).
 
@@ -28,11 +30,11 @@ Guest cookies backed by server-owned progress; additive ownership mapping; email
 
 ## M2 — Hosted private staging and backup verification (separate approval)
 
-Provision small OVH VPS manually initially; bootstrap Docker and private access (Tailscale or equivalent); CI/GHCR manual deploy, Caddy HTTPS and transactional email; recoverable encrypted PostgreSQL/object/draft backups and restore test. Do not deploy the designer's uncommitted world accidentally. Provision/secret spending needs explicit owner approval.
+Provision small OVH VPS manually initially; bootstrap Docker and private access (Tailscale or equivalent); CI/GHCR manual deploy, Caddy HTTPS and transactional email; recoverable encrypted PostgreSQL/object/draft backups and restore test. Staging uses the fixture world only for now (#29); hosting Madison needs a new decision naming the main SHA. Provision/secret spending needs explicit owner approval.
 
 ## M3 — Field Atlas UX and story read models (may run parallel)
 
-Simplify the player layout without changing game rules. Then finalize the cases/stages/end-condition contract using The Quiet Hour epilogue; implement Current Investigation, Field Journal and full-screen intro. Add map note/investigation indicators. Test no spoiler leakage and mobile/accessibility behavior.
+Simplify the player layout without changing game rules. Then finalize the cases/stages/end-condition contract under decision #27 (the older Quiet Hour epilogue framing predates #86); implement Current Investigation, Field Journal and full-screen intro. Add map note/investigation indicators. Test no spoiler leakage and mobile/accessibility behavior.
 
 ## M4 — LiveView Story editor and safe drafts
 
@@ -48,6 +50,6 @@ Manually select reviewed revision, validate and deploy release artifacts with re
 
 ## Cross-cutting release gates
 
-Preserve `priv/worlds/madison/authored.json`, the uncommitted diamond boundary, `generated` symlink and snapshots, development DB and saves, active worktrees. Never reset or clean the designer's workspace. Tests use disposable Postgres and scratch world copies. Validate JSON and geographic references; retain schema compatibility, no-spoiler projections, author permissions, health checks and restore capability.
+Preserve `priv/worlds/madison/authored.json`, the tracked playable boundary, `generated` symlink and snapshots, development DB and saves, active worktrees. Never reset or clean the designer's workspace. Tests use disposable Postgres and scratch world copies. Validate JSON and geographic references; retain schema compatibility, no-spoiler projections, author permissions, health checks and restore capability.
 
 The existing `docs/world-revisions-proposal.md` is **not approved for implementation** merely by this roadmap. No feature should treat an architecture memo as an instruction to modify protected local authored data.

@@ -1,3 +1,5 @@
+> **Status: Current.** Approved authoring/publishing direction; implementations remain future ticket work. See the handoff for later #30 decisions awaiting PR #83.
+
 # Threshold — Collaborative Authoring, Assets, and Git Publishing
 
 **Status:** Approved product direction, 2026-10-12; GitHub App and binary pipelines are **future milestones**, not immediate build authorization.

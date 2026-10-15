@@ -1,3 +1,5 @@
+> **Status: Historical.** Original editor design draft. See [implementation status](implementation-status.md) and [UX/story architecture](architecture/ux-v2.md); open questions below are dated, not a current queue.
+
 # Geographic editor design
 
 Status: **Draft for discussion.** Items marked **[DECIDE]** are product questions; each is listed in `implementation-plan.md` with a recommendation. Nothing here overrides `project-decisions.md` until agreed.

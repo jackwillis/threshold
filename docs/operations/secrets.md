@@ -1,3 +1,5 @@
+> **Status: Current.** Runtime variable/credential custody reference and future staging inventory; no provisioning authorization.
+
 # Staging variables and credential custody
 
 This is an inventory for the private staging direction, not an authorization to provision or deploy. The designer owns access grants and approves credential rotation. Store values in the chosen private credential store and protected host or CI configuration, never in Git, PRs, logs or shell history. Record custody and rotation dates without recording values here. Production, staging and disposable tests use separate credentials.

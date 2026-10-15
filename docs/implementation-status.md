@@ -1,74 +1,37 @@
+> **Status: Current — October 15, 2026.** Implementation summary for main at `a8a9772`; open PRs are separate. Work status and priority live on the [backlog board](https://github.com/users/jackwillis/projects/3).
+
 # Implementation status
 
-Last updated: October 10, 2026. This file separates what exists and has been verified from what is active, planned or deferred. The operational task list is [implementation-plan.md](implementation-plan.md).
+Read the [handoff](handoff.md) for current decisions and standing safety instructions, [architecture](architecture/ux-v2.md) for approved direction, and the [agent workflow](planning/agent-workflow.md) before implementing a ticket. Older implementation plans and reports are indexed as historical in [docs/README.md](README.md).
 
-## Completed and verified
+## Implemented on main
 
-Verified means exercised by an automated test and/or by driving the app in headless Firefox during development. `make check` (Elixir tests, Python tests, ruff, TypeScript type check, world validation, determinism) passed when this was last updated.
+- **Geography:** pinned source snapshot; offline, deterministic generated nodes/edges/context/playable routes; boundary validation; authored references and walking-access anchors; atomic publication of coherent generation snapshots. The imported graph, authored places and runtime movement graph remain distinct layers.
+- **Editor:** inspect/place/move/connect/closures/boundary tools, conflict-checked atomic saves under a per-world write lock, explicit reference repair, offline regeneration and stale-input rejection. LiveView owns the working copy; MapLibre/Terra Draw handle browser gestures.
+- **Player:** strict one-hop movement on the authored graph by default, radial numbered shortcuts, constrained camera, separate generated-graph development mode, runtime-world cache, PostgreSQL progress, revision and stale-turn guards, transactional movement and interaction completion.
+- **Presentation:** Classic Atlas seasonal styling and local EB Garamond typography; integrated subtle procedural watercolor materials; accessible field-notebook investigation scenes with focus management, live announcements and reduced-motion support. Season changes are presentation-only.
+- **Interactions/content:** validated per-world `interactions.json`, declared discoveries, discovery requirements, scenes/choices and durable completions. Madison contains *The Quiet Hour*. #86 selects *The Red-Headed League* for later authoring; existing content stays until separately approved replacement work. No inventory, timer, dialogue tree or new rules engine is implied.
+- **Release foundation:** environment-driven OTP release and migration task (#2), `/healthz` and `/readyz` (#3), production Docker image support (#4), and the GitHub CI gate (#34). See [release](release.md), [health checks](health-checks.md) and [local gameplay](local-gameplay.md).
 
-- **Geographic pipeline** (`gis/`, Python/OSMnx): acquire (the only networked step), build and validate. A pinned Overpass snapshot of the Madison rectangle plus a 250 m buffer is committed, with checksum and manifest. Generated nodes, edges, context and provenance are deterministic and covered by a byte-identical rebuild check. Edge IDs are topological (`edge:<from>-<to>-<lowest way id>`) with a separate geometry hash. Closed `area=yes` ways are context (pedestrian areas), not edges; cycleways are in the graph; elevators are kept as `vertical` context.
-- **Read-only viewer** (Phoenix LiveView + a TypeScript MapLibre hook): layers, access/type/component colouring, legend with counts, components list, inspector, staleness banner. No basemap.
-- **Authored layer:** strict schema and validation, deterministic conflict-checked atomic save, reference status (ok / moved / missing) for node, edge and closure references.
-- **Editing tools:** inspect, place (snaps to node, edge with offset, or free point), move, connect, close street, boundary editing (Terra Draw), Save and Discard with an unsaved-changes indicator and leave-page guard. Saving a boundary makes the geography stale and is refused if boundary plus buffer exceeds the pinned snapshot.
+## Verification
 
-- **Playable-location layer (candidate):** `threshold-gis playable` builds a derived network (graph-radius clustering, 25 m) beside the imported files with connectivity-integrity diagnostics and designer retain/suppress overrides; the editor displays it, flags staleness, and saves overrides with the authored layer. Verified by Python and Elixir tests and in headless Firefox. Playable connections now contain continuous source-network routes, ordered edge/node lists and actual route geometry; route integrity was audited on Madison and tested on synthetic data. See [playable-route-review.md](playable-route-review.md) for results and gameplay limits. Playability remains untested.
+The full `make check` gate passed for this documentation update on October 15, 2026 using isolated PostgreSQL `threshold_test_81` on port 5433. See `make check` for current test counts and exclusions; a full run must set `THRESHOLD_TEST_DATABASE_URL` so database tests run. It covers warnings-as-errors compilation, formatting, Elixir tests (including database concurrency), ruff, TypeScript, Bun/material checks, Python tests, world validation and a byte-identical offline rebuild into a disposable copy.
 
-- **Walking access** (`0547583`): optional `access` on authored places, independent of the display marker; routing, validation, reference status, inspector and Route-check actions. LiveView-tested; the map does not yet draw the access point or a connector (Studio V2 backlog) and it was not browser-verified.
-- **Runtime-world cache** (`e68269c`): `Threshold.WorldCache` keeps the four most recent compiled movement worlds keyed by generation, authored hash, boundary hash and graph mode; warm loads 148-210 ms to 0.3 ms. Tested including with PostgreSQL.
-- **Classic Atlas** (`6e5f75e`, `d04e223`): season tokens, a shared MapLibre layer stack, bundled EB Garamond drawn locally by MapLibre 5.24 (no glyph PBFs), `/atlas` prototype and the `/play` map; season is display-only. Browser-verified in headless Firefox; see [classic-atlas-typography.md](classic-atlas-typography.md) for rendering limitations. The editor keeps its diagnostic style.
-- **Interactions, first slice** (`5eafbca` to `6f9304a`): `interactions.json` with strict validation and lint (`mix threshold.interactions`), discoveries and completed interactions in two PostgreSQL tables, transactional `Sessions.complete_interaction/5`, and an accessible, field-notebook investigate panel on `/play` (live region, focus management, reduced motion). Verified by tests (including concurrency on independent connections) and in headless Firefox at desktop and 420-500 px on scratch worlds. See [gameplay-interactions.md](gameplay-interactions.md).
+GitHub CI is exercised: #34 is closed; the main run for `a8a9772` [passed](https://github.com/jackwillis/threshold/actions/runs/38357984109). Consult the [latest workflow runs](https://github.com/jackwillis/threshold/actions/workflows/ci.yml) instead of assuming a dated local gate proves current CI.
 
-- **The Quiet Hour** (first Madison mystery): `priv/worlds/madison/interactions.json`, four approved places, seven interactions, two branches and two endings. Content tests over every choice order; scratch-world playtest of both branches and both endings in headless Firefox. Pacing of the last two legs is long (see [madison-mystery-proposal.md](madison-mystery-proposal.md)); not human-playtested.
+Prior browser reports used scratch worlds and disposable PostgreSQL, including editor boundary/regeneration/reference repair and Quiet Hour branches/endings in headless Firefox. They are retained as [expanded-world verification](expanded-world-verification.md), [Quiet Hour report](madison-mystery-proposal.md), [Classic Atlas typography](classic-atlas-typography.md) and [watercolor report](watercolor-atlas.md). They are historical checks, not browser automation in `make check` or a new browser run for this documentation update.
 
-## Verification status (October 10, 2026)
+## Gaps and pending verification
 
-`make check` passes with 303 Elixir tests when `THRESHOLD_TEST_DATABASE_URL` points at the disposable test database (13 database tests are excluded without it), 35 Bun tests and 38 Python tests. Not verified: real screen readers, touch devices, browsers other than Firefox, the CI workflow on GitHub, Compose container startup, and the interactions migration against the designer's development database (not applied by agents). The designer's real `authored.json`, playable boundary, active generated snapshot and snapshots have never been modified by agent work.
+- Real screen readers, touch-device behavior and a broader browser matrix remain unverified by the historical reports. LiveView tests do not exercise Terra Draw or MapLibre. Walking-access marker/connector presentation is deferred.
+- #5 owns the fresh local production-style Compose smoke test; #58 owns fresh quick-start/native-Compose/browser verification. A built production image and a successful source gate do not establish those outcomes. No hosted deployment or backup/restore operation is claimed here.
+- Agents do not verify migrations against the designer's development database. [Local gameplay](local-gameplay.md) lists migrations for the designer to apply; current application state must be inspected rather than inferred from an old handoff.
+- Saves still use whole-file `world_revision`; [session compatibility](world-revisions-proposal.md) is subject to #31. The case schema/completion contract is subject to #27.
+- Generated play remains available locally (#80); hosted gating (#82) is follow-up work. JSON snapshot draft storage (#30) is a decision, not implemented shared drafts. Fixture-only staging (#29) does not authorize hosting Madison.
+- PRs #83 and #89 record recent decisions; PRs #90 and #91 implement Field Atlas focus-area/mobile-sheet changes. All are unmerged at this update; consult their current state before relying on them.
 
-## Near-term features recorded (not built, not yet authorized)
+## Planned and deferred
 
-Full-screen introduction on a new walk, the Field Journal (cases, recorded discoveries, completed outcomes, with a proposed smallest `cases` data model), and map indicators for notes and investigations: [near-term-features.md](near-term-features.md). Also deferred: geographically anchored trees (see the handoff), Studio V2 interaction editing, portraits and dialogue. Standing decisions from the designer (play the mystery first; no Nearby notes or spawn change yet; environmental notes only for persistent features; no new gameplay systems) are in the handoff's "Resume here" section.
+Field Journal, introduction, map content indicators, LiveView Story editor, safe collaborative drafts, geographically anchored trees, asset ingestion and publishing are scoped separately on the board. Radio, null zones, Backrooms, achievements, portraits/dialogue, general scripting and multiplayer remain future systems requiring explicit decisions and authorization. The older editor [implementation plan](implementation-plan.md) is historical, not a live task queue.
 
-## Proposals awaiting approval
-
-- [Session compatibility instead of whole-file revisions](world-revisions-proposal.md): an explicit position check (exists, traversable, inside the boundary), a diagnostic revision stamp, and non-destructive recovery. Not implemented.
-
-## Known limitations and untested areas
-
-- Regeneration and reference repair are implemented. Regeneration stages an offline build, playable build and validation before publishing generated files; saved-input changes reject publication. The editor preserves authored working data and save-conflict hashes. Missing/moved references open the inspector for deliberate reconnection, detachment or removal. Browser checks on a scratch Madison world exercised boundary drag/save/regenerate, map refresh, location-to-edge reconnection and missing-closure reconnection/save. Automated tests cover missing/moved references, unsaved guards and failed-build preservation. An end-to-end synthetic source update moved node 2 and removed way 105; in-editor regeneration flagged the location as moved and the closure as missing, and authored.json remained byte-identical. Browser console inspection during hot reload reported one MutationObserver error; the exercised editing, saving and regeneration actions still completed.
-- Network review done (see [network-review.md](network-review.md)): undirected edges are correct for walking; open items are retaining sidewalk/crossing tags, an optional derived access basis, and plaza/entrance handling in the playable-node layer.
-- The full designer workflow was driven in headless Firefox against a scratch copy of the world, not against a long editing session on the committed Madison files; no browser tests are automated (the LiveView tests do not exercise Terra Draw).
-- Map labels are not drawn (they would need a font source); names appear in the inspector.
-- Shapely emits a deprecation warning from the importer.
-- A GitHub Actions workflow (`.github/workflows/ci.yml`) runs `make check` with a PostgreSQL service and fails if database tests would be skipped. It has not yet run on GitHub, so its action versions and `.tool-versions` handling are unverified. No deployment target is configured.
-
-## Reliability guarantees (Reliability Pass 1, 2026-10-09)
-
-What the code now guarantees, each with the test or check that backs it:
-
-- **Authored and boundary saves cannot silently overwrite each other.** The content-hash check, write and rename run under one per-world lock (`Threshold.WorldFile`) with unique temp files; of N saves from one base revision exactly one wins and the rest get `:conflict` (tests with 8 concurrent writers; the same test failed with 3-5 winners before the fix).
-- **Generated geography is published as one coherent snapshot.** Five files are copied into `generations/<digest>/` and the `generated` symlink is repointed by one atomic rename; readers resolve it once and read every file from that snapshot, and browsers pin layer requests with `?generation=`. A failed publication leaves the previous snapshot active (tests: publication failure, concurrent readers during 40 publications, plain-directory conversion, pruning). Regeneration re-checks inputs and publishes under the same lock as saves, so an input cannot change between the check and publication.
-- **Player movement is transactional.** Row lock plus expected-turn check: 16 competing moves from one turn (same or different destinations) advance the save once; replays and failed moves leave it unchanged; concurrent initialisation creates one row; resets racing moves leave a coherent save; a revision mismatch blocks moves (tests use independent connections, not the shared sandbox).
-- **Edge anchors are derived from imported geometry.** The client supplies an edge and an offset; the position comes from the edge, and offsets outside 0..1 are rejected.
-- **The game-world revision describes the bytes actually used,** all read once from one snapshot.
-- **Committed Madison geography satisfies the movement invariants** (`madison_geography_test.exs`): 1,080 of 1,631 playable connections are valid walks and the other 551 are excluded only by the boundary; none fails structurally; every valid connection starts and ends on its locations and is reversible; excluded connections are never offered.
-
-Not verified or not done: the CI workflow has never run on GitHub; the editor's recovery-draft idea (4.6) is deferred; `mix release` copies `generated` as a real directory (it dereferences the symlink, so a release works but holds the files twice and the first in-release publication converts it); `make build-world` still writes into the active snapshot in place and non-atomically; a held advisory lock covers one running node only; browser behaviour on touch devices, reduced motion and multiple tabs is untested.
-
-## Active
-
-Gameplay content: *The Quiet Hour* is implemented ([madison-mystery-proposal.md](madison-mystery-proposal.md)); next are pacing notes for its long legs (the designer's decision), then Studio V2 interaction editing, portraits and simple dialogue.
-
-## Planned
-
-1. Apply the agreed fixes from the network review (retain sidewalk/crossing tags; decide on a derived access basis).
-2. Playable-node approach: an experiment compared candidate networks ([playable-node-experiment.md](playable-node-experiment.md)); graph-radius clustering preserved connectivity, proximity merging did not. Productized as a derived layer; alleys are protected and plaza gaps are not bridged as provisional choices (undecided by the designer). Imported routing topology and playable locations stay distinct.
-3. PostGIS: not used yet; PostgreSQL and Ecto now hold player progress and interactions. World files remain the reproducible source artifacts.
-4. Done: strict one-hop movement on the authored graph (see Completed).
-
-## Deferred
-
-Radio, encounters beyond the first interaction slice, null zones, Backrooms, achievements, cartography/knowledge UI, journal, chained scenes, portraits and dialogue, Studio V2 interaction editing, a dark "field-map" style, multiplayer, hosted deployment, CI provider selection.
-
-## Environment
-
-Elixir 1.19 / OTP 26, Python 3.12 and Bun (see `.tool-versions` and the README). Bun is installed at `~/.bun/bin` and added to PATH by the Makefile.
+Madison's boundary, `generated` symlink and snapshots are tracked. The standing restrictions in `AGENTS.md` apply equally to tracked and untracked work: do not edit protected world data, saves or the development database, and never stage/reset/clean/stash the designer's files. Tests use fixtures or scratch worlds and disposable PostgreSQL.

@@ -1,3 +1,5 @@
+> **Status: Historical.** Superseded by [implementation status](implementation-status.md) and [current architecture](architecture/ux-v2.md). Dated steering memo.
+
 # Threshold — Steering Memo for Claude Code
 
 **From:** ChatGPT (GPT-6), Design and Architecture Review  
