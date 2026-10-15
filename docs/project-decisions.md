@@ -138,3 +138,7 @@ The editor milestone decisions (editor actions, anchoring, closure semantics, ed
 - Define source-update comparisons and how unresolved references are shown.
 - Decide whether source data is small enough to commit once acquired.
 - Establish CI provider and deployment target when needed; neither has been chosen.
+
+## First real mystery (#86, 2026-10-14)
+
+The first real mystery adapts Conan Doyle's "The Red-Headed League" (1891, public domain). *The Quiet Hour* is placeholder content and stays as a test fixture until the replacement is playable. The runner-up, kept in reserve, is Lovecraft's "The Call of Cthulhu". Next steps are tracked in #87 (find a Madison site, read-only research) and #88 (author the story, blocked on the site and on the designer's approval to edit world data). Doyle's text is used as inspiration only; use no modern edition text.
