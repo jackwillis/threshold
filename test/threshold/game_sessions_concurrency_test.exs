@@ -128,6 +128,13 @@ defmodule Threshold.GameSessionsConcurrencyTest do
     assert %{turn: 0, location: "pn:1"} = progress()
   end
 
+  test "concurrent resets create and lock one initially absent save", %{world: world} do
+    tasks = for _ <- 1..12, do: Task.async(fn -> Sessions.reset(world) end)
+    assert %{ok: 12} = tasks |> Task.await_many() |> tally()
+    assert Repo.aggregate(Progress, :count) == 1
+    assert %{turn: 0, location: "pn:1", visited: ["pn:1"]} = progress()
+  end
+
   test "resets racing moves always leave a coherent save", %{world: world} do
     {:ok, _} = Sessions.load_or_start(world)
 
